@@ -1,0 +1,485 @@
+---
+title: "Two-Component Implementation in LaplacesDemon"
+output: 
+  html_notebook:
+    toc: true
+bibliography: disease_sim_proj.bib
+link-citations: yes
+---
+
+# Introduction: Two-Component Attempt in LaplacesDemon
+
+@held_two-component_2006
+
+Attempt to recreate bayesian portion: the data is now in ```counts```
+
+## Data Simulated
+```{r change point model}
+library(LaplacesDemon)
+
+n = 199 #total epochs/time steps
+ende_lambda = rep(20, n) #vector of endemic lambda values (\nu)
+epi_lambda = rep(0.5, n)  #vector of epidemic lambda values
+init = 10   #Z_0 value is the initial number of people infected
+
+
+#ende_lambda = rep(0.5, n) #vector of endemic lambda values (\nu)
+
+#---simulate endemic component based on paper's values----#
+rho = 2*pi/52
+gamma_0 = log(10)
+gamma_1 = 0.5
+gamma_2 = 1.5
+
+
+nu_t = gamma_0 + gamma_1*sin(rho*(1:n)*(1+1)/2) + gamma_2*cos(rho*(1:n)*(2+1)/2)
+
+#ende_lambda = exp(nu_t)
+
+#-----setting epidemic lambda values 
+epi_lambda = rep(c(0.5, 1.2, 0.5), c(39,10,150))
+
+
+
+counts = rep(0, n) #initialize count vector
+counts[1] = init #initial value
+
+ende = rep(0, n)
+epi = rep(0, n)
+
+for (i in 1:n) {
+  ende[i] = rpois(1, ende_lambda[i])
+  epi[i] = rpois(1, epi_lambda[i]*counts[i])
+  
+  counts[i+1] = ende[i] + epi[i]
+}
+
+plot(counts, type = "l")
+lines(ende, type = "l", col = "red")
+lines(epi, type = "l", col = "blue")
+```
+
+
+# LaplacesDemon Model Creation
+
+## Data
+```{r data}
+n_cp = 2
+
+parm_names = as.parm.names(list(epi_lambda = rep(0,n_cp+1),
+                               # gamma = rep(0,3),
+                                cp = rep(0, n_cp))
+                           )
+
+pos_epi_lambda <- grep("epi_lambda", parm_names)
+#pos_gamma <- grep("gamma", parm_names)
+pos_cp <- grep("cp", parm_names)
+
+data_list_1 = list(N = length(counts),
+                 counts = counts,
+                 mon.names = c("post_lik"),
+                 parm.names = parm_names)
+```
+
+## Model
+```{r}
+model_1 <- function(parm, data) {
+  # number is actually 200 with 1 initial value
+  N <- data$N
+  counts = data$counts
+
+  #make lambdas positive, and let the model know
+  epi_lambda <- abs(parm[pos_epi_lambda])
+  parm[pos_epi_lambda] <- epi_lambda #let the model know
+  
+  
+  #------from gammas generate the epidemic parameter
+  #gammas <- parm[pos_gamma] 
+  
+  #rho = 2*pi/52
+  #gamma_0 = gammas[1]
+  #gamma_1 = gammas[2]
+  #gamma_2 = gammas[3]
+  
+
+  #nu_t = gamma_0 + gamma_1*sin(rho*(1:N)*(1+1)/2) + gamma_2*cos(rho*(1:N)*(2+1)/2)
+  
+
+  #ende_lambda = exp(nu_t[1:N-1]) #only need N-1 since first is seeded
+  #ende_lambda = 0
+
+  
+  
+  #----change point and force it to be in an interval ------
+  
+  cp <- interval(parm[pos_cp], 0, N)  #N change points
+  cp <- ceiling(sort(cp))
+  parm[pos_cp] <- cp  #constrained so replace
+  
+  #The cp parameter must be integer-only, and so it is constrained function.
+  #The algorithm, outside of the Model function needs to be aware that cp has been
+  #constrained, so the parm vector is updated with the constrained values
+  
+  
+  lambdas <- rep(epi_lambda, diff(c(0, cp, N)))
+
+  
+  #--------------------likelihoods-----------
+  log_lik <- sum(dpois(data$counts[2:N],
+                       counts[1:(N-1)]*lambdas[1:(N-1)] + 20, #+ #ende_lambda,
+                       log = TRUE))
+  
+  post_lik <- log_lik +
+    sum(dgamma(epi_lambda, 10,10, log = TRUE)) +  #prior on epidemics
+    sum(dunif(cp, 0, 200, log=T))    #prior on change points
+    #sum(dnorm(gammas, 0, 10^5), log = TRUE) #prior on gamma values
+  
+  # This list is returned and has to follow a the format specified by
+  # LaplacesDemon.  
+  list(LP = post_lik,
+       Dev = -2 * log_lik,
+       Monitor = c(post_lik),
+       yhat = NA,
+       parm = parm)
+}
+
+
+
+```
+
+## likelihood issues
+
+```{r}
+inits <- c(rexp(n_cp+1, 2),  runif(n_cp, 1, 198))
+inits <- c(0.5, 1.2, 0.5, 39, 49)
+
+inits <- c(0.2, 1.2, 0.5, 75, 95)
+
+
+#true
+model_1(c(0.5, 1.2, 0.5, 39, 49), data_list_1)$LP
+
+#converges values
+model_1(c(1.0775867,0.5132553, 0.6676782,49.0191000,55.4587667  ), data_list_1)$LP
+
+924/1174
+
+posts1 = numeric(100)
+posts2 = numeric(100)
+for (i in 1:100){
+
+posts1[i] <- model_1(c(i/100,1.5132553, 0.6676782,49,59), data_list_1)$LP
+
+}
+
+for (i in 1:100){
+
+posts2[i] <- model_1(c(0.5,1.2, 0.5,39,i), data_list_1)$LP
+
+}
+
+
+plot(posts2, type = "l")
+
+lines(posts1, type = "l", col = "red")
+```
+
+## Initial samples
+
+```{r}
+mcmc_samples <- LaplacesDemon(Model = model_1,
+                              Initial.Values = inits,
+                              Data = data_list_1, 
+                              Iterations = 30000,
+                              Specs=list(alpha.star=0.234, B=NULL),
+                              Algorithm = "CHARM", Thinning = 1)
+
+Consort(mcmc_samples)
+bayesplot::mcmc_trace(mcmc_samples$Posterior1)
+test <-colMeans(mcmc_samples$Posterior1)
+```
+
+## Extended samples
+
+```{r}
+Initial.Values <- as.initial.values(mcmc_samples)
+
+mcmc_samples <- LaplacesDemon(model, Data=data_list, Initial.Values,
+     Covar=NULL, Iterations=1320000, Status=58823, Thinning=44,
+     Algorithm="HARM", Specs=list(alpha.star=0.234, B=NULL))
+```
+
+
+```{r}
+mcmc_samples
+```
+
+## Trace Plots
+
+```{r}
+bayesplot::mcmc_trace(mcmc_samples$Posterior1)
+```
+
+
+#Simulate Graph Data
+
+```{r simulate p25}
+library(igraph)
+n = 199 #total epochs/time steps
+init = 5   #Z_0 value is the initial number of people infected
+graph = sample_gnp(10, 1) #speed check
+
+#---simulate endemic component based on paper's values----#
+#-----------NOTE: need to divide the rate since each city gets a chance
+rho = 2*pi/52
+gamma_0 = log(10)
+gamma_1 = 0.5
+gamma_2 = 1.5
+
+
+nu_t = gamma_0 + gamma_1*sin(rho*(1:n)*(1+1)/2) + gamma_2*cos(rho*(1:n)*(2+1)/2)
+
+
+#need to divide!
+ende_lambda = rep(0, n)
+ende_lambda = exp(nu_t)/gorder(graph)
+
+
+#-----setting epidemic lambda values 
+epi_lambda = rep(c(0.7, 1.2, 0.7)/(gorder(graph)), c(39,10,150))
+
+
+
+
+
+
+#----separate count figures----#
+ende_c = matrix(0, nrow = gorder(graph), ncol = n)
+epi_c = matrix(0, nrow = gorder(graph), ncol = n)
+
+
+
+#----------------
+
+#-----------------counts matrix ------
+
+
+
+counts = matrix(0, nrow = gorder(graph), ncol = n)
+counts[1:2,1] = init
+
+#counts = rep(0, n) #initialize count vector
+#counts[1] = init #initial value
+ 
+
+#get list of all adjacent vertices
+adj = adjacent_vertices(graph, 1:gorder(graph))
+
+
+
+#-----------
+
+for (i in 1:(n - 1)) {
+  #all rows/cities get same value
+  ende_c[, i] = rpois(1, ende_lambda[i])
+  
+  for (j in 1:gorder(graph)) {
+    counts_j = sum(counts[adj[[j]], i]) #sum all adjacent counts
+    counts_j = counts_j + counts[j, i] #add self count
+    epi_c[j, i] = rpois(1, epi_lambda[i] * counts_j) #generate new counts
+    counts[j , i + 1] = ende_c[j, i] + epi_c[j, i] #append new counts
+  }
+  
+  
+}
+
+plot(graph)
+
+
+
+plot(colSums(counts), type = 'l')
+lines(colSums(ende_c), col = 'blue', type = 'l')
+lines(colSums(epi_c), col = 'red', type = 'l')
+title(main = "all cities sum")
+
+plot(counts[1, ], type = 'l', col = 'forestgreen')
+lines(ende_c[1, ], type = 'l', col = 'blue')
+lines(epi_c[1, ], type = 'l', col = 'red')
+title(main = 'city 1')
+
+plot(counts[10, ], type = 'l', col = 'forestgreen')
+lines(ende_c[10, ], type = 'l', col = 'blue')
+lines(epi_c[10, ], type = 'l', col = 'red')
+title(main = 'city 10')
+
+```
+
+
+
+# Graph Laplaces Demon
+
+## data
+
+```{r}
+library(LaplacesDemon)
+n_cp = 2
+
+parm_names = as.parm.names(list(epi_lambda = rep(0,n_cp+1),
+                                gamma = rep(0,3),
+                                cp = rep(0, n_cp),
+                                gp = 0)
+                           )
+
+pos_epi_lambda <- grep("epi_lambda", parm_names)
+pos_gamma <- grep("gamma", parm_names)
+pos_cp <- grep("cp", parm_names)
+pos_p <- grep("gp", parm_names)
+
+
+pos_p
+data_list = list(N = dim(counts)[2],
+                 order = dim(counts)[1],
+                 counts = counts,
+                 mon.names = c("post_lik"),
+                 parm.names = parm_names)
+```
+
+
+## model
+
+
+
+```{r LP model graph}
+
+model <- function(parm, data) {
+  # number is actually 200 with 1 initial value
+  N <- data$N
+  ord <- data$order
+
+  
+  counts = data$counts
+  
+  p = interval(parm[pos_p], 0,1)
+  parm[pos_p] = p
+
+  #make lambdas positive, and let the model know
+  epi_lambda <- abs(parm[pos_epi_lambda])
+  parm[pos_epi_lambda] <- epi_lambda #let the model know
+  
+  
+  #------from gammas generate the epidemic parameter
+  gammas <- parm[pos_gamma] 
+  
+  rho = 2*pi/52
+  gamma_0 = gammas[1]
+  gamma_1 = gammas[2]
+  gamma_2 = gammas[3]
+  
+
+  nu_t = gamma_0 + gamma_1*sin(rho*(1:N)*(1+1)/2) + gamma_2*cos(rho*(1:N)*(2+1)/2)
+  
+  ende_lambda = exp(nu_t[1:N - 1]) #only need N-1 since first is seeded
+  mat_ende_lambda <- matrix(ende_lambda, nrow = ord, ncol = N-1, byrow = TRUE)
+
+  
+  
+  #----change point and force it to be in an interval ------
+  
+  cp <- interval(parm[pos_cp], 1, N-1)  #N change points
+  cp <- ceiling(sort(cp))
+  parm[pos_cp] <- cp  #constrained so replace
+  
+  #The cp parameter must be integer-only, and so it is constrained function.
+  #The algorithm, outside of the Model function needs to be aware that cp has been
+  #constrained, so the parm vector is updated with the constrained values
+  
+  
+  lambdas <- rep(epi_lambda, diff(c(0, cp, N)))
+  mat_lambdas <- matrix(lambdas, nrow = ord, ncol = N, byrow = TRUE)
+  
+  #graph
+  
+  graph = sample_gnp(ord, p)
+  
+
+  
+  
+  adj = adjacent_vertices(graph, 1:gorder(graph))
+
+  
+  #--------------------likelihoods-----------
+  
+  #for each city
+  
+# this partitions
+ ord = gorder(graph) #the number of vertices/cities/rows
+N = n #number of columns
+
+#get adjacency list
+adj = adjacent_vertices(graph, 1:gorder(graph))
+
+inf_counts = matrix(0, nrow = gorder(graph), ncol = n)
+
+#recompute counts into infection potential counts
+
+for (i in 1:gorder(graph)) {
+    inf_counts[i, ] = colSums(counts[adj[[i]], , drop = FALSE]) + counts[i, ]
+}
+
+
+#creates matrix of repeated rows
+mat_ende_lambda <- matrix(ende_lambda, nrow = ord, ncol = (N-1), byrow = TRUE)
+#creates matrix of lambdas from estimated lambda row
+mat_lambdas <- matrix(epi_lambda, nrow = ord, ncol = (N-1), byrow = TRUE)
+
+#compute the log-likelihood
+log_lik <- sum(dpois(counts[ ,2:N], #data is for 2:N, first column is an initial value
+                       inf_counts[ ,1:N - 1]*mat_lambdas[, 1:N - 1] + mat_ende_lambda[, 1:N-1],
+                       log = TRUE))
+  
+  post_lik <- log_lik +
+    sum(dgamma(epi_lambda, 10,10, log = TRUE)) +  #prior on epidemics
+    sum(dunif(cp, 1, 198, log = T)) +   #prior on change points
+    sum(dnorm(gammas, 0, 10^3), log = TRUE) + #prior on gamma values
+    dbeta(p, 1, 1, log = TRUE)
+  
+  # This list is returned and has to follow a the format specified by
+  # LaplacesDemon.  
+  list(LP = post_lik,
+       Dev = -2 * log_lik,
+       Monitor = c(post_lik),
+       yhat = NA,
+       parm = parm)
+}
+
+inits <- c(rexp(n_cp + 1, 2), log(20),1, 3 ,runif(n_cp,1,199), 0.3)
+inits
+```
+
+```{r}
+
+undebug(model)
+model(inits, data_list)
+
+```
+
+# initial samples
+```{r}
+mcmc_samples <- LaplacesDemon(Model = model, Initial.Values = inits, Data = data_list, 
+                              Iterations = 30000, Specs=list(alpha.star=0.234, B=NULL),
+                              Algorithm = "HARM", Thinning = 1, Status = 100)
+
+Consort(mcmc_samples)
+bayesplot::mcmc_trace(mcmc_samples$Posterior1)
+```
+
+```{r}
+Initial.Values <- as.initial.values(mcmc_samples)
+mcmc_samples <- LaplacesDemon(model, Data=data_list, Initial.Values,
+     Covar=NULL, Iterations=1320000, Status=25210, Thinning=44,
+     Algorithm="/'HARM", Specs=list(alpha.star=0.234, B=NULL))
+```
+
+
+
+# Citations
