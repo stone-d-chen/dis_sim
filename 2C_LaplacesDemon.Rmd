@@ -147,7 +147,7 @@ model_1 <- function(parm, data) {
 
 ```
 
-## likelihood issues
+## flat likelihood issues
 
 ```{r}
 inits <- c(rexp(n_cp+1, 2),  runif(n_cp, 1, 198))
