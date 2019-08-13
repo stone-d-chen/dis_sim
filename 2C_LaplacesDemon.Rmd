@@ -168,7 +168,7 @@ posts1 = numeric(100)
 posts2 = numeric(100)
 for (i in 1:100){
 
-posts1[i] <- model_1(c(i/100,1.5132553, 0.6676782,49,59), data_list_1)$LP
+posts1[i] <- model_1(c(1,0.7, 0.6676782,i,200), data_list_1)$LP
 
 }
 
