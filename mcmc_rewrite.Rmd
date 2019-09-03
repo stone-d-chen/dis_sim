@@ -17,18 +17,26 @@ rbern <- function(n, p) {
 # start to simulate data
 
 ####
+
+
 N <- 299
 t <- 1:N
 gamma  <- c(log(10), 0.7, 1.7)
 
-K <- 3
-theta  <- c(78, 100, 180)
+K <- 4
 
-lambda <- c(0.5, 1.15, .75, 0.5)
+theta  <- c(53, 55, 273,280)
+
+lambda <- c(0.7, 1.5, 0.7, 1.1,0.5)
+
+
+
+
 vlambda <- rep(lambda, diff(c(0, theta, N)))
 
 rho <- 2*pi/52
-nu <- exp(cbind(1, sin(rho*t), cos(rho*t)) %*% gamma)
+INDEP <- data.frame(x0=1, x1=sin(rho*t), x2=cos(rho*t))
+nu <- exp(as.matrix(INDEP) %*% gamma)
 
 Z <- numeric(N)
 Z[1] <- 1
@@ -36,8 +44,8 @@ Z[1] <- 1
 
 X <- rpois(1:N, nu)
 
-for(i in 2:(N+1)) {
-  Z[i] <- X[i-1] + rpois(1, vlambda[i-1] * Z[i-1])
+for (i in 2:(N + 1)) {
+  Z[i] <- X[i - 1] + rpois(1, vlambda[i - 1] * Z[i - 1])
 }
 
 
@@ -53,52 +61,182 @@ mean(Z)
 
 ```{r}
 
-change_theta <- function(K, N, theta, lambda, LL) {
+  compute_post <- function(lambda, theta_star, nu) {
+    vepi_star <- rep(lambda, diff(c(0, theta_star, N))) #make into vector
+    LL_star <- sum(dpois(Z[2:(N + 1)], nu + vepi_star*Z[1:N], log = T)) #likelihood of the new parameters
+    prior_star <- sum(dgamma(lambda ,1 , 1, log = TRUE))
+    post_star <- LL_star + prior_star #new log posterior
+  }
+
+
+death_theta <- function(K ,theta, lambda, gamma, INDEP, LL) {
+
+    
+    m <- sample(1:length(theta), 1)                   #sample which to remove
+    theta_star <- theta[c(-m)]                 # remove
+
+    lambda1 <- lambda[m]     #find adjacent values to change point m
+    lambda2 <- lambda[m + 1]
+    
+    temp_theta = c(0, theta, N)
+    j = m + 1
+    
+    #crate new value
+    lambda0 <- lambda1^((temp_theta[j] - temp_theta[j - 1])/(temp_theta[j + 1] - temp_theta[j - 1])) * lambda2^((temp_theta[j + 1] - temp_theta[j])/(temp_theta[j+1] - temp_theta[j-1]))
+    
+    #new lambda proposal vector
+    lambda_star <- lambda
+    lambda_star[m] <- lambda0
+    lambda_star <- lambda_star[-c(m + 1)]
+
   
-  K <- length(theta)
+    #edge case handling
+    if (K == 1) {
+    vepi_star <- rep(lambda_star, N)
+    
+    } else {
+      vepi_star <- rep(lambda_star, diff(c(0, theta_star, N)))
+      
+    }
+    
+    LL_star <- sum(dpois(Z[2:(N + 1)], nu + vepi_star*Z[1:N], log = T)) #likelihood of the new parameters
+    
+    
+    if (K == 1) {
+    prior_star <- sum(dgamma(lambda_star, 1, 1, log = TRUE)) 
+    } else {
+      prior_star <- sum(dgamma(lambda_star, 1, 1, log = TRUE)) + sum(dunif(theta_star, 0, N, log = TRUE))
+    }
+    
+    post_star <- LL_star + prior_star #new log posterior
+    
+    
+    alpha <- post_star - LL - 2*log(lambda1 + lambda2) + log(lambda0)
+    
+    if (alpha > log(runif(1))) {
+      list(K = K - 1, theta = theta_star, lambda = lambda_star, INDEP = INDEP, gamma = gamma, LL = post_star)
+    }  else {
+     list(K = K, theta = theta, lambda = lambda,INDEP = INDEP,
+                gamma = gamma, LL = LL)
+      
+    }
+    
+} 
+
+
+
+
+
+
+birth_theta <- function(K ,theta, lambda, gamma, INDEP, LL) {
+  
+    theta_m <- sample(setdiff(1:N, theta), 1)  # birth
+    theta_star <- sort(c(theta, theta_m))
+    
+    m <- which(theta_star == theta_m)       # since 1 and N are attached to theta, 1 < m < N
+    
+    u <- runif(1)
+    
+    if (m == 1) {
+      lambda0 <- lambda[1]
+      lambda1 <- lambda0*(u/(1 - u))^((theta_star[2] - theta_star[1])/theta_star[2])
+      lambda2 <- lambda0*((1 - u)/u)^(theta_star[1]/theta_star[2])
+      lambda_star <- c(lambda1, lambda2, lambda[-1])
+      
+    }
+    else if (m == length(theta_star)) {
+      
+      lambda0 <- lambda[K + 1]
+      lambda1 <- lambda0*(u/(1 - u))^((theta_star[m] - theta_star[m - 1])/(N - theta_star[m - 1]))
+      lambda2 <- lambda0*((1 - u)/u)^((N - theta_star[m])/(N - theta_star[m - 1]))
+      lambda_star <- c(lambda[1:K], lambda1, lambda2)
+    }
+    
+    else {
+      lambda0 <- lambda[m]
+      lambda1 <- lambda0*(u/(1 - u))^((theta_star[m] - theta_star[m - 1])/(theta_star[m + 1] - theta_star[m - 1]))
+      lambda2 <- lambda0*((1 - u)/u)^((theta_star[m + 1] - theta_star[m])/(theta_star[m + 1] - theta_star[m - 1]))
+      lambda_star <- c(lambda[1:(m - 1)], lambda1, lambda2, lambda[(m + 1):(K + 1)])
+      
+    }
+
+    vepi_star <- rep(lambda_star, diff(c(0, theta_star, N)))
+    LL_star <- sum(dpois(Z[2:(N + 1)], nu + vepi_star*Z[1:N], log = T)) #likelihood of the new parameters
+    
+    
+    if (K == 1) {
+    prior_star <- sum(dgamma(lambda_star ,1 , 1, log = TRUE)) 
+    } else {
+      prior_star <- sum(dgamma(lambda_star ,1 , 1, log = TRUE)) + sum(dunif(theta_star, 0, N, log = TRUE))
+    }
+    
+    post_star <- LL_star + prior_star #new log posterior
+    
+
+    alpha <- post_star + 2*log(lambda1 + lambda2) - log(lambda0) - LL
+    
+    if (alpha > log(runif(1))) list(K = K + 1, theta = theta_star, lambda = lambda_star, INDEP = INDEP, gamma = gamma, LL = post_star)
+    else list(K = K, theta = theta, lambda = lambda,INDEP = INDEP,
+                gamma = gamma, LL = LL)
+
+  
+}
+  
+
+change_theta <- function(K, theta, lambda, gamma, INDEP, LL) {
+  
+  nu <- exp(as.matrix(INDEP) %*% gamma)
+  K <- K
   j <- sample(1:K, size = 1) + 1# select a theta 50, 70
   
   
   temp_theta <- c(0, theta, N)
   
   s_star <- ceiling(runif(1,temp_theta[j - 1], temp_theta[j + 1] - 1 ))
+  #s_star <- temp_theta[j] + sample(c(-1,1),1)
   
   theta_star <- theta
   theta_star[j - 1] <- s_star
+
+
+   vepi_star <- rep(lambda, diff(c(0, theta_star, N))) #make into vector
+   LL_star <- sum(dpois(Z[2:(N + 1)], nu + vepi_star*Z[1:N], log = T)) #likelihood of the new parameters
+   prior_star <- sum(dgamma(lambda, 1, 1, log = TRUE)) + sum(dunif(theta_star, 0, N, log = TRUE))#0#sum(dgamma(lambda ,2 , 20, log = TRUE))
+   post_star <- LL_star + prior_star #new log posterior
+
   
-  vepi_star <- rep(lambda, diff(c(0, theta_star, N))) #make into vector
-  LL_star <- sum(dpois(Z[2:(N + 1)], nu + vepi_star*Z[1:N], log = T)) #likelihood of the new parameters
-  prior_star <- 0 # sum(dgamma(lambda,1.5,2, log = TRUE)) + sum(dbeta(theta_star/N, 1, 1, log = TRUE))
-  post_star <- LL_star + prior_star #new log posterior
+  #post_star <- compute_post(lambda, theta_star, nu)
   
   
   U <- runif(1)
-  
-  if (log(U) < post_star - LL) {
     
-    return(list(K = length(theta_star), N = N, theta = theta_star, lambda = lambda, LL = post_star))
+    if (log(U) < post_star - LL) {
+    
+    return(list(K = K, theta = theta_star, lambda = lambda, INDEP = INDEP, gamma = gamma, LL = post_star))
     
   } else {
-    return(list(K = length(theta), N = N, theta = theta, lambda = lambda, LL = LL))
+    return(list(K = K, theta = theta, lambda = lambda,INDEP = INDEP,
+                gamma = gamma, LL = LL))
   }
   
 }
 
 
-change_lambda <- function(K, N, theta, lambda, LL) {
+change_lambda <- function(K ,theta, lambda, gamma, INDEP, LL) {
   
-  K <- length(lambda)
-  j <- sample(1:K, size = 1)# select a theta 50, 70
+  nu <- exp(as.matrix(INDEP) %*% gamma)
+  K <- K
+  j <- sample(1:(K + 1), size = 1)# select a theta 50, 70
   
   lambda_star <- lambda
-  # lambda_star <- lambda_star + rnorm(K, 0, 0.03)
-  lambda_star[j] <- lambda_star[j] + rnorm(1,0,0.01)
+  lambda_star <- lambda_star + rnorm(K + 1, 0, 0.01)
+  #lambda_star[j] <- lambda_star[j] + rnorm(1,0,0.01)
   
   vepi_star <- rep(lambda_star, diff(c(0, theta, N))) #make into vector
   
   LL_star <- sum(dpois(Z[2:(N + 1)], nu + vepi_star*Z[1:N], log = T)) #likelihood of the new parameters
   
-  prior_star <- 0 # sum(dgamma(lambda_star,1.5,2, log = TRUE)) + sum(dunif(theta, 0, 200, log = TRUE))
+  prior_star <-  sum(dgamma(lambda_star, 1, 1, log = TRUE)) + sum(dunif(theta, 0, N, log = TRUE)) #sum(dgamma(lambda_star, 1, 1, log = TRUE))
   post_star <- LL_star + prior_star #new log posterior
   
   
@@ -106,10 +244,10 @@ change_lambda <- function(K, N, theta, lambda, LL) {
   
   if (log(U) < post_star - LL) {
     
-    return(list(K = length(theta), N = N, theta = theta, lambda = lambda_star, LL = post_star))
+    return(list(K = K, theta = theta, lambda = lambda_star, LL = post_star, gamma = gamma, INDEP = INDEP))
     
   } else {
-    return(list(K = length(theta), N = N, theta = theta, lambda = lambda, LL = LL))
+    return(list(K = K, theta = theta, lambda = lambda, LL = LL ,gamma = gamma, INDEP = INDEP))
   }
   
 }
@@ -123,43 +261,39 @@ change_lambda <- function(K, N, theta, lambda, LL) {
 
  
 
-update_param <- function(K, N, theta, lambda, LL) {
+update_param <- function(K, theta, lambda, gamma, INDEP, LL) {
   
-  
-  if (rbern(1,0.5) == 1) {
-  output <- change_lambda(K, N, theta, lambda, LL)
-  output <- change_theta(output$K, output$N, output$theta, output$lambda, output$LL)
+  p = runif(1)
+  if (p < 0.25) {
+    output <- change_lambda(K, theta, lambda, gamma, INDEP, LL)
+  } else if (p < 2/4) {
+    output <- change_theta(K, theta, lambda, gamma, INDEP, LL)
+  } else if ( K < 1 | p < 3/4) {
+    output <- birth_theta(K, theta, lambda, gamma, INDEP, LL)
   } else {
-  output <- change_theta(K, N, theta, lambda, LL)
-  output <- change_lambda(output$K, output$N, output$theta, output$lambda, output$LL)
-
+    output <- death_theta(K, theta, lambda, gamma, INDEP, LL)
   }
-
-
   
-  # if (rbern(1,0.5) == 1){
-  # output <- change_lambda(K, N, theta, lambda, LL)
-  # output <- change_theta(output$K, output$N, output$theta, output$lambda, output$LL)
-  # } else {
-  # output <- change_theta(K, N, theta, lambda, LL)
-  # output <- change_lambda(output$K, output$N, output$theta, output$lambda, output$LL)
-  # }
+  # if (rbern(1,0.5) == 1) {
+  # output <- change_lambda(K, theta, lambda, gamma, INDEP, LL)
   # 
-  
-  # output <- change_lambda(K, N, theta, lambda, LL)
-  # output <- change_theta(K, N, theta, lambda, LL)
- # output <- change_lambda(output$K, output$N, output$theta, output$lambda, output$LL)
-  #output <- change_theta(output$K, output$N, output$theta, output$lambda, output$LL)
-  return(output)
+  # } else {
+  # output <- change_theta(K, theta, lambda, gamma, INDEP, LL)
+  # 
+  # }
 
+
+ 
+  return(output)
 
 }
 
-undebug(change_theta)
-undebug(change_lambda)
-undebug(update_param)
-
-
+# library(compiler)
+# birth_theta <- compiler::cmpfun(birth_theta)
+# death_theta <- compiler::cmpfun(death_theta)
+# change_theta <- compiler::cmpfun(change_theta)
+# change_lambda <- compiler::cmpfun(change_lambda)
+# update_param <- compiler::cmpfun(update_param)
 ```
 
 
@@ -167,47 +301,95 @@ undebug(update_param)
 
 ## update number of change points theta
 
-
- 
+undebug(death_theta)
 
 nSim <- 100000
 #pre-allocate
 res <- list(K = numeric(nSim),
-            theta = matrix(0, nSim, 3),
-            lambda = matrix(0, nSim, 4))
+            theta = matrix(0, nSim, N),
+            lambda = matrix(0, nSim, N))
 
  
 
-output <- list(K = K, N = N, theta = c(25, 75, 150), lambda = c( 0.7134912, 1.6539448, 0.9624683,  0.3509613), LL = -Inf)
-output <- list(K = K, N = N, theta = c(150, 200, 250), lambda = c( 0.5, 0.7, 0.5,  0.5), LL = -Inf)
+
+output <- list(K = 3, theta = c(50,55,200), lambda = c( 0.5, 1.15, 0.7, 0.5), LL = -Inf,
+               gamma = c(log(10), 0.7, 1.7), INDEP = INDEP)
 
 system.time(
-for (i in 1:nSim) {        
-   output <-  update_param(output$K, N, output$theta, output$lambda, output$LL)
+
+  for (i in 1:nSim) {        
+   output <-  update_param(output$K, output$theta, output$lambda,output$gamma, output$INDEP, output$LL)
    k <- output$K
    res$K[i] <- k
-   res$theta[i, ] <- output$theta
-   res$lambda[i, ] <- output$lambda
+   if (length(output$theta) == 0) {
+     res$theta[i, ] <-   0
+   } else {
+   res$theta[i, ] <-   c(output$theta, rep(output$theta[k], N - k))
+   }
+   res$lambda[i, ] <- c(output$lambda, rep(output$lambda[K + 1 ], N - k - 1))
 }
 )
 
-plot(res$theta[-(1:10000),1], type = "l")
-plot(res$theta[-(1:10000),2], type = "l")
-plot(res$theta[-(1:10000),3], type = "l")
-
-plot(res$lambda[-(1:10000),1], type = "l")
-plot(res$lambda[-(1:10000),2], type = "l")
-plot(res$lambda[-(1:10000),3], type = "l")
-plot(res$lambda[-(1:10000),4], type = "l")
-
-
-plot(res$theta[,1], res$lambda[ ,1])
-plot(res$theta[,1], res$lambda[ ,2])
-plot(res$theta[,1], res$lambda[ ,3])
-
-plot(res$theta[,2], res$lambda[ ,1])
-plot(res$theta[,2], res$lambda[ ,2])
-plot(res$theta[,2], res$lambda[ ,3])
+undebug(death_theta)
+undebug(birth_theta)
+undebug(change_theta)
+undebug(change_lambda)
 
 
 ```
+
+
+
+
+
+
+```{r}
+plot(res$theta[,1], type = "l")
+plot(res$theta[,2], type = "l")
+plot(res$theta[,3], type = "l")
+plot(res$theta[,4], type = "l")
+
+plot(res$lambda[-(1:nSim/10),1], type = "l")
+plot(res$lambda[-(1:nSim/10),2], type = "l")
+plot(res$lambda[-(1:nSim/10),3], type = "l")
+plot(res$lambda[-(1:nSim/10),4], type = "l")
+
+# 
+# plot(res$theta[,1], res$lambda[ ,1])
+# plot(res$theta[,1], res$lambda[ ,2])
+# plot(res$theta[,1], res$lambda[ ,3])
+# 
+# plot(res$theta[,2], res$lambda[ ,1])
+# plot(res$theta[,2], res$lambda[ ,2])
+# plot(res$theta[,2], res$lambda[ ,3])
+
+
+# dev.off()
+
+par(mfrow = c(3, 3))
+
+plot(Z, type = "l")
+
+plot(density(res$K))
+
+plot(density(res$lambda[-(1:20000), 1], bw=0.01))
+plot(density(res$lambda[-(1:20000), 2], bw=0.01))
+plot(density(res$lambda[-(1:20000), 3], bw=0.01))
+plot(density(res$lambda[-(1:20000), 4], bw=0.01))
+plot(density(res$lambda[-(1:20000), 5], bw=0.01))
+plot(density(res$lambda[-(1:20000), 6], bw=0.01))
+plot(density(res$lambda[-(1:20000), 7], bw=0.01))
+
+plot(density(res$theta[-(1:20000), 1], bw=1))
+plot(density(res$theta[-(1:20000), 2], bw=1))
+plot(density(res$theta[-(1:20000), 3], bw=1))
+plot(density(res$theta[-(1:20000), 4], bw=0.1))
+plot(density(res$theta[-(1:20000), 5], bw=0.1))
+plot(density(res$theta[-(1:20000), 6], bw=0.1))
+# 
+# 
+# theta  <- c(40, 55, 150, 250, 275)
+# 
+# lambda <- c(0.7, 1.2, 0.7, 0.3, 0.2, 1.2)
+```
+
