@@ -1,0 +1,203 @@
+---
+title: "Disease Modeling"
+link-citations: yes
+output:
+  html_notebook:
+    toc: yes
+  word_document:
+    toc: yes
+bibliography: disease_sim_proj.bib
+---
+
+
+# Intro 
+
+Over May 2011, a strain *Escherichia coli* (*E. coli*) caused an outbreak of severe illness in Germany, with ~3,950 affected compared with ~200 cases a year typically seen. Of those infected 53 died.
+
+In this - we extend a method presented by @held_two-component_2006 for modeling parameters of infectious disease counts in a Bayesian framework. Their method models the count data as a branching Poisson process with a cyclical endemic parameter. 
+
+We then extend their model to incorporate a graph.
+
+# Intro to Two-Component Model
+
+@held_two-component_2006 presents a stochastic model for the statistical analysis of infectious disease counts that serves as the basis of the the extended graph model.
+
+The two components of the model are a simple Poisson branching process with autoregressive parameter $\lambda$ and a seasonal component fit with a Fourier series. These components are described as the "epidemic" and "endemic" components respectively. Additionally, the two-component model allows for the $\lambda$ to change over time allowing for the disease to change infectivity over time.
+
+## Two-Component Model Notation
+
+Let $$Z = (Z_0, Z_1, ..., Z_n) \text{ : the infectious disease counts at each time step }t$$ The model is then specified through $Z_t | Z_{t-1}$.
+
+Each $Z_t$ is determined as
+
+$$ Z_t = Y_t + X_t$$
+Where:
+
+$$Y_t: \text{epidemic component}$$
+$$X_t: \text{endemic component}$$
+
+
+$$Y_t|Z_{t-1} \sim Pois(\lambda_tZ_{t-1})$$
+$$ X_t \sim Pois(\nu_t)$$
+
+$$ \log{\nu_t} = \gamma_0 + \sum_{l = 1}^L \big(\gamma_{2l-1}\sin(\rho l t)+\gamma_{2l}cos(\rho l t)\big) $$
+
+
+
+## Epidemic
+The epidemic component is given by:
+
+$$Y_t|Z_{t-1} \sim Pois(\lambda_tZ_{t-1})$$
+
+$$\lambda_t: \text{time varying infectivity parameter}$$ 
+
+$$Z_{t-t}: \text{the infected count in the previous time step}$$
+
+That is each current infected person causes new infection cases given by $Pois(\lambda_t)$ so the total number of infected in the next time step is the sum of Poissons which is distributed $\sum_1^{Z_{n-1}}Pois(\lambda_t) = Pois(Z_{n-1}\lambda_t)$.
+
+The parameter $\lambda = (\lambda_1,\cdots,\lambda_n)$ is a piecewise constant function with unknown number of changepoints $K$ and unknown location of changepoints $\theta_1 < \cdots < \theta_K$ with $\theta \in \{1,...,n-1\}$. If $K = 0$ there is no changepoint and the $\lambda$ parameter is constant for each time step.
+
+
+
+## Endemic
+
+The endemic component is given by:
+
+$$X_t \sim Pois(\nu_t)$$
+$$\log{\nu_t} = \gamma_0 + \sum_{l = 1}^L (\gamma_{2l-1}\sin(\rho l t)+\gamma_{2l}cos(\rho l t))$$
+
+That is $\log{\nu_t}$ is fit with a Fourier series which can approximate any function arbitrarily closely. In @held they limit $L = 1$ since they determined higher order frequencies were insignificant.
+
+The parameter can then be fit with a linear regression $\log{\nu_t} = s_t\gamma^T$
+
+where $s_t = \langle 1, sin(\rho l t), \gamma_{2l}cos(\rho l t) \rangle$
+
+# Initial Bayesian Modelling
+
+
+## Bayesian Basics
+
+In Bayesian analysis estimate the posterior distribution of the parameters given the data through Bayes' theorem.
+
+$$ P(\text{parameters}|\text{data}) = \frac{P(\text{data}|\text{parameters})P(\text{parameters})}{P(\text{data})} $$
+
+One issue is the computation of $P(\text{data})$ which is given by $\int P(\text{data}|\text{parameters})P(\text{parameters})$ over the entire parameter space. With many parameters this integral it typically analytically intractable. To deal with this issue @held writes many of the distributions as conjugate priors etc (tk elaborate) and uses Markov Chain Monte-Carlo (MCMC) methods for some.
+
+In this work we primarily appeal to MCMC methods.
+
+## Markov Chain Monte-Carlo
+
+
+
+In Markov Chain Monte Carlo (MCMC), the goal is to simulate samples from a distribution. This is done by creating a Markov Chain whose stationary distribution is desired distribution.
+
+
+
+
+# graph notation
+
+We now represent with 
+
+
+$$X_{it}: \text{infected count in city } i \text{ at time step } t \text{, due to endemic factors}   $$
+$$Y_{it} : \text{infected count in city } i \text{ at time step } t \text{, due to epidemic factors}   $$
+
+$$Z_{i,t+1} = X_{i,t} + Y_{i,t}: \text{infected count in city } i \text{ at time step } t $$
+We have:
+$$X_{i,t} \sim Pois(\nu_t)$$
+
+$$Y_{i,t}|G \sim ~ Pois\big(\lambda_t*\sum_{j=1}^nZ_{i,t}1[e_{i,j}=1]\big) $$
+
+Where 
+
+$$Y_{i,t} |G =   1[e_{1,i}]Z_{1,t-1} + 1[e_{2,i}]Z_{2,t-1} + \cdots + 1[e_{n,i}]Z_{1,t-1} | G  $$
+
+Where $G \in \mathscr{G}_n$ is a graph with $n$ nodes, the total number of cities.
+
+$$P(G) \sim ERGM(\beta_0,\beta_1,...\beta_i)| \beta_0,\beta_1,...\beta_i$$
+
+Where the $\beta_i$ are covariates assuming dyadic independence.
+
+So the probability of $logit[P(G_{ij} = 1)] =  X^T\beta$
+
+## ERGM
+
+$$P_{\theta, \mathscr{Y}}(Y = y) = \frac{\exp{\theta^Tg(y)}}{\kappa(\theta,\mathscr{Y})}  $$
+
+$$ \kappa = \kappa(\theta) = \sum_y \exp{\theta^Tg(y)}$$
+
+
+
+# Initial Model
+
+In this initial model we have:
+
+Let $Z = (Z_1, ..., Z_n)$ be the weekly counts of infectious diseases. The model is specified through $Z_t | Z_{t-1}$.
+
+$Z_t$ follows a Poisson branching process with immigration and time-varying parameters $\lambda_t$ and $v_t$.
+
+$$ Z_t = X_t + Y_t$$
+$$ X_t \sim Pois(v_t)$$
+$$Y_t|Z_{t-1} \sim Pois(\lambda_tZ_{t-1})$$
+
+
+
+The epidemic component is modelled as a Poisson branching process.
+
+A stochastic model for statistical analysis of surveillance data of infection disease counts.
+
+Data has seasonalities and outbreaks, low counts are typical so normal approximations are often inadequate 
+
+allow for overdispersion
+be non-stationary
+
+mechanistic modeling - susceptible, exposed, infectious removed - is too ambitious eg information of susceptibles, under-reporting and reporting delays
+
+surveillance data have features that are not captured by empirical models like log-linear poisson
+
+Our starting point is a simple branching process model with autoregressive parameter $\lambda$ and Poisson offspring 
+
+* viewed as approximation to the chain-binomial model
+* this mechanistic model assume that time period between data is generation time between generations of infected
+
+* $\lambda$ is therefore not the basic reproduction number
+
+* allows for endemic count, so the #will not explode or die out with probability 1
+
+* include seasonal terms for endemic rate
+
+* replace poisson with negative binomial to allow over-dispersion
+
+* The additional influx of endemic cases implies that whenever λ≥1 an outbreak will occur, while for λ<1 the process will be stable. 
+
+* Inclusion of overdispersion through latent random effects can be seen as an attempt to adjust for unobserved covariates or mechanisms that affect the disease incidence. For example, overdispersion can be caused by the fact that the generation time of many infectious diseases does not equal the time unit in which the data are collected or simply by the influence of unobserved covariates that affect the disease incidence.
+
+A central feature is to let the auto-regressive threshold parameter of the branching process vary over time
+
+* infectiousness might change due to public health measures, increasing vaccination
+
+* when the number of susceptible decreases (number of infected is up but lower amounts of targets)
+
+
+Want smooth change in $\lambda$, also want to capture sudden changes in infectiousness
+
+* state-space or dynamic model with autoregressive or random walk prior on lambda does not allow for sudden changes
+
+* a bayesian change-point model with unknown number of change points
+
+* Through Bayesian model averaging, the estimated time-changing λ may still be smooth because it is obtained through averaging over different changepoint models of variable dimension with different locations of the changepoints (Green, 1995; Clyde, 1999).
+
+
+# Model
+
+Let $Z = (Z_1, ..., Z_n)$ be the weekly counts of infectious diseases. The model is specified through $Z_t | Z_{t-1}$.
+
+$Z_t$ follows a Poisson branching process with immigration and time-varying parameters $\lambda_t$ and $v_t$.
+
+$$ Z_t = X_t + Y_t$$
+$$ X_t \sim Pois(v_t)$$
+$$Y_t|Z_{t-1} \sim Pois(\lambda_tZ_{t-1})$$
+
+
+
+# Citations
