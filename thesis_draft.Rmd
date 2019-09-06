@@ -44,8 +44,6 @@ $$ X_t \sim Pois(\nu_t)$$
 
 $$ \log{\nu_t} = \gamma_0 + \sum_{l = 1}^L \big(\gamma_{2l-1}\sin(\rho l t)+\gamma_{2l}cos(\rho l t)\big) $$
 ```{r simulation figure, echo = FALSE, warning=FALSE}
-
-set.seed(1)
 n = 200 #total epochs/time steps
 ende_lambda = rep(0.5, n) #vector of endemic lambda values (\nu)
 epi_lambda = rep(0.5, n)  #vector of epidemic lambda values
@@ -95,7 +93,12 @@ for (i in 1:n) {
   
   counts[i+1] = ende[i] + epi[i]
 }
+counts = counts[-length(counts)]
 
+
+# counts = load(file = "counts.RData")
+# epi = load("epi.RData")
+# ende = load("ende.RData")
 
 layout(matrix(c(1,1,2,2),2,2, byrow = TRUE), heights = c(1,6))
 par(mar = c(0,4,0,2), oma = c(0,0,4,0))
@@ -106,7 +109,7 @@ axis(side = 1,at = c(0,200), labels = FALSE, tcl = 0)
 
 
 par(mar = c(5,4,2,2))
-plot(x = 0:n, y = counts, type = "l", xaxs = "i",yaxs = "i", axes = FALSE, ann = FALSE)
+plot(x = 0:(n-1), y = counts, type = "l", xaxs = "i",yaxs = "i", axes = FALSE, ann = FALSE)
 axis(side = 1, at = seq(0,200,by = 50))
 axis(side = 2, at = seq(0,700, by = 100))
 title(xlab = "time")
@@ -246,6 +249,7 @@ $$P(\theta|K=k) = \binom{n-1}{k}^{-1}$$
 $$\gamma \sim N(0,10^6)$$ (tk didn't actually implement this)
 
 # Code
+(tk maybe a figure here would be helpful)
 
 The code is structured as follows:
 
@@ -295,7 +299,7 @@ and the Jacobian is given by
 
 $$(\lambda_1 + \lambda_2)^2/\lambda_0$$
 
-(tk figure here would be helpful)
+
 
 ```{r}
 
