@@ -1,0 +1,351 @@
+---
+title: "Disease Modeling"
+link-citations: yes
+output:
+  html_notebook:
+    toc: yes
+  word_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+bibliography: disease_sim_proj.bib
+---
+
+
+# Intro 
+
+Over May 2011, a strain *Escherichia coli* (*E. coli*) caused an outbreak of severe illness in Germany, with ~3,950 affected compared with ~200 cases a year typically seen. Of those infected 53 died.
+
+In this - we extend a method presented by @held_two-component_2006 for modeling parameters of infectious disease counts in a Bayesian framework. Their method models the count data as a branching Poisson process with a cyclical endemic parameter. 
+
+We then extend their model to incorporate a graph.
+
+# Intro to Two-Component Model
+
+@held_two-component_2006 presents a stochastic model for the statistical analysis of infectious disease counts that serves as the basis of the the extended graph model.
+
+The two components of the model are a simple Poisson branching process with autoregressive parameter $\lambda$ and a seasonal component fit with a Fourier series. These components are described as the "epidemic" and "endemic" components respectively. Additionally, the two-component model allows for the $\lambda$ to change over time allowing for the disease to change infectivity over time.
+
+## Two-Component Model Notation
+
+Let $$Z = (Z_0, Z_1, ..., Z_n) \text{ : the infectious disease counts at each time step }t$$ The model is then specified through $Z_t | Z_{t-1}$.
+
+Each $Z_t$ is determined as
+
+$$ Z_t = Y_t + X_t$$
+Where:
+
+$$Y_t: \text{epidemic component}$$
+$$X_t: \text{endemic component}$$
+
+
+$$Y_t|Z_{t-1} \sim Pois(\lambda_tZ_{t-1})$$
+$$ X_t \sim Pois(\nu_t)$$
+
+$$ \log{\nu_t} = \gamma_0 + \sum_{l = 1}^L \big(\gamma_{2l-1}\sin(\rho l t)+\gamma_{2l}cos(\rho l t)\big) $$
+```{r simulation figure, echo = FALSE, warning=FALSE}
+
+set.seed(1)
+n = 200 #total epochs/time steps
+ende_lambda = rep(0.5, n) #vector of endemic lambda values (\nu)
+epi_lambda = rep(0.5, n)  #vector of epidemic lambda values
+init = 10   #Z_0 value is the initial number of people infected
+
+
+#ende_lambda = rep(0.5, n) #vector of endemic lambda values (\nu)
+
+#---simulate endemic component based on paper's values----#
+rho = 2*pi/52
+gamma_0 = log(10)
+gamma_1 = 0.5
+gamma_2 = 1.5
+
+
+nu_t = gamma_0 + gamma_1*sin(rho*(1:n)*(1+1)/2) + gamma_2*cos(rho*(1:n)*(2+1)/2)
+
+ende_lambda = exp(nu_t)
+
+
+
+#----ability to do random change point-----#
+exp_rate = 2 #prior for the lambda value in the poisson process
+k = sample(1:n, 1)
+chg_pt_idx = sort(sample(1:n, k))
+
+epi_lambda[1:(chg_pt_idx[1]-1)] = rexp(1, exp_rate)
+
+for (i in 1:(length(chg_pt_idx)-1)) {
+    epi_lambda[chg_pt_idx[i]:chg_pt_idx[i+1]] = rexp(1, exp_rate)
+}
+
+#-----setting epidemic lambda values 
+epi_lambda = rep(c(0.7, 1.2, 0.7), c(39,10,150))
+
+
+
+counts = rep(0, n) #initialize count vector
+counts[1] = init #initial value
+
+ende = rep(0, n)
+epi = rep(0, n)
+
+for (i in 1:n) {
+  ende[i] = rpois(1, ende_lambda[i])
+  epi[i] = rpois(1, epi_lambda[i]*counts[i])
+  
+  counts[i+1] = ende[i] + epi[i]
+}
+
+
+layout(matrix(c(1,1,2,2),2,2, byrow = TRUE), heights = c(1,6))
+par(mar = c(0,4,0,2), oma = c(0,0,4,0))
+plot(0:(n-1), rep(c(0.7, 1.2, 0.7), c(39,10,151)), type = "s", xlab = "", ylab = "", xaxs = "i", axes = FALSE, ylim = c(0.5,1.5))
+title(ylab = expression(lambda))
+axis(side = 2, at = c(0.5,1,1.5))
+axis(side = 1,at = c(0,200), labels = FALSE, tcl = 0)
+
+
+par(mar = c(5,4,2,2))
+plot(x = 0:n, y = counts, type = "l", xaxs = "i",yaxs = "i", axes = FALSE, ann = FALSE)
+axis(side = 1, at = seq(0,200,by = 50))
+axis(side = 2, at = seq(0,700, by = 100))
+title(xlab = "time")
+title(ylab = "counts")
+lines(ende, type = "l", col = "blue")
+lines(epi, type = "l", col = "red")
+
+legend(150, max(epi, na.rm = TRUE),
+legend = c("total",
+"epidemic", "endemic"),
+lty = c("solid", "solid", "solid"),
+col = c("black", "red", "blue"),
+lwd = c(2,2,2),
+bty = "n")
+
+title(main = expression(paste("Simulated Infection Counts and Corresponding ", lambda, " values")), outer = TRUE)
+```
+
+
+## Epidemic
+The epidemic component is given by:
+
+$$Y_t|Z_{t-1} \sim Pois(\lambda_tZ_{t-1})$$
+
+$$\lambda_t: \text{time varying infectivity parameter}$$ 
+
+$$Z_{t-t}: \text{the infected count in the previous time step}$$
+
+That is each current infected person causes new infection cases given by $Pois(\lambda_t)$ so the total number of infected in the next time step is the sum of Poissons which is distributed $\sum_1^{Z_{n-1}}Pois(\lambda_t) = Pois(Z_{n-1}\lambda_t)$.
+
+The parameter $\lambda = (\lambda_1,\cdots,\lambda_n)$ is a piecewise constant function with unknown number of changepoints $K$ and unknown location of changepoints $\theta_1 < \cdots < \theta_K$ with $\theta \in \{1,...,n-1\}$. If $K = 0$ there is no changepoint and the $\lambda$ parameter is constant for each time step.
+
+
+
+## Endemic
+
+The endemic component is given by:
+
+$$X_t \sim Pois(\nu_t)$$
+$$\log{\nu_t} = \gamma_0 + \sum_{l = 1}^L (\gamma_{2l-1}\sin(\rho l t)+\gamma_{2l}cos(\rho l t))$$
+
+That is $\log{\nu_t}$ is fit with a Fourier series which can approximate any function arbitrarily closely. In @held_two-component_2006 they limit $L = 1$ since they determined higher order frequencies were insignificant.
+
+The parameter can then be fit with a linear regression $\log{\nu_t} = s_t\gamma^T$
+
+where $s_t = \langle 1, sin(\rho l t), \gamma_{2l}cos(\rho l t) \rangle$
+
+# Initial Bayesian Modelling
+
+
+## Bayesian Basics
+
+In Bayesian analysis estimate the posterior distribution of the parameters given the data through Bayes' theorem.
+
+$$ P(\text{parameters}|\text{data}) = \frac{P(\text{data}|\text{parameters})P(\text{parameters})}{P(\text{data})} $$
+
+One issue is the computation of $P(\text{data})$ which is given by $\int P(\text{data}|\text{parameters})P(\text{parameters})$ over the entire parameter space. With many parameters this integral it typically analytically intractable. To deal with this issue @held writes many of the distributions as conjugate priors etc (tk elaborate) and uses Markov Chain Monte-Carlo (MCMC) methods for some.
+
+In this work we primarily appeal to MCMC methods.
+
+## Markov Chain Monte-Carlo
+
+(tk terrible explanation)
+
+
+A Markov Chain is a sequence of random variables $(X_n)$ where $P(X_n)$ depends only on $X_{n-1}$.
+
+A probability distribution on the states of a Markov Chain is said to be a stationary distribution $\pi$ if after a long period of time, the probability that the Markov Chain is in a particular state is given by $\pi$.
+
+That is a distribution $\pi$ is a stationary distribution of the Markov Chain with transition probabilities $P(t)$ if 
+
+$$\sum \pi_i \\ \pi = \pi P(t) $$
+
+In Markov Chain Monte Carlo (MCMC), the goal is to simulate samples from a distribution. This is done by constructing a Markov Chain whose stationary distribution is desired distribution, the posterior distribution of the parameters.
+
+One method for constructing the chain is the Metropolis-Hasting Algorithm
+
+
+## MHA
+
+Discrete Case:
+
+Let $\pi$ be the desired stationary distribution (in this case, the posterior distribution of the parameters) and let $p$ be transition density of some Markov Chain. Then if the detailed balance equation: 
+
+$$\pi(i)p(i,j) = \pi(j)p(j,i)$$
+
+holds for all $i,j$ then $\pi$ is the stationary distribution for the markov chain given by $p$.
+
+The Metropolis-Hastings Algorithm is a method of constructing a Markov Chain such that the detailed balanced equations hold, where $\pi$ is the posterior distribution of the parameters.
+
+We start with a Markov Chain with proposal distribution $q(i,j)$.
+
+We then modify $q$ in the following way to obtain a Markov Chain with stationary distribution $\pi$.
+
+1. From the current state $X_n = i$ propose a new state $j$ according to $q$.
+2. Compute the acceptance probability 
+
+$$a(i,j) = \min{\big(\frac{\pi(j)q(j,i)}{\pi(i)q(i,j)},1\big) }$$
+
+3. Generate $U \sim Unif(0,1)$
+4. If $U < a_{ij}$ then accept the move and $X_n = j$ otherwise reject and $X_n = i$.
+
+This new Markov Chain has a transition probability
+
+$$p(i,j) = q(i,j)a(i,j)$$
+
+Assuming $a(i,j) < 1$
+
+
+$$ \begin{align} \int \pi(i)*p(i,j) & = \int\pi(j)*p(j,i) \\
+\int \pi(i)q(i,j)\frac{\pi(j)q(j,i)}{\pi(i)q(i,j)} & = \int\pi(j)*q(j,i)*a(j,i) \\ \int \pi(j)*q(j,i)*1 & = \int\pi(j)*q(j,i)*a(j,i)
+\end{align}$$
+
+
+## Reversible Jump MCMC
+
+To handle the dimension jumping of the model (between different number of changepoints) we use Reversible Jump MCMC.
+
+Since the model can jump between a collection of possible models $\{M_k, k \in \{0,1,\cdots,n-1\}}$ where $k$ indexes the number of possible changepoints.
+
+The issue comes from the fact that we can only compare points in the parameter space if they're defined on the same probability space.
+
+# Actual Model
+
+## Likelihood
+
+$$P(Z|Z_0) = \prod_{t=1}^b P(Z_t|Z_t{-1})$$
+Where
+
+$$Z_t|Z_{t-1} \sim Pois(\nu_t + \lambda_tZ_{t-1})$$
+## Priors
+
+$$\lambda_t \sim Gamma(a,b)$$ (tk fill in actual values)
+$$P(K = k) \sim 1/n,\ k \in \{0,\cdots,n-1\}$$
+$$P(\theta|K=k) = \binom{n-1}{k}^{-1}$$
+
+$$\gamma \sim N(0,10^6)$$ (tk didn't actually implement this)
+
+# Code
+
+The code is structured as follows:
+
+* `update_param()`
+  * `change_theta() `
+  * `change_lambda()`
+  * `change_gamma()`
+  * `birth_theta()`
+  * `death_theta()`
+  
+`update_param()`
+
+
+
+Randomly calls one of `change_theta() `, `change_lambda()`, `change_gamma()`, `birth_theta()` or `death_theta()` and returns the output.
+
+Each of these functions takes the current state of the MCMC chain and the unormlized log-posterior, proposes a new state, and decides whether to accept the new state or remain in the current state. It then next state of the MCMC chain and unnormalized log-posterior.
+
+`change_theta()` randomly selects one of the current change points and proposes a new changepoint with a random walk metropolis (RWM) using a discrete uniform proposal
+
+`change_lambda()` a RWM using a normal distribution. updates all lambda values simulataneously
+
+`change_gamma()` a RWM using a normal distribution. updates all three gamma values simultaneously
+
+`birth_theta()` a Reversible Jump MCMC. This operator will propose a new changepoint to add uniformly at random. Since doing so will split a current interval, we now need an additional $\lambda$ value.
+
+To properly do so we need to use a Reversible Jump MCMC.
+
+The procedure is as follows:
+
+1. Draw $u \sim Unif(0,1)$
+2. The following proposals for the new $\lambda$ values are from @green
+
+$$\lambda*(\frac{u}{1-u})^{(\theta_1-\theta_0)/(\theta_2-\theta_0)}$$
+$$\lambda*(\frac{1-u}{u})^{(\theta_2-\theta_1)/(\theta_2-\theta_0)}$$
+
+That is the new $\lambda$ values are a compromise between the original value as a function of where the new changepoint is factored in.
+
+3. Acceptance probability; In order to determine the acceptance probability for the proposal, the corresponding death move must also be determined.
+
+This is done deterministically such that if the newly proposed changepoint is removed (and the heights were the same as newly proposed ones), then the new height should be the original height.
+
+Then the new proposal probability would be
+
+$$ \frac{p({K+1 \rightarrow K})*\frac{1}{K+1}}{p(K\rightarrow K+1)*\frac{1}{N-K}} $$
+and the Jacobian is given by
+
+$$(\lambda_1 + \lambda_2)^2/\lambda_0$$
+
+(tk figure here would be helpful)
+
+```{r}
+
+```
+
+
+`death_theta()` a Reversilbe Jump MCMC
+
+
+## Proposals
+Gamma, $\lambda$ are updated in respective blocks with a random walk metropolis.
+
+The number of changepoints $K$ is updated by either randomly adding a new changepoint or by randomly deleting a current changepoint. This is done via a Reversible Jump MCMC
+
+
+# graph notation
+
+We now represent with 
+
+
+$$X_{it}: \text{infected count in city } i \text{ at time step } t \text{, due to endemic factors}   $$
+$$Y_{it} : \text{infected count in city } i \text{ at time step } t \text{, due to epidemic factors}   $$
+
+$$Z_{i,t+1} = X_{i,t} + Y_{i,t}: \text{infected count in city } i \text{ at time step } t $$
+We have:
+$$X_{i,t} \sim Pois(\nu_t)$$
+
+$$Y_{i,t}|G \sim ~ Pois\big(\lambda_t*\sum_{j=1}^nZ_{i,t}1[e_{i,j}=1]\big) $$
+
+Where 
+
+$$Y_{i,t} |G =   1[e_{1,i}]Z_{1,t-1} + 1[e_{2,i}]Z_{2,t-1} + \cdots + 1[e_{n,i}]Z_{1,t-1} | G  $$
+
+Where $G \in \mathscr{G}_n$ is a graph with $n$ nodes, the total number of cities.
+
+$$P(G) \sim ERGM(\beta_0,\beta_1,...\beta_i)| \beta_0,\beta_1,...\beta_i$$
+
+Where the $\beta_i$ are covariates assuming dyadic independence.
+
+So the probability of $logit[P(G_{ij} = 1)] =  X^T\beta$
+
+## ERGM
+
+$$P_{\theta, \mathscr{Y}}(Y = y) = \frac{\exp{\theta^Tg(y)}}{\kappa(\theta,\mathscr{Y})}  $$
+
+$$ \kappa = \kappa(\theta) = \sum_y \exp{\theta^Tg(y)}$$
+
+
+
+
+
+
+# Citations
