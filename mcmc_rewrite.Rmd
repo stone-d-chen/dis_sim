@@ -47,22 +47,38 @@ plot(Z, type = "l")
 
 
 ```{r likelihood function}
+
+Rcpp::cppFunction("NumericVector diff_sug(NumericVector x){
+   return diff(x);
+}")
+
+Rcpp::cppFunction("NumericVector stl_sort(NumericVector x) {
+   NumericVector y = clone(x);
+   std::sort(y.begin(), y.end());
+   return y;
+}")
+
+
   compute_like <- function(K, lambda, theta, gamma, INDEP) {
         if (K == 0) {
     vepi_star <- rep(lambda, N)
     
     } else {
-      vepi_star <- rep(lambda, diff(c(0, theta, N)))
+      vepi_star <- rep(lambda, diff_sug(c(0, theta, N)))
       
     }
     
     nu <- exp(INDEP %*% gamma)
-    vepi <- rep(lambda, diff(c(0, theta, N))) #make into vector
-    LL_star <- sum(dpois(Z[2:(N + 1)], nu + vepi*Z[1:N], log = T)) #likelihood of the new parameters
+    vepi <- rep(lambda, diff_sug(c(0, theta, N))) #make into vector
+    LL_star <- sum(mypois(Z[2:(N + 1)], nu + vepi*Z[1:N])) #likelihood of the new parameters
+    
     
     return(LL_star)
   }
 
+mypois <- function(data, lambdas) {
+  sum(-lambdas + data*log(lambdas))
+}
 
 ```
 
@@ -113,7 +129,8 @@ death_theta <- function(input) {
 
 
     
-    m <- sample(1:length(theta), 1)                   #sample which to remove
+    #m <- sample(1:length(theta), 1)
+    m <- ceiling(runif(1,0,length(theta)))
     theta_star <- theta[c(-m)]                 # remove
 
     lambda1 <- lambda[m]     #find adjacent values to change point m
@@ -174,8 +191,13 @@ birth_theta <- function(input) {
   
 
   
-    theta_m <- sample(setdiff(1:N, theta), 1)  # birth
-    theta_star <- sort(c(theta, theta_m))
+    #theta_m <- sample(setdiff(1:N, theta), 1)  # birth
+    theta_m <- ceiling(runif(1, 0, N))
+    while (theta_m %in% theta) {
+      theta_m <- ceiling(runif(1, 0, N))
+    }
+    
+    theta_star <- stl_sort(c(theta, theta_m))
     
     m <- which(theta_star == theta_m)      
     
@@ -241,6 +263,7 @@ change_theta <- function(input) {
 
   K <- K
   j <- sample(1:K, size = 1) + 1# select a theta 50, 70
+  #j <- ceiling(runif(1,1,K+1))
   
   
   temp_theta <- c(0, theta, N)
@@ -320,13 +343,14 @@ change_lambda <- function(input) {
  
 
 update_param <- function(input) {
+  K = input$K
   
   
   
   cutoff <- 1/5
   
   p = runif(1)
-  if (p < cutoff) {
+  if (p < cutoff || K < 1 ) {
     output <- birth_theta(input)
   } else if (p < 2*cutoff & K > 0) {
     output <- change_theta(input)
@@ -371,7 +395,7 @@ res <- list(K = numeric(nSim),
  
 
 
-output <- list(K = 4, theta = c(55, 60, 250,278), lambda =  c(0.8, 1.5, 0.7, 1.1, 1.1), LL = -Inf,
+output <- list(K = 1, theta = c(55), lambda =  c(0.8, 1.5), LL = -Inf,
                gamma = c(1, 1, 1), INDEP = INDEP)
 
 library(profvis)
@@ -408,7 +432,7 @@ system.time(
 
 
 
-burnin = 20000
+burnin = 10000
 
 par(mfrow = c(1,3))
 plot(res$gamma[,1], type = "l")
