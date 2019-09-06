@@ -17,7 +17,7 @@ K <- 3
 
 theta  <- c(50, 55, 270)
 
-lambda <- c(0.7, 1.5, 0.7, 1)
+lambda <- c(0.7, 1.5, 0.5, 0.9)
 
 
 
@@ -48,6 +48,22 @@ plot(Z, type = "l")
 
 ```{r likelihood function}
 
+Rcpp::cppFunction("double mypoisC(NumericVector data, NumericVector lambdas) {
+  int n = data.size();
+  NumericVector plik(n);
+  plik = -lambdas + data*log(lambdas);
+
+  double tlik = 0;
+
+  for(int i = 0; i < n; ++i){
+    tlik += plik[i];
+  }
+
+  return tlik;
+  }")
+
+
+
 Rcpp::cppFunction("NumericVector diff_sug(NumericVector x){
    return diff(x);
 }")
@@ -58,6 +74,9 @@ Rcpp::cppFunction("NumericVector stl_sort(NumericVector x) {
    return y;
 }")
 
+mypoisR <- function(data, lambdas) {
+  sum(-lambdas + data*log(lambdas))
+}
 
   compute_like <- function(K, lambda, theta, gamma, INDEP) {
         if (K == 0) {
@@ -70,15 +89,30 @@ Rcpp::cppFunction("NumericVector stl_sort(NumericVector x) {
     
     nu <- exp(INDEP %*% gamma)
     vepi <- rep(lambda, diff_sug(c(0, theta, N))) #make into vector
-    LL_star <- sum(mypois(Z[2:(N + 1)], nu + vepi*Z[1:N])) #likelihood of the new parameters
+    LL_star <- sum(mypoisC(Z[2:(N + 1)], nu + vepi*Z[1:N])) #likelihood of the new parameters
     
     
     return(LL_star)
   }
+  
+  
+# compute_like <- function(K, lambda, theta, gamma, INDEP) {
+#         if (K == 0) {
+#     vepi_star <- rep(lambda, N)
+#     
+#     } else {
+#       vepi_star <- rep(lambda, diff(c(0, theta, N)))
+#       
+#     }
+#     
+#     nu <- exp(as.matrix(INDEP) %*% gamma)
+#     vepi <- rep(lambda, diff(c(0, theta, N))) #make into vector
+#     LL_star <- sum(dpois(Z[2:(N + 1)], nu + vepi*Z[1:N], log = TRUE)) #likelihood of the new parameters
+#     
+#     
+#     return(LL_star)
+# }
 
-mypois <- function(data, lambdas) {
-  sum(-lambdas + data*log(lambdas))
-}
 
 ```
 
@@ -375,15 +409,15 @@ update_param <- function(input) {
 ```{r}
 
 # update number of change points theta
-# library(compiler)
-# ops = c(compute_like, change_theta, birth_theta, death_theta, change_gamma, change_lambda)
-# 
-# compute_like <- cmpfun(compute_like)
-# change_theta <- cmpfun(change_theta)
-# birth_theta <- cmpfun(birth_theta)
-# death_theta <- cmpfun(death_theta)
-# change_gamma <- cmpfun(change_gamma)
-# update_param <- cmpfun(update_param)
+library(compiler)
+ops = c(compute_like, change_theta, birth_theta, death_theta, change_gamma, change_lambda)
+
+compute_like <- cmpfun(compute_like)
+change_theta <- cmpfun(change_theta)
+birth_theta <- cmpfun(birth_theta)
+death_theta <- cmpfun(death_theta)
+change_gamma <- cmpfun(change_gamma)
+update_param <- cmpfun(update_param)
 
 nSim <- 100000
 #pre-allocate
@@ -432,7 +466,7 @@ system.time(
 
 
 
-burnin = 10000
+burnin = 20000
 
 par(mfrow = c(1,3))
 plot(res$gamma[,1], type = "l")
