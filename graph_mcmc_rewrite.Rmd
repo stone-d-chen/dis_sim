@@ -132,15 +132,15 @@ epi_lambda = rep(lambda, diff(c(0, theta, N)))
 
 
 #----separate count figures----#
-ende_c = matrix(0, nrow = gorder(graph), ncol = N)
-epi_c = matrix(0, nrow = gorder(graph), ncol = N)
+ende_c = matrix(0, nrow = gorder(g_city), ncol = N)
+epi_c = matrix(0, nrow = gorder(g_city), ncol = N)
 
 
 
 #-----------------counts matrix ------
 
 
-counts = matrix(0, nrow = gorder(graph), ncol = N)
+counts = matrix(0, nrow = gorder(g_city), ncol = N)
 counts[1,1] = init
 
 #counts = rep(0, n) #initialize count vector
@@ -148,7 +148,7 @@ counts[1,1] = init
  
 
 #get list of all adjacent vertices
-adj = adjacent_vertices(graph, 1:gorder(graph))
+adj = adjacent_vertices(g_city, 1:gorder(g_city))
 
 
 
@@ -158,7 +158,7 @@ for (i in 1:(N - 1)) {
   #all rows/cities get same value
   ende_c[, i] = rpois(1, ende_lambda[i])
   
-  for (j in 1:gorder(graph)) {
+  for (j in 1:gorder(g_city)) {
     counts_j = sum(counts[adj[[j]], i]) #sum all adjacent counts
     counts_j = counts_j + counts[j, i] #add self count
     epi_c[j, i] = rpois(1, epi_lambda[i] * counts_j) #generate new counts
@@ -167,8 +167,6 @@ for (i in 1:(N - 1)) {
   
   
 }
-
-plot(graph)
 
 plot(colSums(counts), type = 'l')
 lines(colSums(ende_c), col = 'blue', type = 'l')
@@ -201,6 +199,7 @@ change_gamma <- function(input) {
   gamma = input$gamma
   INDEP = input$INDEP
   LL = input$LL
+  graph = input$graph
   
   
   gamma_star <- gamma + rnorm(3, 0, 0.01)
@@ -235,6 +234,7 @@ death_theta <- function(input) {
   gamma = input$gamma
   INDEP = input$INDEP
   LL = input$LL
+  graph = input$graph
 
 
     
@@ -301,6 +301,7 @@ birth_theta <- function(input) {
   gamma = input$gamma
   INDEP = input$INDEP
   LL = input$LL
+  graph = input$graph
   
 
   
@@ -376,6 +377,7 @@ change_theta <- function(input) {
   gamma = input$gamma
   INDEP = input$INDEP
   LL = input$LL
+  graph = input$graph
   
   
 
@@ -424,6 +426,7 @@ change_lambda <- function(input) {
   gamma = input$gamma
   INDEP = input$INDEP
   LL = input$LL
+  graph = input$graph
   
   
   K <- K
@@ -478,7 +481,7 @@ update_param <- function(input) {
    cutoff <- 1/5
   
    p = runif(1)
-   if (p < cutoff || K < 1 ) {
+   if (p < cutoff || input$K < 1 ) {
      output <- birth_theta(input)
    } else if (p < 2*cutoff & K > 0) {
      output <- change_theta(input)
@@ -487,7 +490,7 @@ update_param <- function(input) {
    }  else if (p < 4*cutoff) {
      output <- change_gamma(input)
    }
-      else if (p >= 4*cutoff & K > 0) {
+      else if (p >= 4*cutoff & input$K > 0) {
      output <- death_theta(input)
    }
 
@@ -565,8 +568,8 @@ compute_like <- function(input) {
 
 
 ```{r}
-ops = c(death_theta, birth_theta, change_theta, change_lambda, change_gamma)
-lapply(ops, undebug)
+#ops = c(death_theta, birth_theta, change_theta, change_lambda, change_gamma)
+#lapply(ops, undebug)
 
 
 # update number of change points theta
@@ -595,7 +598,7 @@ output <- list(K = 1, theta = c(55), lambda =  c(0.8, 1.5), LL = -Inf,
                gamma = c(1, 1, 1), INDEP = INDEP)
 
 
-output <- list(K = 3, theta = c(29,70,90), lambda = c(0.5,1,0.5,0.5), LL = -Inf,
+output <- list(K = 1, theta = c(29), lambda = c(0.5,1), LL = -Inf,
                gamma = gamma, INDEP = INDEP, graph = g_city, p = 0.5)
 
 
