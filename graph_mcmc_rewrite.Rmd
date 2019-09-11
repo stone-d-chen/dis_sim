@@ -55,7 +55,13 @@ el = matrix(
 g_city = graph_from_edgelist(el, directed = FALSE)
 plot(g_city)
 
-adjlist = as_adj_list(g_city)
+adjlist = as_adj_list(g_city, mode = 'all')
+
+adjlist <- unclass(adjlist)
+for (i in 1:length(adjlist)){
+  adjlist[[i]] = unclass(adjlist[[i]])
+}
+
 
 
 
@@ -89,7 +95,8 @@ epi_lambda = rep(lambda, diff(c(0, theta, N)))
 
 
 
-
+actual <- list(K = K, theta = theta, lambda = lambda, LL = -Inf,
+                gamma = gamma, INDEP = INDEP, graph = g_city, p = 0.5, adj = adjlist)
 
 #----separate count figures----#
 ende_c = matrix(0, nrow = gorder(g_city), ncol = N)
@@ -480,7 +487,7 @@ change_lambda <- function(input) {
 update_param <- function(input) {
 
 
-   cutoff <- 1/5
+   cutoff <- 1/6
   
    p = runif(1)
    if (p < cutoff ) {
@@ -491,34 +498,26 @@ update_param <- function(input) {
      output <- change_lambda(input)
    }  else if (p < 4*cutoff) {
      output <- change_gamma(input)
+   } else if (p < 5*cutoff) {
+     output <- flip_edge(input)
    }
-      else if (p >= 4*cutoff ) {
+      else  {
      output <- death_theta(input)
    }
-
 
  
   return(output)
 
 }
-# 
-# update_param2 <- function(input) {
-# 
-# 
-#    cutoff <- 1/5
-#   
-#    p = runif(1)
-# 
-#     if( p < 1/2) {
-#      output <- birth_theta(input)
-#    } else {
-#      output <- death_theta(input)
-#    }
-# 
-# 
-#   return(output)
-# 
-# }
+
+update_param2 <- function(input) {
+
+
+  output <- flip_edge(input)
+
+  return(output)
+
+}
 
 
 
@@ -566,7 +565,8 @@ compute_like <- function(input) {
   #compute the log-likelihood
   log_lik <- mypoisC(counts[ ,2:N], #data is for 2:N, first column is an initial value
                          inf_counts[ , 1:(N - 1)]*mat_lambdas[, 1:(N - 1)] + mat_ende_lambda[, 1:(N - 1)])
-  log_lik
+
+  return(log_lik)
 }
 
 
@@ -580,13 +580,79 @@ compute_like <- function(input) {
 
 
 
+```{r graph_ops}
+
+
+#-----------flip edge operator
+flip_edge <- function(input) {
+  K = input$K
+  theta = input$theta
+  lambda = input$lambda
+  gamma = input$gamma
+  INDEP = input$INDEP
+  LL = input$LL
+  graph = input$graph
+  adj = input$adj
+  adj = input$adj
+  ord = length(adj)
+  ec = input$ec
+  
+  ep = sample(1:ord, 2, replace = FALSE)
+  
+  if (ep[1] %in% adj[[ ep[2] ]]) {
+    m = which(adj[[ ep[2] ]] == ep[1])
+    adj[[ ep[2] ]] = adj[[ ep[2] ]][-m]
+    
+    m = which(adj[[ ep[1] ]] == ep[2])
+    adj[[ ep[1] ]] = adj[[ ep[1] ]][-m]
+    
+    #ec = update_edge_c(ec, ep[1], ep[2], "del")
+
+  } else {
+    adj[[ ep[2] ]] = sort(c(adj[[ep[2]]], ep[1]))
+    adj[[ ep[1] ]] = sort( c(adj[[ ep[1] ]], ep[2]))
+    
+    #ec = update_edge_c(ec, ep[1], ep[2], "add")
+  }
+  input_star <- input
+  input_star$adj <- adj
+  input_star$ec <- ec
+  
+  LL_star <- compute_like(input_star)
+  prior_star <-   compute_prior(input_star) 
+  
+  post_star <- LL_star + prior_star #new log posterior
+  
+  
+  U = runif(1)
+  
+  if (log(U) < post_star - LL) {
+    input_star$graph = 1
+    input_star$LL <- post_star
+    return(input_star)
+    
+  } else {
+    input$graph <- 0
+    return(input)
+  }
+  
+  
+
+}
+
+#------------flip------
+
+```
 
 
 
 ```{r}
-ops = c(death_theta, birth_theta, change_theta, change_lambda, change_gamma)
+ops = c(death_theta, birth_theta, change_theta, change_lambda, change_gamma, flip_edge, compute_like)
 lapply(ops, undebug)
 
+
+
+#debug(compute_like)
 
 # update number of change points theta
 # 
@@ -604,17 +670,24 @@ res <- list(K = numeric(nSim),
             theta = matrix(0, nSim, N),
             lambda = matrix(0, nSim, N + 1),
             gamma = matrix(0, nSim, 3),
-            graph = vector(mode = "list", N),
-            p = numeric(nSim))
+            adj = vector(mode = "list", N),
+            graph = numeric(nSim))
 
  
 
+g = sample_gnp(10, 1)
+plot(g)
+adjlist <- as_adj_list(g)
+adjlist <- unclass(adjlist)
+for (i in 1:length(adjlist)){
+  adjlist[[i]] = unclass(adjlist[[i]])
+}
 
 
 
+output <- list(K = 3, theta = c(10, 25, 150), lambda = c(0.5, 1, 0.5,  0.5), LL = -Inf,
+               gamma = gamma, INDEP = INDEP, adj = adjlist, graph = 1)
 
-output <- list(K = 4, theta = c(49, 59, 89, 90), lambda = c(0.5, 0.7, 0.3, 0.1, 0.5), LL = -Inf,
-               gamma = c(2,1,1), INDEP = INDEP, graph = g_city, p = 0.5, adj = adjlist)
 
 
 
@@ -622,7 +695,7 @@ output <- list(K = 4, theta = c(49, 59, 89, 90), lambda = c(0.5, 0.7, 0.3, 0.1, 
 system.time(
   for (i in 1:nSim) {        
    output <-  update_param(output)
-   k <- output$K
+    k <- output$K
    res$K[i] <- k
    
    if (length(output$theta) == 0) {
@@ -633,8 +706,14 @@ system.time(
    
    res$lambda[i, ] <- c(output$lambda, rep(output$lambda[k + 1], N - k))
    res$gamma[i, ] <- output$gamma
-   #res$graph[[i]] <- output$graph
-   #res$p[i] <- output$p
+   res$graph[i] <- output$graph
+
+   if (i %% 10000 == 0){
+     # plot(graph.adjlist(output$adj, mode = "all"))
+     # debug(flip_edge)
+     print(output$LL)
+
+   }
  
   
   }
@@ -644,6 +723,10 @@ system.time(
   
 )
 
+par(mfrow = c(1,2))
+plot(graph.adjlist(output$adj, mode = "all"))
+plot(g_city)
+hist(res$graph)
 
 ```
 
@@ -656,7 +739,7 @@ system.time(
 
 
 
-burnin = 20000
+burnin = 2
 
 par(mfrow = c(1,3))
 plot(res$gamma[-(1:burnin),1], type = "l")
@@ -691,7 +774,7 @@ plot(density(res$lambda[-(1:burnin), 2], bw=0.01))
 
 plot(density(res$lambda[-(1:burnin), 3], bw=0.01))
 
-plot(density(res$lambda[-(1:burnin), 4][res$K == 4 ], bw=0.01))
+#(density(res$lambda[-(1:burnin), 4][res$K == 4 ], bw=0.01))
 
 title("Actual, #CP and Lambda densities", outer = TRUE)
 
@@ -720,10 +803,149 @@ title("Theta densities", outer = TRUE)
 
 
 ```{r}
-colMeans(res$theta[(res$K == 3),1:4])
-colMeans(res$theta[(res$K == 2),1:3][-(1:burnin),1:2])
 
-tail(res$theta[(res$K == 4),1:4])
+
+
+
+
+adjlist = as_adj_list(g_city, mode = 'all')
+g = sample_gnp(10, 0.1)
+adjlist <- as_adj_list(g)
+adjlist <- unclass(adjlist)
+for (i in 1:length(adjlist)){
+  adjlist[[i]] = unclass(adjlist[[i]])
+}
+
+adjlist = vector(mode = "list", 10)
+
+adjlist[[1]] <- c(2, 3, 4, 5, 6)
+adjlist[[2]] <- c(1, 7, 8)
+adjlist[[3]] <- c(1)
+adjlist[[4]] <- c(1)
+adjlist[[5]] <- c(1)
+adjlist[[6]] <- c(1, 9)
+adjlist[[7]] <- c(2, 8)
+adjlist[[8]] <- c(2, 7)
+adjlist[[9]] <- c(6, 10)
+adjlist[[10]] <- c(9)
+
+
+#---------initialize edge list ----#
+#create names
+edge_c.names = as.character(1:length(adjlist))
+#init vector
+edge_c <- vector(mode = "list", length = length(adjlist))
+#name
+names(edge_c) <- edge_c.names
+
+
+# fill edge list
+for (i in 1:length(adjlist)) {
+  num_edge <- length(adjlist[[i]])
+  if (num_edge > 0) {
+    edge_c[[i]] <- num_edge
+  } else {
+    edge_c[i] <- NULL
+  }
+}
+
+#-------update edge list function----------#
+update_edge_c <- function(elist, v1, v2, update_t){
+  n_v1 <- as.character(v1)
+  n_v2 <- as.character(v2)
+  
+  decrement_edge_c <- function(elist, v1, v2) {
+       
+    if (elist[[n_v1]] == 1) {
+      elist[n_v1] <- NULL
+    } else {
+    elist[[n_v1]] = elist[[n_v1]] - 1
+    }
+    
+    if (elist[[n_v2]] == 1) {
+      elist[n_v2] <- NULL
+    } else {
+    elist[[n_v2]] = elist[[n_v2]] - 1
+    }
+    return(elist)
+    
+  }
+  
+  increment_edge_c <- function(elist, v1, v2) {
+       
+    if (is.null(elist[[n_v1]])) {
+      elist[[n_v1]] <- 0
+    } else {
+    elist[[n_v1]] = elist[[n_v1]] - 1
+    }
+    
+    if (is.null(elist[[n_v2]])) {
+      elist[[n_v2]] <- 0
+    } else {
+    elist[[n_v2]] = elist[[n_v2]] - 1
+    }
+    return(elist)
+    
+  }
+
+  
+  if (update_t == "del") {
+    elist = decrement_edge_c(elist, v1, v2)
+  } else if (update_t == "add") {
+    elist = increment_edge_c(elist, v1, v2)
+  }
+  
+  return(elist)
+}
+
+delete_edge <- function(input) {
+  adj = input$adj
+  ord = length(adj)
+  
+  v1 = sample(1:ord, 1)
+  while (length(adj[[v1]]) == 0) {
+    v1 = sample(1:ord, 1)
+  }
+  
+  #issues when low number of edges...could just sample forever
+  
+  m = sample(length(adj[[v1]]), 1)
+  
+  v2 <- adj[[v1]][m]
+  adj[[v1]] <- adj[[v1]][-m]
+  
+  m = which(adj[[v2]] == v1)
+  adj[[v2]] = adj[[v2]][-m]
+  
+  input$adj <- adj
+  return(input)
+
+}
+
+
+
+ginput$adj <- adjlist
+ginput$ec <- edge_c
+
+
+par(mfrow = c(5,5))
+par(mar = c(0,0,0,0))
+plot(graph.adjlist(ginput$adj, mode = "all"))
+
+for (i in 1:24) {
+ginput <- flip_edge(ginput)
+plot(graph.adjlist(ginput$adj, mode = "all"))
+}
+
+
+# 
+# 
+# for (i in 1:24) {
+# ginput <- delete_edge(ginput)
+# plot(graph.adjlist(ginput$adj, mode = "all"))
+# }
+
+
 ```
 
 
