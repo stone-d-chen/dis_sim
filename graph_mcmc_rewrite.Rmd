@@ -9,11 +9,7 @@ inst = lapply(pkgs, library, character.only = TRUE)
 ```
 
 
-
-
-
-```{r likelihood}
-
+```{r rcpp}
 Rcpp::cppFunction("double mypoisC(NumericVector data, NumericVector lambdas) {
   int n = data.size();
   NumericVector plik(n);
@@ -40,47 +36,9 @@ Rcpp::cppFunction("NumericVector stl_sort(NumericVector x) {
    return y;
 }")
 
-mypoisR <- function(data, lambdas) {
-  sum(-lambdas + data*log(lambdas))
-}
-
-  compute_like <- function(K, lambda, theta, gamma, INDEP) {
-        if (K == 0) {
-    vepi_star <- rep(lambda, N)
-    
-    } else {
-      vepi_star <- rep(lambda, diff_sug(c(0, theta, N)))
-      
-    }
-    
-    nu <- exp(INDEP %*% gamma)
-    vepi <- rep(lambda, diff_sug(c(0, theta, N))) #make into vector
-    LL_star <- sum(mypoisC(Z[2:(N + 1)], nu + vepi*Z[1:N])) #likelihood of the new parameters
-    
-    
-    return(LL_star)
-  }
-  
-  
-# compute_like <- function(K, lambda, theta, gamma, INDEP) {
-#         if (K == 0) {
-#     vepi_star <- rep(lambda, N)
-#     
-#     } else {
-#       vepi_star <- rep(lambda, diff(c(0, theta, N)))
-#       
-#     }
-#     
-#     nu <- exp(as.matrix(INDEP) %*% gamma)
-#     vepi <- rep(lambda, diff(c(0, theta, N))) #make into vector
-#     LL_star <- sum(dpois(Z[2:(N + 1)], nu + vepi*Z[1:N], log = TRUE)) #likelihood of the new parameters
-#     
-#     
-#     return(LL_star)
-# }
-
-
 ```
+
+
 
 
 
@@ -96,6 +54,8 @@ el = matrix(
 
 g_city = graph_from_edgelist(el, directed = FALSE)
 plot(g_city)
+
+adjlist = as_adj_list(g_city)
 
 
 
@@ -121,10 +81,10 @@ ende_lambda = exp(nu_t)
 
 #-----setting epidemic lambda values 
 
-K <- 2
-theta  <- c(39, 49)
+K <- 3
+theta  <- c(39, 49, 193)
 
-lambda <- c(0.7, 1.3, 0.7)/4
+lambda <- c(0.7, 1.2, 0.7, 0.95)/3.5
 epi_lambda = rep(lambda, diff(c(0, theta, N)))
 
 
@@ -149,6 +109,7 @@ counts[1,1] = init
 
 #get list of all adjacent vertices
 adj = adjacent_vertices(g_city, 1:gorder(g_city))
+adj = as_adj_list(g_city)
 
 
 
@@ -186,20 +147,33 @@ title(main = 'city 10')
 
 ```
 
+```{r}
+compute_prior <- function(input){
+    K = input$K
+    theta = input$theta
+    lambda = input$lambda
+    gamma = input$gamma
+    INDEP = input$INDEP
+    LL = input$LL
+    graph = input$graph
+    adj = input$adj
+    0
+    prior_star <- -log(choose(N, K)) + sum(dgamma(lambda, 1, 1, log = TRUE)) + sum(dnorm(gamma, 0, 3, log = TRUE)) + dpois(K, 2, log = TRUE)
+}
+```
 
 
 ```{r operators}
 
 change_gamma <- function(input) {
-
-
-  K = input$K
-  theta = input$theta
-  lambda = input$lambda
-  gamma = input$gamma
-  INDEP = input$INDEP
-  LL = input$LL
-  graph = input$graph
+    K = input$K
+    theta = input$theta
+    lambda = input$lambda
+    gamma = input$gamma
+    INDEP = input$INDEP
+    LL = input$LL
+    graph = input$graph
+    adj = input$adj
   
   
   gamma_star <- gamma + rnorm(3, 0, 0.01)
@@ -209,14 +183,15 @@ change_gamma <- function(input) {
   
   LL_star <- compute_like(input_star)
   
-  prior_star <-  sum(dgamma(lambda, 1, 1, log = TRUE)) + sum(dunif(theta, 0, N, log = TRUE)) #sum(dgamma(lambda_star, 1, 1, log = TRUE))
+  prior_star <-  compute_prior(input_star)
+  
   post_star <- LL_star + prior_star #new log posterior
   
   U = runif(1)
   
   if (log(U) < post_star - LL) {
     
-    return(list(K = K, theta = theta, lambda = lambda, LL = post_star, gamma = gamma_star, INDEP = INDEP, graph = graph))
+    return(list(K = K, theta = theta, lambda = lambda, LL = post_star, gamma = gamma_star, INDEP = INDEP, graph = graph, adj = adj))
     
   } else {
     return(input)
@@ -228,13 +203,18 @@ change_gamma <- function(input) {
 
 
 death_theta <- function(input) {
-  K = input$K
-  theta = input$theta
-  lambda = input$lambda
-  gamma = input$gamma
-  INDEP = input$INDEP
-  LL = input$LL
-  graph = input$graph
+    K = input$K
+    theta = input$theta
+    lambda = input$lambda
+    gamma = input$gamma
+    INDEP = input$INDEP
+    LL = input$LL
+    graph = input$graph
+    adj = input$adj
+    
+    if (K == 0) {
+      return(input)
+    }
 
 
     
@@ -262,28 +242,32 @@ death_theta <- function(input) {
     input_star <- input
     input_star$lambda <- lambda_star
     input_star$theta <- theta_star
+    input_star$K <- K - 1
 
     
     LL_star <- compute_like(input_star)
     
     
     if (K == 1) {
-    prior_star <- sum(dgamma(lambda_star, 1, 1, log = TRUE)) 
+    prior_star <-  compute_prior(input_star) 
     } else {
-      prior_star <- sum(dgamma(lambda_star, 1, 1, log = TRUE)) + sum(dunif(theta_star, 0, N, log = TRUE))
+      prior_star <-  compute_prior(input_star)
     }
     
     post_star <- LL_star + prior_star #new log posterior
     
-    proposal <- -log(K+1) + log(N-K)
-    
-    alpha <- post_star - LL - 2*log(lambda1 + lambda2) + log(lambda0) - proposal
+    proposal <- log(K) - log(N - (K - 1))
+
+    log_jacobian <- -2*log(lambda1 + lambda2) + log(lambda0)
+
+
+    alpha <- post_star  - LL + log_jacobian
+   
     
     if (alpha > log(runif(1))) {
-      list(K = K - 1, theta = theta_star, lambda = lambda_star, INDEP = INDEP, gamma = gamma, LL = post_star, graph = graph)
+      list(K = K - 1, theta = theta_star, lambda = lambda_star, INDEP = INDEP, gamma = gamma, LL = post_star, graph = graph, adj = adj)
     }  else {
-     list(K = K, theta = theta, lambda = lambda,INDEP = INDEP,
-                gamma = gamma, LL = LL, graph = graph)
+     input
       
     }
     
@@ -295,13 +279,18 @@ death_theta <- function(input) {
 
 
 birth_theta <- function(input) {
-  K = input$K
-  theta = input$theta
-  lambda = input$lambda
-  gamma = input$gamma
-  INDEP = input$INDEP
-  LL = input$LL
-  graph = input$graph
+    K = input$K
+    theta = input$theta
+    lambda = input$lambda
+    gamma = input$gamma
+    INDEP = input$INDEP
+    LL = input$LL
+    graph = input$graph
+    adj = input$adj
+    
+    if (K == N) {
+      return(input)
+    }
   
 
   
@@ -319,11 +308,17 @@ birth_theta <- function(input) {
     
     u <- runif(1)
     
-
-      j = m+1
+    
+      j = m + 1
       lambda0 <- lambda[m]
       lambda1 <- lambda0*(u/(1 - u))^((temp_theta_star[j] - temp_theta_star[j - 1])/(temp_theta_star[j + 1] - temp_theta_star[j - 1]))
       lambda2 <- lambda0*((1 - u)/u)^((temp_theta_star[j + 1] - temp_theta_star[j])/(temp_theta_star[j + 1] - temp_theta_star[j - 1]))
+      
+      if (K == 0){
+        lambda0 <- lambda[1]
+      lambda1 <- lambda0*(u/(1 - u))^((temp_theta_star[j] - temp_theta_star[j - 1])/(temp_theta_star[j + 1] - temp_theta_star[j - 1]))
+      lambda2 <- lambda0*((1 - u)/u)^((temp_theta_star[j + 1] - temp_theta_star[j])/(temp_theta_star[j + 1] - temp_theta_star[j - 1]))
+      }
       
     
     
@@ -343,6 +338,7 @@ birth_theta <- function(input) {
     input_star <- input
     input_star$lambda <- lambda_star
     input_star$theta <- theta_star
+    input_star$K <- K + 1
 
     
     LL_star <- compute_like(input_star)
@@ -350,34 +346,45 @@ birth_theta <- function(input) {
     
     
     if (K == 1) {
-    prior_star <- sum(dgamma(lambda_star ,1 , 1, log = TRUE)) 
+    prior_star <-  compute_prior(input_star)
     } else {
-      prior_star <- sum(dgamma(lambda_star ,1 , 1, log = TRUE)) + sum(dunif(theta_star, 0, N, log = TRUE))
+      prior_star <-  compute_prior(input_star)
     }
     
     post_star <- LL_star + prior_star #new log posterior
     
-    proposal <- -log(K+1) + log(N-K)
+    
+    
+    proposal <- -log(K + 1) + log(N - K)
+    log_jacobian <- 2*log(lambda1 + lambda2) - log(lambda0)
     
 
-    alpha <- post_star + 2*log(lambda1 + lambda2) - log(lambda0) - LL + proposal
+    alpha <- post_star  - LL + log_jacobian
     
-    if (alpha > log(runif(1))) list(K = K + 1, theta = theta_star, lambda = lambda_star, INDEP = INDEP, gamma = gamma, LL = post_star, graph = graph)
-    else list(K = K, theta = theta, lambda = lambda,INDEP = INDEP,
-                gamma = gamma, LL = LL, graph = graph)
+    if (alpha > log(runif(1))) list(K = K + 1, theta = theta_star, lambda = lambda_star, INDEP = INDEP, gamma = gamma, LL = post_star, graph = graph, adj = adj)
+    else {
+      input
+      }
 
   
 }
   
 
 change_theta <- function(input) {
-  K = input$K
-  theta = input$theta
-  lambda = input$lambda
-  gamma = input$gamma
-  INDEP = input$INDEP
-  LL = input$LL
-  graph = input$graph
+    K = input$K
+    theta = input$theta
+    lambda = input$lambda
+    gamma = input$gamma
+    INDEP = input$INDEP
+    LL = input$LL
+    graph = input$graph
+    adj = input$adj
+    
+    
+    if (K == 0 || K == N) {
+      return(input)
+    }
+    
   
   
 
@@ -386,8 +393,10 @@ change_theta <- function(input) {
   #j <- ceiling(runif(1,1,K+1))
   
   
-  temp_theta <- c(0, theta, N)
-  
+  temp_theta <- c(0, theta, N + 1)
+  if(temp_theta[j+1] - temp_theta[j-1] < 2) {
+    return(input)
+  }
   s_star <- ceiling(runif(1,temp_theta[j - 1], temp_theta[j + 1] - 1 ))
   #s_star <- temp_theta[j] + sample(c(-1,1),1)
   
@@ -398,7 +407,7 @@ change_theta <- function(input) {
   input_star$theta <- theta_star
 
    LL_star <- compute_like(input_star) #likelihood of the new parameters
-   prior_star <- sum(dgamma(lambda, 1, 1, log = TRUE)) + sum(dunif(theta_star, 0, N, log = TRUE))#0#sum(dgamma(lambda ,2 , 20, log = TRUE))
+   prior_star <-  compute_prior(input_star)
    post_star <- LL_star + prior_star #new log posterior
 
   
@@ -409,24 +418,24 @@ change_theta <- function(input) {
     
     if (log(U) < post_star - LL) {
     
-    return(list(K = K, theta = theta_star, lambda = lambda, INDEP = INDEP, gamma = gamma, LL = post_star, graph = graph))
+    return(list(K = K, theta = theta_star, lambda = lambda, INDEP = INDEP, gamma = gamma, LL = post_star, graph = graph, adj = adj))
     
   } else {
-    return(list(K = K, theta = theta, lambda = lambda,INDEP = INDEP,
-                gamma = gamma, LL = LL, graph = graph))
+    return(input)
   }
   
 }
 
 
 change_lambda <- function(input) {
-  K = input$K
-  theta = input$theta
-  lambda = input$lambda
-  gamma = input$gamma
-  INDEP = input$INDEP
-  LL = input$LL
-  graph = input$graph
+    K = input$K
+    theta = input$theta
+    lambda = input$lambda
+    gamma = input$gamma
+    INDEP = input$INDEP
+    LL = input$LL
+    graph = input$graph
+    adj = input$adj
   
   
   K <- K
@@ -442,19 +451,19 @@ change_lambda <- function(input) {
   
   LL_star <- compute_like(input_star)
   
-  prior_star <-  sum(dgamma(lambda_star, 1, 1, log = TRUE)) + sum(dunif(theta, 0, N, log = TRUE)) #sum(dgamma(lambda_star, 1, 1, log = TRUE))
+  prior_star <-   compute_prior(input_star) 
   post_star <- LL_star + prior_star #new log posterior
   
   
   
   U = runif(1)
-  
+  if (post_star == -Inf && LL == -Inf) {return(input)}
   if (log(U) < post_star - LL) {
     
-    return(list(K = K, theta = theta, lambda = lambda_star, LL = post_star, gamma = gamma, INDEP = INDEP, graph = graph))
+    return(list(K = K, theta = theta, lambda = lambda_star, LL = post_star, gamma = gamma, INDEP = INDEP, graph = graph, adj = adj))
     
   } else {
-    return(list(K = K, theta = theta, lambda = lambda, LL = LL ,gamma = gamma, INDEP = INDEP, graph = graph))
+    return(input)
   }
   
 }
@@ -471,26 +480,19 @@ change_lambda <- function(input) {
 update_param <- function(input) {
 
 
-  
-  
-  
-
-  
-
-
    cutoff <- 1/5
   
    p = runif(1)
-   if (p < cutoff || input$K < 1 ) {
+   if (p < cutoff ) {
      output <- birth_theta(input)
-   } else if (p < 2*cutoff & K > 0) {
+   } else if (p < 2*cutoff ) {
      output <- change_theta(input)
    } else if (p < 3*cutoff) {
      output <- change_lambda(input)
    }  else if (p < 4*cutoff) {
      output <- change_gamma(input)
    }
-      else if (p >= 4*cutoff & input$K > 0) {
+      else if (p >= 4*cutoff ) {
      output <- death_theta(input)
    }
 
@@ -499,6 +501,24 @@ update_param <- function(input) {
   return(output)
 
 }
+# 
+# update_param2 <- function(input) {
+# 
+# 
+#    cutoff <- 1/5
+#   
+#    p = runif(1)
+# 
+#     if( p < 1/2) {
+#      output <- birth_theta(input)
+#    } else {
+#      output <- death_theta(input)
+#    }
+# 
+# 
+#   return(output)
+# 
+# }
 
 
 
@@ -510,14 +530,14 @@ update_param <- function(input) {
 
 
 compute_like <- function(input) {
-    
     K = input$K
     theta = input$theta
     lambda = input$lambda
     gamma = input$gamma
-    INth_thetaP = input$INDEP
+    INDEP = input$INDEP
     LL = input$LL
     graph = input$graph
+    adj = input$adj
     
   
     if (K == 0) {
@@ -527,14 +547,14 @@ compute_like <- function(input) {
       vepi_star <- rep(lambda, diff_sug(c(0, theta, N)))
     }
 
-  ord = gorder(graph)
-  adj = adjacent_vertices(graph, 1:gorder(graph))
-  inf_counts = matrix(0, nrow = gorder(graph), ncol = N)
+  ord = length(adj)
+  inf_counts = matrix(0, nrow = ord, ncol = N)
   
   nu <- exp(INDEP %*% gamma)
   
-  for (i in 1:gorder(graph)) {
-      inf_counts[i, ] = colSums(counts[adj[[i]], , drop = FALSE]) + counts[i, ]
+  for (i in 1:ord) {
+      #inf_counts[i, ] = colSums(counts[adj[[i]], , drop = FALSE]) + counts[i, ]
+      inf_counts[i, ] = .colSums(counts[adj[[i]], , drop = FALSE], length(adj[[i]]), N) + counts[i, ]
   }
   
   #creates matrix of repeated rows
@@ -544,19 +564,15 @@ compute_like <- function(input) {
   mat_lambdas <- matrix(rep(vepi_star, ord), nrow = ord, byrow = TRUE)
   
   #compute the log-likelihood
-  log_lik <- sum(dpois(counts[ ,2:N], #data is for 2:N, first column is an initial value
-                         inf_counts[ , 1:(N - 1)]*mat_lambdas[, 1:(N - 1)] + mat_ende_lambda[, 1:(N - 1)],
-                         log = TRUE))
+  log_lik <- mypoisC(counts[ ,2:N], #data is for 2:N, first column is an initial value
+                         inf_counts[ , 1:(N - 1)]*mat_lambdas[, 1:(N - 1)] + mat_ende_lambda[, 1:(N - 1)])
   log_lik
 }
 
-# graph_lik(K, lambda, theta, gamma, INDEP, graph)
-# 
-# profvis(for (i in 1:1000){graph_lik(K, lambda, theta, gamma, INDEP, graph)})
 
-
-
-
+# compute_like <- function(input){
+#   0
+# }
 
 ```
 
@@ -568,8 +584,8 @@ compute_like <- function(input) {
 
 
 ```{r}
-#ops = c(death_theta, birth_theta, change_theta, change_lambda, change_gamma)
-#lapply(ops, undebug)
+ops = c(death_theta, birth_theta, change_theta, change_lambda, change_gamma)
+lapply(ops, undebug)
 
 
 # update number of change points theta
@@ -582,11 +598,11 @@ compute_like <- function(input) {
 # change_gamma <- cmpfun(change_gamma)
 # update_param <- cmpfun(update_param)
 
-nSim <- 10000
+nSim <- 100000
 #pre-allocate
 res <- list(K = numeric(nSim),
             theta = matrix(0, nSim, N),
-            lambda = matrix(0, nSim, N),
+            lambda = matrix(0, nSim, N + 1),
             gamma = matrix(0, nSim, 3),
             graph = vector(mode = "list", N),
             p = numeric(nSim))
@@ -594,14 +610,11 @@ res <- list(K = numeric(nSim),
  
 
 
-output <- list(K = 1, theta = c(55), lambda =  c(0.8, 1.5), LL = -Inf,
-               gamma = c(1, 1, 1), INDEP = INDEP)
 
 
-output <- list(K = 1, theta = c(29), lambda = c(0.5,1), LL = -Inf,
-               gamma = gamma, INDEP = INDEP, graph = g_city, p = 0.5)
 
-
+output <- list(K = 4, theta = c(49, 59, 89, 90), lambda = c(0.5, 0.7, 0.3, 0.1, 0.5), LL = -Inf,
+               gamma = c(2,1,1), INDEP = INDEP, graph = g_city, p = 0.5, adj = adjlist)
 
 
 
@@ -613,17 +626,22 @@ system.time(
    res$K[i] <- k
    
    if (length(output$theta) == 0) {
-     res$theta[i, ] <-   0
+     res$theta[i, ] <-  0
    } else {
    res$theta[i, ] <-   c(output$theta, rep(output$theta[k], N - k))
    }
    
-   res$lambda[i, ] <- c(output$lambda, rep(output$lambda[k + 1 ], N - k - 1))
+   res$lambda[i, ] <- c(output$lambda, rep(output$lambda[k + 1], N - k))
    res$gamma[i, ] <- output$gamma
    #res$graph[[i]] <- output$graph
    #res$p[i] <- output$p
+ 
+  
+  }
 
-}
+  
+  
+  
 )
 
 
@@ -638,7 +656,7 @@ system.time(
 
 
 
-burnin = 2
+burnin = 20000
 
 par(mfrow = c(1,3))
 plot(res$gamma[-(1:burnin),1], type = "l")
@@ -665,18 +683,31 @@ title("Lambda (epidemic) Trace Plots", outer = TRUE)
 par(mfrow = c(2, 3))
 
 plot(colSums(counts), type = "l")
-plot(density(res$K))
+lines(c(177,177), c(0,400), col = "red")
+hist(res$K[-(1:burnin)],freq = FALSE, breaks = 5)
 plot(density(res$lambda[-(1:burnin), 1], bw=0.01))
+
 plot(density(res$lambda[-(1:burnin), 2], bw=0.01))
+
 plot(density(res$lambda[-(1:burnin), 3], bw=0.01))
-plot(density(res$lambda[-(1:burnin), 4], bw=0.01))
+
+plot(density(res$lambda[-(1:burnin), 4][res$K == 4 ], bw=0.01))
+
 title("Actual, #CP and Lambda densities", outer = TRUE)
 
 
-par(mfrow = c(1, 3))
+par(mfrow = c(2, 3))
 plot(density(res$theta[-(1:burnin), 1], bw=1))
 plot(density(res$theta[-(1:burnin), 2], bw=1))
 plot(density(res$theta[-(1:burnin), 3], bw=1))
+plot(density(res$theta[-(1:burnin), 4], bw=1))
+plot(density(res$theta[-(1:burnin), 5], bw=1))
+plot(density(res$theta[-(1:burnin), 6], bw=1))
+
+par(mfrow = c(1, 3))
+plot(density(res$gamma[-(1:burnin), 1], bw=0.1))
+plot(density(res$gamma[-(1:burnin), 2], bw=0.1))
+plot(density(res$gamma[-(1:burnin), 3], bw=0.1))
 title("Theta densities", outer = TRUE)
 
 
@@ -688,42 +719,11 @@ title("Theta densities", outer = TRUE)
 ```
 
 
+```{r}
+colMeans(res$theta[(res$K == 3),1:4])
+colMeans(res$theta[(res$K == 2),1:3][-(1:burnin),1:2])
 
-```{r graph_operators}
-
-
-change_p <- function(input){
-  K = input$K
-  theta = input$theta
-  lambda = input$lambda
-  gamma = input$gamma
-  INDEP = input$INDEP
-  LL = input$LL
-  p <- input$p
-  graph <- input$graph
-  
-  p_star <- p + rnorm(1, 0,0.025)
-  if (p_star < 0 || p_star > 1){
-    return(list(K = K, theta = theta, lambda = lambda, LL = LL, gamma = gamma, INDEP = INDEP, graph = graph, p = p))
-  }
-  graph_star = sample_gnp(10, p_star)
-  lik <- graph_lik(K, lambda, theta, gamma, INDEP, graph_star)
-  
-  U = runif(1)
-  
-  if (log(U) < lik - LL) {
-    
-    return(list(K = K, theta = theta, lambda = lambda, LL = lik, gamma = gamma, INDEP = INDEP, graph = graph_star, p = p_star))
-    
-  } else {
-    return(list(K = K, theta = theta, lambda = lambda, LL = LL, gamma = gamma, INDEP = INDEP, graph = graph, p = p))
-  }
-  
-  
-}
-
-
-update_param <- function(input){
-  change_p(input)
-}
+tail(res$theta[(res$K == 4),1:4])
 ```
+
+
