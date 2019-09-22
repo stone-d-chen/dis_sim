@@ -25,7 +25,7 @@ inst = lapply(pkgs, library, character.only = TRUE)
 #pre: two numeric vectors of the same length
 #post: unnormalized loglikelhood
 
-cppFunction("double mypoisC(NumericVector data, NumericVector lambdas) {
+cppFunction("double mypois(NumericVector data, NumericVector lambdas) {
   int n = data.size();
   NumericVector plik(n);
   plik = -lambdas + data*log(lambdas);
@@ -39,11 +39,11 @@ cppFunction("double mypoisC(NumericVector data, NumericVector lambdas) {
   return tlik;
   }")
 
-cppFunction("NumericVector diff_sug(NumericVector x){
+cppFunction("NumericVector diff(NumericVector x){
    return diff(x);
 }")
 
-cppFunction("NumericVector stl_sort(NumericVector x) {
+cppFunction("NumericVector sort(NumericVector x) {
    NumericVector y = clone(x);
    std::sort(y.begin(), y.end());
    return y;
@@ -53,7 +53,7 @@ cppFunction("NumericVector stl_sort(NumericVector x) {
 
 
 ```{r mypoisR}
-mypoisR <- function(data, lambdas) {
+mypois <- function(data, lambdas) {
   sum(-lambdas + data*log(lambdas))
 }
 ```
@@ -383,7 +383,7 @@ compute_like <- function(input) {
   #compute the log-likelihood
   #data is for 2:N, first column is an initial value
   log_lik <-
-    mypoisC(counts[, 2:N], 
+    mypois(counts[, 2:N], 
             inf_counts[, 1:(N - 1)] * mat_lambdas[, 1:(N - 1)] 
             + mat_ende_lambda[, 1:(N - 1)])
   
@@ -1040,12 +1040,14 @@ flip_edge <- function(input) {
     if (ep[1] %in% adj_star[[ep[2]]]) {
 
       adj_star <- remove_edge(adj_star, ep)
+      migration_star <- migration + runif(1, 0, 0.2)
       #ec_star = update_edge_c(ec_star, ep[1], ep[2], "del")
       #ec_star$count = ec_star$count - 1
       
     } else {
 
       adj_star <- add_edge(adj_star, ep)
+      migration_star <- migration - runif(1, 0, 0.2)
       
      # ec_star = update_edge_c(ec_star, ep[1], ep[2], "add")
       #ec_star$count = ec_star$count + 1
