@@ -5,22 +5,23 @@ output:
   pdf_document:
     toc: yes
     fig_caption: yes
+    number_sections: true
+    keep_tex: true
   word_document:
     toc: yes
   html_notebook:
     toc: yes
+geometry: "top=3cm,left=3cm,right=3cm"
+
 bibliography: disease_sim_proj.bib
 header-includes:
  - \usepackage{multirow}
  - \usepackage{multicol}
  - \usepackage{booktabs}
- - \usepackage[tocflat]{tocstyle}
- - \usetocstyle{standard}
  - \usepackage{xcolor}
  - \numberwithin{equation}{section}
  - \counterwithin{figure}{section}
  - \counterwithin{table}{section}
- - \usepackage{hologo}
  - \usepackage{dcolumn}
  - \usepackage{rotating}
  - \usepackage{caption}
@@ -35,23 +36,25 @@ In this - we extend a method presented by @held_two-component_2006 for modeling 
 
 We then extend their model to incorporate a graph.
 
+## Comments
+
+Expand and metion general ideas of epidemics spreading & how we model them (~1 page)
+
 # Intro to Two-Component Model
 
-@held_two-component_2006 presents a stochastic model for the statistical analysis of infectious disease counts that serves as the basis of the the extended graph model.
+@held_two-component_2006 presents a stochastic model for the statistical analysis of infectious disease counts that serves as the basis of the theextended graph model.
 
 The two components of the model are a simple Poisson branching process with autoregressive parameter $\lambda$ and a seasonal component fit with a Fourier series. These components are described as the "epidemic" and "endemic" components respectively. Additionally, the two-component model allows for the $\lambda$ to change over time allowing for the disease to change infectivity over time.
 
 ## Two-Component Model Notation
 
-Let $$Z = (Z_0, Z_1, ..., Z_n) \text{ : the infectious disease counts at each time step }t$$ The model is then specified through $Z_t | Z_{t-1}$.
+Let $Z = (Z_0, Z_1, ..., Z_n)$ be the infectious disease counts at each time step $t$. The model is then specified through $Z_t | Z_{t-1}$.
 
 Each $Z_t$ is determined as
 
 $$ Z_t = Y_t + X_t,\ t\in\{1,\dots, n\}$$
-Where:
 
-$$Y_t: \text{epidemic component}$$
-$$X_t: \text{endemic component}$$
+Where $Y_t$ is the epidemic component and $X_t$ is the endemic component.
 The epidemic component is parameterized as:
 $$Y_t|Z_{t-1} \sim Pois(\lambda_tZ_{t-1})$$
 Where $\lambda_t$  is piecewise constant depending on an unknown number of changepoints $K$ and unknown locations $\theta_1 < \cdots < \theta_K$.
@@ -64,37 +67,34 @@ The endemic component is parameterized as:
 
 $$ X_t \sim Pois(\nu_t)$$
 
-Where $\log{\nu_t}$ is modeled as a fourier series:
+Where $\log{\nu_t}$ is modeled as a Fourier series:
 
 $$ \log{\nu_t} = \gamma_0 + \sum_{l = 1}^L \big(\gamma_{2l-1}\sin(\rho l t)+\gamma_{2l}cos(\rho l t)\big) $$
 
 
 
-## Epidemic
+## Epidemic Component
+
 The epidemic component is given by:
 
 $$Y_t|Z_{t-1} \sim Pois(\lambda_tZ_{t-1})$$
 
-$$\lambda_t: \text{time varying infectivity parameter}$$ 
+Where $\lambda_t$ is the time varing infectivity parameter and $Z_{t-1}$ is the the infected count in the previous time step.
 
-$$Z_{t-t}: \text{the infected count in the previous time step}$$
+We can think of $\lambda_t$ as the infectivity of the disease at time $t$ with an infected person causing new infections as $Pois(\lambda_t)$. Since each infected at time $Z_{t-1}$ generates new infected i.i.d $Pois(\lambda_t)$, then $Z_t$ is the sum of those random variables which itself is Poisson;  $\sum_1^{Z_{n-1}}Pois(\lambda_t) = Pois(\lambda_tZ_{n-1})$.
 
-We can think $\lambda_t$ as how infectious the disease is at time $t$ where an infected person can cause new infections at time $t$ distributed $Pois(\lambda_t)$. Since each infected at time $Z_{t-1}$ generates new infected i.i.d $Pois(\lambda_t)$, then $Z_t$ is the sum of those random variables which itself is poisson;  $\sum_1^{Z_{n-1}}Pois(\lambda_t) = Pois(\lambda_tZ_{n-1})$.
+In this model, the $\lambda_t$ is allowed to vary over time. The parameter $\lambda = (\lambda_1,\cdots,\lambda_n)$ is a piecewise constant function with unknown number of changepoints $K$ and unknown location of changepoints $\theta_1 < \cdots < \theta_K$ with $\theta \in \{1,...,n-1\}$. If $K = 0$ there is no changepoint and the $\lambda$ parameter is constant throughout.
 
-In this model, the $\lambda_t$ is allowed to vary over time. The parameter $\lambda = (\lambda_1,\cdots,\lambda_n)$ is a piecewise constant function with unknown number of changepoints $K$ and unknown location of changepoints $\theta_1 < \cdots < \theta_K$ with $\theta \in \{1,...,n-1\}$. If $K = 0$ there is no changepoint and the $\lambda$ parameter is constant for each time step.
+## TK add references below
 
+For constant $\lambda$, this is known as a Poisson branching process. For such a process, when $\lambda > 1$ the process explodes and the number of infected goes to infinity with probability 1. When $\lambda < 1$ then the process "goes extinct" or reaches and remains at 0 with probability 1. Once the process reaches a point where $Z_t = 0$, it remains there as there are no more infected to create new infected at the next time step. When $\lambda_t > 1$ an "outbreak" occurs shown as the spike in the graph between. When $\lambda_t < 1$ the outbreak ends.
 
-
-For constant $\lambda$, this is known as a Poisson branching process. For such a process, when $\lambda > 1$ the process explodes and the number of infected goes to infinity with probability 1. When $\lambda < 1$ then the process "goes extinct" or reaches and remains at 0 with probability 1. Once the process reaches a point where $Z_t = 0$, it remains there as there are no more infected to create new infected at the next time step.
-
-In this model we model "outbreaks" by allowing $\lambda_t$ to vary. When $\lambda_t > 1$ an "outbreak" occurs shown as the spike in the graph between. When $\lambda_t < 1$ the outbreak ends.
-
-Allowing $\lambda_t$ to vary captures many scenarios, for example a particulary infectious strain of the flu could cause $\lambda_t$ to increase above 1 and cause an outbreak. Later better or new vaccines and quarentine procedures can cause the overall infectivity to decrease below 1.
+Allowing $\lambda_t$ to vary captures many scenarios, for example a particulary infectious strain of the flu could cause $\lambda_t$ to increase above 1 and cause an outbreak. Later, better or new vaccines and quarentine procedures can cause the overall infectivity to decrease below 1.
 
 
-## Endemic
+## Endemic Component
 
-As previously mentioned, when a Poisson branching process has $\lambda < 1$ then it goes extinct with probability 1. To prevent this from occuring, the model includes an endemic component.
+To prevent the branching proccess going extinct or going to infinity, the model includes an endemic component.
 
 
 The endemic component is given by:
@@ -102,7 +102,7 @@ The endemic component is given by:
 $$X_t \sim Pois(\nu_t)$$
 $$\log{\nu_t} = \gamma_0 + \sum_{l = 1}^L (\gamma_{2l-1}\sin(\rho l t)+\gamma_{2l}cos(\rho l t))$$
 
-That is $\log{\nu_t}$ is fit with a Fourier series which can approximate any function arbitrarily closely. In @held_two-component_2006 they limit $L = 1$ since they determined higher order frequencies were insignificant.
+That is, $\log{\nu_t}$ is fit with a Fourier series which can approximate any function arbitrarily closely. In @held_two-component_2006 they limit $L = 1$ since they determined higher order frequencies were insignificant.
 
 The parameter can then be fit with a linear regression $\log{\nu_t} = s_t\gamma^T$
 
@@ -212,12 +212,10 @@ Then the full likelihood is
 
 $$ P(Z_t|Z_{t-1},\theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2)*P(\theta|K)*P(K)*P(\prod_{k=1}^{k+1}\lambda^{(k)} )*P(\prod_{i=0}^2 \gamma_i)  $$
 
-# Initial Bayesian Modelling
+# Bayesian Inference
 
 
-## Bayesian Basics
-
-In Bayesian analysis estimate the posterior distribution of the parameters given the data through Bayes' theorem.
+In Bayesian analysis, we aimt to calculate the posterior distribution of the parameters given the data via Bayes' theorem.
 
 $$ P(\text{parameters}|\text{data}) = \frac{P(\text{data}|\text{parameters})P(\text{parameters})}{P(\text{data})} $$
 
@@ -225,35 +223,25 @@ One issue is the computation of $P(\text{data})$ which is given by $\int P(\text
 
 In this work we primarily appeal to MCMC methods.
 
-## Markov Chain Monte-Carlo
+## Markov chain Monte-Carlo
 
 (tk terrible explanation)
 
 
 A Markov Chain is a sequence of random variables $(X_n)$ where $P(X_n)$ depends only on $X_{n-1}$.
 
-A probability distribution on the states of a Markov Chain is said to be a stationary distribution $\pi$ if after a long period of time, the probability that the Markov Chain is in a particular state is given by $\pi$.
+A probability distribution on the states of a Markov Chain is said to be a stationary distribution $\pi$ i
 
-That is a distribution $\pi$ is a stationary distribution of the Markov Chain with transition probabilities $P(t)$ if 
+That is a distribution $\pi$ is a stationary distribution of the Markov Chain with transition probabilities $P$ if 
 
-$$\sum \pi_i \\ \pi = \pi P(t) $$
+$$ \pi = \pi P $$
 
-In Markov Chain Monte Carlo (MCMC), the goal is to simulate samples from a distribution. This is done by constructing a Markov Chain whose stationary distribution is desired distribution, the posterior distribution of the parameters.
+In Markov chain Monte Carlo (MCMC), the algorithm generates samples from a given posterior dist $\pi$ by constructing a Markov chain with stationary distribution $\pi$
 
-One method for constructing the chain is the Metropolis-Hasting Algorithm
+One method for constructing the chain is the Metropolis-Hastings Algorithm
 
 
-## MHA
-
-Discrete Case:
-
-Let $\pi$ be the desired stationary distribution (in this case, the posterior distribution of the parameters) and let $p$ be transition density of some Markov Chain. Then if the detailed balance equation: 
-
-$$\pi(i)p(i,j) = \pi(j)p(j,i)$$
-
-holds for all $i,j$ then $\pi$ is the stationary distribution for the markov chain given by $p$.
-
-The Metropolis-Hastings Algorithm is a method of constructing a Markov Chain such that the detailed balanced equations hold, where $\pi$ is the posterior distribution of the parameters.
+## Metropolis-Hastings Aglorithm
 
 We start with a Markov Chain with proposal distribution $q(i,j)$.
 
@@ -287,36 +275,6 @@ Since the model can jump between a collection of possible models $\{M_k, k \in \
 
 The issue comes from the fact that we can only compare points in the parameter space if they're defined on the same probability space.
 
-
-
-# Code
-(tk maybe a figure here would be helpful)
-
-The code is structured as follows:
-
-* `update_param()`
-  * `change_theta() `
-  * `change_lambda()`
-  * `change_gamma()`
-  * `birth_theta()`
-  * `death_theta()`
-  
-`update_param()`
-
-
-
-Randomly calls one of `change_theta() `, `change_lambda()`, `change_gamma()`, `birth_theta()` or `death_theta()` and returns the output.
-
-Each of these functions takes the current state of the MCMC chain and the unormlized log-posterior, proposes a new state, and decides whether to accept the new state or remain in the current state. It then next state of the MCMC chain and unnormalized log-posterior.
-
-`change_theta()` randomly selects one of the current change points and proposes a new changepoint with a random walk metropolis (RWM) using a discrete uniform proposal
-
-`change_lambda()` a RWM using a normal distribution. updates all lambda values simulataneously
-
-`change_gamma()` a RWM using a normal distribution. updates all three gamma values simultaneously
-
-`birth_theta()` a Reversible Jump MCMC. This operator will propose a new changepoint to add uniformly at random. Since doing so will split a current interval, we now need an additional $\lambda$ value.
-
 To properly do so we need to use a Reversible Jump MCMC.
 
 The procedure is as follows:
@@ -342,13 +300,9 @@ $$(\lambda_1 + \lambda_2)^2/\lambda_0$$
 
 
 
-```{r}
-
-```
-
-
 `death_theta()` a Reversilbe Jump MCMC
 
+# Implementation
 
 ## Proposals
 Gamma, $\lambda$ are updated in respective blocks with a random walk metropolis.
