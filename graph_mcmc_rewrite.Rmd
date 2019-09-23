@@ -1,7 +1,8 @@
 ---
 title: "Handwritten MCMC 2"
 output:
-  pdf_document: default
+  pdf_document:
+    keep_tex: true
   html_notebook: default
 geometry: "left=3cm,top=3cm,right=3cm"
 fontsize: 11pt
@@ -927,7 +928,7 @@ flip_edge <- function(input, mig = FALSE) {
   
   adj_star <- adj
   
-  if (runif(1) < 1) {
+  if (runif(1) < 1/2) {
     stepl = 1
   } else {
     stepl = 3
@@ -960,7 +961,9 @@ flip_edge <- function(input, mig = FALSE) {
   input_star <- input
   input_star$adj <- adj_star
   input_star$ec <- ec_star
+  if (mig) {
   input_star$migration <- migration_star
+  }
   
   LL_star <- compute_like(input_star)
   prior_star <- compute_prior(input_star)
@@ -1115,15 +1118,15 @@ update_param4 <- function(input) {
 update_param3 <- function(input) {
   U = runif(1)
   if (U < 1/4) {
-    output <- flip_edge(input, mig = TRUE)
+    output <- flip_edge(input, mig = FALSE)
   
   } else if (U < 2/4) {
     output <- degree_preserving(input)
     
-  } else if (U < 3/4) {
+  } else if (U < 1) {
     output <- rewire(input)
   } else {
-   output <- change_migration(input)
+   #output <- change_migration(input)
   }
   return(output)
 }
@@ -1132,10 +1135,10 @@ update_param3 <- function(input) {
 
 update_param5 <- function(input){
   U = runif(1)
-  if (U < 1){
-    output <- flip_edge(input, mig = TRUE)
+  if (U < 1) {
+    output <- flip_edge(input, mig = FALSE)
   } else {
-    output <- change_migration(output)
+    #output <- change_migration(output)
   }
 }
 ```
@@ -1158,7 +1161,7 @@ ops = c(death_theta,
 lapply(ops, undebug)
 
 
-nSim <- 100000
+nSim <- 200000
 #pre-allocate
 res <- list(
   K = numeric(nSim),
@@ -1236,7 +1239,7 @@ edge_c_list$count = 0
      graph = 1,
      ec = edge_c_list,
      counts = counts,
-     migration = 0.9
+     migration = migration
   )
 
 
