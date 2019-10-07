@@ -339,7 +339,7 @@ As before we have the epidemic component as
 \(X_{i,t} \sim Pois(\nu_t)\). For the epidemic component we now include
 the additional counts from connected cities as
 
-\[Y_{i,t}|G \sim ~ Pois\big(\lambda_t*\sum_{j\neq i}^{N_v}Z_{j,t}*1[e_{ij}=1]+ \lambda_tZ_{i,t}\big)|G \]
+\[Y_{i,t}|G \sim ~ Pois\big(\lambda_t*\sum_{j\neq i}^{N_v}Z_{j,t-1}*1[e_{ij}=1]+ \lambda_tZ_{i,t-1}\big)|G \]
 Where \(\lambda_t*\sum_{j\neq i}^{N_v}Z_{j,t}*1[e_{ij}=1]\) are the
 counts from cities connected to city \(i\).
 
@@ -357,13 +357,18 @@ cities is equivalent to treating them a single city. To make the model
 more realistic, a migration parameter \(m \in (0,1)\) is introduced.
 
 The migration parameter enters into the likelihood as
-\[Y_{i,t}|G \sim ~ Pois\big(m*\lambda_t*\sum_{j\neq i}^{N_v}Z_{j,t}*1[e_{ij}=1]+ \lambda_tZ_{i,t}\big)|G \]
+\[Y_{i,t}|G \sim ~ Pois\big(m*\lambda_t*\sum_{j\neq i}^{N_v}Z_{j,t-1}*1[e_{ij}=1]+ \lambda_tZ_{i,t-1}\big)|G \]
 The migration parameter \(m\) is then the fraction of infected in city
 \(j\) that can cause infections in city \(i\), where \(m = 1\) is
 equivalent to the previous model and all infected in city \(j\) are
 counted and \(m = 0\) is no infected are counted and is equivalent to
 the cities \(i,j\) not being connected in graph \(G\) (i.e,
 \(e_{ij} \notin G\))
+
+\hypertarget{full-likelihood}{%
+\subsection{Full Likelihood}\label{full-likelihood}}
+
+\[\prod_{i=1}^{N_v}\prod_{t=1}^N P(Z_{i,t}|Z_{t-1},\theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2,G,p)P(\theta|K)P(K)P(\prod_{k=1}^{K+1}\lambda^{(k)} )P(\prod_{i=0}^2 \gamma_i)P(G|p)P(p)\]
 
 \hypertarget{future-extensions}{%
 \subsubsection{Future Extensions}\label{future-extensions}}
@@ -540,11 +545,18 @@ the parts that remain identical have a likelihood of 1 (or
 log-likelihood of 0) and all that remains of the likelihood computation
 is:
 
-Similar reductions in comptutation could feasibly be done following
-changes in the graph. Following a graph proposal any vertices whose
-component does not change, does not need its contribution to the
-likelihood recomputed. With sparse graphs this could save computational
-effort.
+Similar reductions in comptutation can be done following changes in the
+graph. If an edge \(e^*_{ik}\) is proposed then only \(Y_{i,t}\) and
+\(Y_{k,t}\) and the corresponding \(Z\)'s are affected. As such only
+those two cities need to be updated.
+\[Y^*_{i,t}|G^* \sim ~ Pois\big(m\lambda_tZ_{k,t-1} +m\lambda_t\sum_{j=1}^{N_v}Z_{j,t-1}1[e_{ij}\in E(G)]+ \lambda_tZ_{i,t-1}\big) \]
+\[Y^*_{k,t}|G^* \sim  Pois\big(m\lambda_tZ_{i,t-1} +m\lambda_t\sum_{j=1}^{N_v}Z_{j,t-1}1[e_{ij}\in E(G)]+ \lambda_tZ_{i,t-1}\big) \]
+\[\begin{aligned} Y^*_{j,t}|G^* &\sim Pois\big(m\lambda_t\sum_{l=1}^{N_v}Z_{j,t-1}1[e_{jl}\in E(G^*)]+ \lambda_tZ_{i,t-1}\big)\\ & \sim  Pois\big(m\lambda_t\sum_{l=1}^{N_v}Z_{j,t-1}1[e_{jl}\in E(G)]+ \lambda_tZ_{i,t-1}\big) \end{aligned}\]
+
+Then the likelihood ratio can be computed as (dropping conditioning
+notation for clarity)
+
+\[ \frac{P(Z^*_{i,t})P(Z^*_{k,t})}{P(Z_{i,t})P(Z_k,t)}\frac{\prod_j P(Z_{j})}{\prod_{j}P( Z_{j})} \]
 
 \hypertarget{change_gamma-change_lambda}{%
 \subsection{change\_gamma,
@@ -552,7 +564,7 @@ change\_lambda}\label{change_gamma-change_lambda}}
 
 The gamma and lambda parameters are updated in blocks via a standard
 Metropolis-Hastings step. The gamma and lambda proposals are each drawn
-from Multivariate Normal (MVN) distributions centered as the current
+from Multivariate Normal (MVN) distributions centered at the current
 parameter values. That is the proposed parameter vectors \(\gamma^*\)
 and \(\lambda^*\) are drawn from \(MVN(\gamma, \sigma_\gamma I_3)\) and
 \(MVN(\lambda, \sigma_\lambda I_{K+1})\) where \(I_n\) is the identity
@@ -610,14 +622,14 @@ likelihoods.
 mcmc}\label{birthdeath_theta-reversible-jump-mcmc}}
 
 The \texttt{birth\_theta()} and \texttt{death\_theta()} operators allow
-for increasing and decreasing the number of changepoints. Since the
+for an increase and decrease in the number of changepoints. Then the
 parameter space can jump between a collection of possible models
 \(\{M_K, K \in \{0,1,\cdots,n-1\}\}\) where \(K\) indexes the number of
 changepoints. However models from different \(M_K\)'s have different
-length of \(\boldsymbol{\theta_k}\) and the likelihoods are not directly
-comparable, they need to be defined on the same probability space. To
-handle this we use a Reversible Jump MCMC (RJMCMC) as proposed in
-({\textbf{???}}).
+dimensions of \(\boldsymbol{\theta_k}\) and the likelihoods are not
+directly comparable (since they are not defined on the same probability
+space). To handle this we use a Reversible Jump MCMC (RJMCMC) as
+proposed in ({\textbf{???}}).
 
 \hypertarget{birth}{%
 \subsubsection{Birth}\label{birth}}
@@ -681,7 +693,8 @@ and \(\lambda_2\) to match the above notation) are recombined
 deterministically as
 
 \[ \lambda_0 =\lambda_1^{\frac{\theta_m-\theta_{m-1}}{\theta_{m+1}-\theta_{m-1}}}*\lambda_2^{\frac{\theta_{m+1}-\theta_{m}}{\theta_{m+1}-\theta_{m-1}}} \]
-where \(\theta_m\) is the theta value that was removed. Then the
+where \(\theta_m\) is the theta value that was removed and \(\lambda_0\)
+is the new \(\lambda\) value for the merged interval. Then the
 acceptance rate is computed as
 \[\alpha_{death}(\theta^*|\theta) = \frac{P(birth)}{P(death)}\frac{q_{(K-1\rightarrow K)}(\theta|\theta^*)*P(u)}{q_{(K\rightarrow K - 1)}(\theta^*|\theta)}\frac{1}{|J_{death}|}\]
 Where
@@ -741,7 +754,7 @@ We need N\_v
 \end{enumerate}
 
 Then the probability of selecting an edge is \(2/(N_v(N_v-1) - 2*N_e)\)
-by symmetry, each edge is represented twice.
+by symmetry.
 
 \[ \frac{\frac{1}{N_e + 1}}{\frac{1}{M - E}} = \frac{M-E}{N_e + 1} \]
 and the Hastings ratio for removing an edge is given by
