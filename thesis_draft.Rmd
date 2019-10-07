@@ -414,13 +414,15 @@ We need N_v
 
 Then the probability of selecting an edge is $2/(N_v(N_v-1) - 2*N_e)$ by symmetry.
 
-$$ \frac{\frac{1}{N_e + 1}}{\frac{1}{M - E}} = \frac{M-E}{N_e + 1} $$
+$q(G^*|G)$ the probability of proposing adding that particular edge occurs with probability$2/(N_v(N_v-1) - 2*N_e)$
+
+The probability of $q(G|G^*)$ of deleting the edge that was added occurs with probability $2/2(N_e+1) = 1/(N_e+1)$ 
+
+$$\frac{q(G|G^*)}{q(G^*|G)} = \frac{\frac{1}{N_e+1}}{\frac{2}{N_v(N_v-1) - 2N_e}} = \frac{N_v(N_v-1) - 2N_e}{2(N_e+1)} $$
 and the Hastings ratio for removing an edge is given by
 
 $$ \frac{\frac{1}{N - (E - 1)}}{\frac{1}{ E}} = \frac{edges}{N_E-(E-1)} $$
-## Delete edge
 
-The `delete_edge_op` samples uniformly at random an edge currently in the graph and proposes to remove it.
 
 ## flip_edge
 
