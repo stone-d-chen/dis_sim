@@ -323,11 +323,7 @@ This differs from @held and @green who perform separate likelihood computations 
 
 Similar reductions in comptutation could feasibly be done following changes in the graph. Following a graph proposal any vertices whose component does not change, does not need its contribution to the likelihood recomputed. With sparse graphs this could save computational effort.
 
-If we maintain a list of vertices (label them numerically) associated with the component they belong to (alphabetically/hex). We additionally maintain a list of components associated with a vector of vertices that comprise the component. Now assume we add an edge between two vertices. Then say a graph proposal is made to connect two vertices. We can look up the component that each of these vertices participate in (call them A and B) , merge the components (A, B -> C). We then look up the vertices that participate in components formerly known as A, B and update them to the new component name (as well as update the component list) maintaining the data structure. Then we know which vertices to update.
 
-Deleting an edge is problematic. The edge is within a component and that component needs to be updated. Updating the components becomes the issue. Either the component remains connected or it's split into two components. There's no way (?) to determine which is the case without ()
-Wikipedia 
-"There are also efficient algorithms to dynamically track the components of a graph as vertices and edges are added, as a straightforward application of disjoint-set data structures. These algorithms require amortized O(alpha(n)) time per operation, where adding vertices and edges and determining the component in which a vertex falls are both operations, and alpha(n) is a very slow-growing inverse of the very quickly growing Ackermann function. A related problem is tracking components as all edges are deleted from a graph, one by one; an algorithm exists to solve this with constant time per query, and O(|V||E|) time to maintain the data structure; this is an amortized cost of O(|V|) per edge deletion. (Shiloach & Even 1981)."
 
 ## change_gamma, change_lambda
 
