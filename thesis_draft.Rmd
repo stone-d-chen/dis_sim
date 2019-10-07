@@ -335,11 +335,11 @@ The gamma and lambda parameters are updated in blocks via a standard Metropolis-
 
 Since the Normal distribution is symmetric, the Hastings ratio is 1 so the acceptance ratio is the ratio of the log-likelihoods between the current and proposed steps.
 
-One potential issue is that gamma and lambda are used to compute the parameter of a Poisson distribution, but the Normal distribution proposals could potentially propose invalid parameter values. To remedy this, the proposal operator checks to see whether the proposed parameter value is valid (in this case positive) and automatically rejects the proposed state (staying in the current state). This can lead to inefficient mixing as a step is "wasted". This inefficiency can be resolved by using a non-symmetric proposal distribution such as log-normal or a truncated normal and an adjustment of the Hastings ratio to compensate for the asymmetry. However this does not seem to be an issue in the simulated cases. 
+One potential issue is that gamma and lambda are used to compute the parameter of a Poisson distribution, but the Normal distribution proposals could potentially propose invalid parameter values. To remedy this, the proposal operator checks to see whether the proposed parameter value is valid (in this case positive) and automatically rejects the proposed state (staying in the current state). This can lead to inefficient mixing as a step is "wasted". This inefficiency can be resolved by using a non-symmetric proposal distribution such as log-normal or a truncated normal and an adjustment of the Hastings ratio to compensate for the asymmetry. However this does not seem to be an issue in the simulated cases, the initial values are positive and the jump ($\sigma$) size is small enough not to propose negative values.
 
 ## change_theta
 
-This operator proposes a new location for one of the current change points $\theta_1,\dots, \theta_K$. A change point, $\theta_k, k \in \{1, \dots, K\}$ is selected uniformly at random from all current change points. Then the proposed location $\theta_k^*$ is selected from values between $\{\theta_{k-1}+1,\dots, \theta_{k+1}-1\}$ uniformly at random. For $\theta_1$ and $\theta_k$ the proposed values are from $\{0,\dots, \theta_1-1\}$ and $\{\theta_K+1,\dots, N\}$ respectively.
+This operator proposes a new location for one of the current change points $\theta_1,\dots, \theta_K$. A change point$\theta_k, k \in \{1, \dots, K\}$ is selected uniformly at random from all current change points. Then the proposed location $\theta_k^*$ is selected from values between $\{\theta_{k-1}+1,\dots, \theta_{k+1}-1\}$ uniformly at random. For $\theta_1$ and $\theta_k$ the proposed values are from $\{0,\dots, \theta_1-1\}$ and $\{\theta_K+1,\dots, N\}$ respectively.
 
 The $\lambda$ are then updated to match the newly proposed location as:
 
@@ -347,46 +347,74 @@ $$ \lambda_t =  \begin{cases} \lambda^{(1)} & t < \theta_0 \\
 \lambda^{(k^*)}, & \theta_{k^*} \leq t < \theta_{(k^*-1)} \\
 \lambda^{(K+1)}, & t \geq \theta_K \end{cases}$$
 
-Since the proposal is generated uniformly at random between $\theta_{k-1}$ and $\theta_{k+1}$, contribution to the Hastings ratio is 1. Furthermore since the $\lambda$ values are deterministically generated from current $\lambda_k$ values and the $\theta_k^*$ values, the overall Hastings ratio is 1 and the acceptance rate is the ratio of the likelihoods.
+Since the proposal is generated uniformly at random between $\theta_{k-1}$ and $\theta_{k+1}$ the proposal probability is $q(\theta_{k^*}|\theta_k) = 1/(\theta_{k+1}-\theta_{k-1}-2) = q(\theta_k|\theta_k^*)$. Furthermore the the $\lambda$ values are deterministically generated from current $\lambda_k$ values and the $\theta_k^*$ values. The Hastings ratio is then 1 and the acceptance rate is the ratio of the likelihoods.
 
 ## birth/death_theta reversible jump mcmc
+The `birth_theta()` and `death_theta()` operators allow for increasing and decreasing the number of changepoints. Since the parameter space can jump between a collection of possible models $\{M_K, K \in \{0,1,\cdots,n-1\}\}$ where $K$ indexes the number of changepoints. However models from different $M_K$'s have different length of $\boldsymbol{\theta_k}$ and the likelihoods are not directly comparable, they need to be defined on the same probability space. To handle this we use a Reversible Jump MCMC (RJMCMC) as proposed in @green. 
 
-To handle the dimension jumping of the model (between different number of changepoints) we use Reversible Jump MCMC.
 
-Since the model can jump between a collection of possible models $\{M_k, k \in \{0,1,\cdots,n-1\}\}$ where $k$ indexes the number of possible changepoints.
+### Birth
 
-The issue comes from the fact that we can only compare points in the parameter space if they're defined on the same probability space. 
-
-To properly do so we need to use a Reversible Jump MCMC as implemented in @green.
-
-For a birth step a new changepoint is chosen uniformly at random from all possible timesteps that aren't currently changepoints. To perform the Reversible Jump algorithm we procede as follows:
+For a birth step a new changepoint is chosen uniformly at random from all possible time steps $\{1,\dots,N\}$ that aren't currently change points $\{\theta_1,\dots,\theta_K\}$ and then added to the current set of change points 
 
 1. Draw $u \sim Unif(0,1)$
-2. The following proposals for the new $\lambda$ values are from 
+2. The following proposals for the new $\lambda_1$ and $\lambda_2$ values are from $$\lambda_1 = \lambda_0*(\frac{u}{1-u})^{(\theta_1-\theta_0)/(\theta_2-\theta_0)}$$ $$\lambda_2 = \lambda_0*(\frac{1-u}{u})^{(\theta_2-\theta_1)/(\theta_2-\theta_0)}$$
+  That is the new $\lambda$ values are a compromise between the original value $\lambda_0$ of the interval that was split. This compromise is a function of the location of the split of the interval.
 
-$$\lambda*(\frac{u}{1-u})^{(\theta_1-\theta_0)/(\theta_2-\theta_0)}$$
-$$\lambda*(\frac{1-u}{u})^{(\theta_2-\theta_1)/(\theta_2-\theta_0)}$$
+3. In order to determine the acceptance probability for the proposal, the corresponding death move must also be determined. In death move a current changepoint is selected uniformly at random and then removed. 
+Then the $\lambda$ values are changed deterministically (as described later).
 
-That is the new $\lambda$ values are a compromise between the original value as a function of where the new changepoint is factored in.
+Then the new acceptance ratio is 
 
-3. Acceptance probability; In order to determine the acceptance probability for the proposal, the corresponding death move must also be determined. In death move a current changepoint is selected uniformly at random and then removed. 
-Then the $\lambda$ values are changed deterministically such that if the newly proposed changepoint is removed (and the heights were the same as newly proposed ones), then the new height should be the original height.
+$$\alpha_{birth}(\theta^*|\theta) = \frac{P(death)}{P(birth)}\frac{q_{(K+1\rightarrow K)}(\theta|\theta^*)}{q_{(K\rightarrow K + 1)}(\theta^*|\theta)*P(u)}|J_{birth}|$$
+Where
+$$  \frac{P(death)}{P(birth)}\frac{q_{(K+1\rightarrow K)}(\theta|\theta^*)}{q_{(K\rightarrow K + 1)}(\theta^*|\theta)*P(u)} $$
+$$= 1*\frac{\frac{1}{K+1}}{\frac{1}{N-K}*1} = \frac{N-K}{K+1} $$
 
-Then the new proposal ratio would be
+The $P(birth)$ and $P(death)$ are the probabilities of proposing a birth and death step respectively and are selected such that $P(birth) = P(death)$.
+The $q_{(K+1\rightarrow K)}(\theta|\theta^*)$term is transition probability from a parameter state with $K$ $\theta$'s to $K+1$. The probability of being in the proposed state $\theta^*$ and proposing jumping back to the current state $\theta$ is the probability of selecting the newly added changepoint $\theta_{k^*}$ and deleting it. This occurs with probability $1/K+1$ since the changepoints are selected uniformly at random and there are $K+1$ changepoints in the proposed state. Similarly the probability of the current proposal state is $1/N-K$ since there are $N-K$ possible timesteps to add. Since $u \sim U(0,1)$ then $P(u) = 1$ and the reverse move is deterministic so it's probability is also 1 (and omitted from the equation).
+Finally the Jacobian is given by $$ |J_{birth}| = \frac{(\lambda_1 + \lambda_2)^2}{\lambda_0}$$
 
-$$ \frac{P(death)}{P(birth)}\frac{P_{death}(\theta^*\rightarrow\theta)}{P_{birth}(\theta\rightarrow \theta^*)*P(u)} = 1*\frac{\frac{1}{K+1}}{\frac{1}{N-K}} = \frac{N-K}{K+1} $$
-The $P(birth)$ and $P(death)$ are the probabilities of proposing a birth or death step and are selected such that $P(birth) = P(death)$. The probability of being in the proposed state $\theta^*$ and returning to $\theta$ is the probability of selecting the newly added changepoint $\theta_{k^*}$ and deleting it. This occurs with probability $1/K+1$ since the changepoints are selected uniformly at random and there are $K+1$ changepoints in the proposed state. Similarly the probability of the current proposal state is $1/N-K$ since there are $N-K$ possible timesteps to add. Since $u \sim U(0,1)$ then $P(u) = 1$ and the reverse move is deterministic so it's probability is also 1. 
 
-Finally the Jacobian is given by
+### Death
 
-$$ |J_{birth}| = (\lambda_1 + \lambda_2)^2/\lambda_0$$
-For the death proposal we have 
+For the death proposal we randomly select any of the current change points uniformly at random and remove it. Then the two $\lambda$ values associated with the removed change point (call them $\lambda_1$ and $\lambda_2$ to match the above notation) are recombined deterministically as
 
-$$ \frac{P(birth)}{P(death)}\frac{P_{birth}(\theta^*\rightarrow\theta)}{P_{death}(\theta\rightarrow \theta^*)*P(u)} = 1*\frac{\frac{1}{N-(K-1)}}{\frac{1}{K}} = \frac{K}{N-(K-1)} $$
-And the Jacobian is $$|J_{death}| = 1/|J_{birth}| = \lambda_0/(\lambda_1 + \lambda_2)^2$$
+$$ \lambda_0 =\lambda_1^{\frac{\theta_m-\theta_{m-1}}{\theta_{m+1}-\theta_{m-1}}}*\lambda_2^{\frac{\theta_{m+1}-\theta_{m}}{\theta_{m+1}-\theta_{m-1}}} $$
+where $\theta_m$ is the theta value that was removed.
+Then the acceptance rate is computed as
+$$\alpha_{death}(\theta^*|\theta) = \frac{P(birth)}{P(death)}\frac{q_{(K-1\rightarrow K)}(\theta|\theta^*)*P(u)}{q_{(K\rightarrow K - 1)}(\theta^*|\theta)}\frac{1}{|J_{death}|}$$
+Where 
+$$ \frac{P(birth)}{P(death)}\frac{q_{(K-1\rightarrow K)}(\theta|\theta^*)*P(u)}{q_{(K\rightarrow K - 1)}(\theta^*|\theta)} = 1*\frac{\frac{1}{N-K+1}}{\frac{1}{K}} = \frac{K}{N-K+1} $$
+The probability of proposing the death of change point $\theta_m$ is $1/K$ since it is chosen uniformly at random from $\boldsymbol{\theta}$ which has dimension $K$. The $q_{(K-1\rightarrow K)}(\theta|\theta^*)$ term is the probability of adding back the change point. Since the change points are birthed uniformly at random from all change point not currently in the $\boldsymbol{\theta^*}$ vector, the probability of birthing the $\theta_m$ that was deleted which is $1/(N-(K-1)) = 1/(N-K+1)$ 
+And the Jacobian is $$|J_{death}| = 1/|J_{birth}| = \lambda_0/(\lambda_1 + \lambda_2)^2$$ since the function is invertible.
 
 # Graph Proposals
 The proposed graph is stored as an adjacency list. To create make proposals in the graph space the follow operators are used. 
+
+## add and delete
+The `add_edge_op()` functions proposes adding an edge to the graph by sampling uniformly at random from all edges in not currently in the graph. Let $M = \binom{N_v}{2}$ be the maximum number of possible edges in the graph. Then $q()$
+
+The actual algorithm works as sfollows. The current number of edges $N_e$ is tracked. Then we randomly sample from $A =\{1,\cdots, N_v(N_v-1)-2*N_e\}$ then tracking the length of the adjacency lists, we decrement A by the $N_v - length(adj[i])$ where length(adj[i]) is the length of the adjacency list of vertex 1 and $i\in\{1,\cdots,N_v\}$. If $A >= 0$ then $i = i+1$ while while continuing to decrement A until $A < 0$. Then $i$ is the index of the adj which has the edge that needs to be added. Then perform a linear search until the remaining i'th index is removed.
+
+We need N_v 
+
+
+1. $A = N_v(N_v-1) - N_e$
+2. for i in (1:N_v):
+3. if (A < length(adj[i]))
+4. perform linear search to find the first A - length(adj[i]) edge not in the list
+5. else A = A-length(adj[i])
+
+Then the probability of selecting an edge is $2/(N_v(N_v-1) - 2*N_e)$ by symmetry, each edge is represented twice.
+
+$$ \frac{\frac{1}{N_e + 1}}{\frac{1}{M - E}} = \frac{M-E}{N_e + 1} $$
+and the Hastings ratio for removing an edge is given by
+
+$$ \frac{\frac{1}{N - (E - 1)}}{\frac{1}{ E}} = \frac{edges}{N_E-(E-1)} $$
+## Delete edge
+
+The `delete_edge_op` samples uniformly at random an edge currently in the graph and proposes to remove it.
 
 ## flip_edge
 
@@ -394,16 +422,7 @@ Flip edge randomly samples an edge by randomly sampling two vertices at random w
 
 This proposal does not appear to mix well and this maybe due to the fact that when the graph is sparse then the probabilty of adding an edge is higher than deleting an edge and vice versa.
 
-## add and delete
 
-The add edge operator samples uniformly at random from all edges in $G\\G$ that is all edges not currently in the graph and then adds it to the graph. The delete edge operator randomly samples from all edges currently in graph and removes it.
-
-The Hastings ratio then becomes 
-
-$$ \frac{\frac{1}{edges + 1}}{\frac{1}{N_E - E}} = \frac{N_E-E}{edges + 1} $$
-and the Hastings ratio for removing an edge is given by
-
-$$ \frac{\frac{1}{N - (E - 1)}}{\frac{1}{ E}} = \frac{edges}{N_E-(E-1)} $$
 
 ## Degree Preserving Swap
 
