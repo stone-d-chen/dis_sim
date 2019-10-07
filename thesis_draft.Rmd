@@ -378,7 +378,7 @@ $$  \frac{P(death)}{P(birth)}\frac{q_{(K+1\rightarrow K)}(\theta|\theta^*)}{q_{(
 $$= 1*\frac{\frac{1}{K+1}}{\frac{1}{N-K}*1} = \frac{N-K}{K+1} $$
 
 The $P(birth)$ and $P(death)$ are the probabilities of proposing a birth and death step respectively and are selected such that $P(birth) = P(death)$.
-The $q_{(K+1\rightarrow K)}(\theta|\theta^*)$term is transition probability from a parameter state with $K$ $\theta$'s to $K+1$. The probability of being in the proposed state $\theta^*$ and proposing jumping back to the current state $\theta$ is the probability of selecting the newly added changepoint $\theta_{k^*}$ and deleting it. This occurs with probability $1/K+1$ since the changepoints are selected uniformly at random and there are $K+1$ changepoints in the proposed state. Similarly the probability of the current proposal state is $1/N-K$ since there are $N-K$ possible timesteps to add. Since $u \sim U(0,1)$ then $P(u) = 1$ and the reverse move is deterministic so it's probability is also 1 (and omitted from the equation).
+The $q_{(K+1\rightarrow K)}(\theta|\theta^*)$ term is transition probability from a parameter state with $K$ $\theta$'s to $K+1$. The probability of being in the proposed state $\theta^*$ and proposing jumping back to the current state $\theta$ is the probability of selecting the newly added changepoint $\theta_{k^*}$ and deleting it. This occurs with probability $1/K+1$ since the changepoints are selected uniformly at random and there are $K+1$ changepoints in the proposed state. Similarly the probability of the current proposal state is $1/N-K$ since there are $N-K$ possible timesteps to add. Since $u \sim U(0,1)$ then $P(u) = 1$ and the reverse move is deterministic so it's probability is also 1 (and omitted from the equation).
 Finally the Jacobian is given by $$ |J_{birth}| = \frac{(\lambda_1 + \lambda_2)^2}{\lambda_0}$$
 
 
@@ -401,20 +401,18 @@ The proposed graph is stored as an adjacency list. To create make proposals in t
 ## add and delete
 The `add_edge_op()` functions proposes adding an edge to the graph by sampling uniformly at random from all edges in not currently in the graph. Let $M = \binom{N_v}{2}$ be the maximum number of possible edges in the graph. Then $q()$
 
-The actual algorithm works as sfollows. The current number of edges $N_e$ is tracked. Then we randomly sample from $A =\{1,\cdots, N_v(N_v-1)-2*N_e\}$ then tracking the length of the adjacency lists, we decrement A by the $N_v - length(adj[i])$ where length(adj[i]) is the length of the adjacency list of vertex 1 and $i\in\{1,\cdots,N_v\}$. If $A >= 0$ then $i = i+1$ while while continuing to decrement A until $A < 0$. Then $i$ is the index of the adj which has the edge that needs to be added. Then perform a linear search until the remaining i'th index is removed.
-
 We need N_v 
 
+1. $A_0 = N_v(N_v-1) - N_e$
+2. $A = A_0$
+3. for i in (1:N_v):
+4. if (A <= N_v - length(\text{adj}[i]))
+5. perform linear search to find the first A - length(\text{adj}[i]) edge not in the list
+6. else A = A-length(\text{adj}[i])
 
-1. $A = N_v(N_v-1) - N_e$
-2. for i in (1:N_v):
-3. if (A < length(adj[i]))
-4. perform linear search to find the first A - length(adj[i]) edge not in the list
-5. else A = A-length(adj[i])
+Then the probability of selecting an edge is $2/(N_v(N_v-1) - 2N_e)$ by symmetry. $N_v(N_v-1)$ is the total possible size of the adjacency list and $N_e$ is the number of unique edges currently in the list. Then $N_v(N_v-1) - 2N_e$ is the remaining "slots" in the adjacency list. We draw uniformly at random from $A \in \{1,\dots,N_v(N_v-1) - 2N_e\}$ which represents an index of the edges not present in the graph. Now we interate along the adjacency list `adj` whose length is the number of vertices $N_v$. Starting from $i = 1$ if $A <= N_v -  length(\text{adj}[i])$ then we know that the edge to be added is in $\text{adj}[i]$ and we can search for the correct edge in $O(|V|)$. If $A > N_v - length(\text{adj}[i])$ then we recompute $A = A - N_v + length(\text{adj}[i])$ increment $i = i + 1$ and repeat. 
 
-Then the probability of selecting an edge is $2/(N_v(N_v-1) - 2*N_e)$ by symmetry.
-
-$q(G^*|G)$ the probability of proposing adding that particular edge occurs with probability$2/(N_v(N_v-1) - 2*N_e)$
+$q(G^*|G)$ the probability of proposing adding that particular edge occurs with probability $2/(N_v(N_v-1) - 2N_e)$, since $A_0$ is chosen uniformly at random from $\{1,\dots,N_v(N_v-1) - 2N_e\}$ and each edge $e_{ij}$ is represented twice (once in \text{adj}[i]: \{\dots,j,\dots\}) and again in $\text{adj}[j]: \{\dots,i,\dots\}$.
 
 The probability of $q(G|G^*)$ of deleting the edge that was added occurs with probability $2/2(N_e+1) = 1/(N_e+1)$ 
 
