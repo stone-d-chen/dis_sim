@@ -770,7 +770,7 @@ occurs with probability \(2/2(N_e+1) = 1/(N_e+1)\)
 \[\frac{q(G|G^*)}{q(G^*|G)} = \frac{\frac{1}{N_e+1}}{\frac{2}{N_v(N_v-1) - 2N_e}} = \frac{N_v(N_v-1) - 2N_e}{2(N_e+1)} \]
 and the Hastings ratio for removing an edge is given by
 
-\[ \frac{\frac{1}{N - (E - 1)}}{\frac{1}{ E}} = \frac{edges}{N_E-(E-1)} \]
+\[ \begin{aligned} \frac{q(G|G^* deleted)}{q(G^* deleted|G)} & = \frac{\frac{1}{N_v(N_v-1) - 2(N_e-1)}}{\frac{1}{N_e}} \\ &= \frac{N_e}{N_v(N_v-1) - 2(N_e-1)} \end{aligned} \]
 
 \hypertarget{flip_edge}{%
 \subsection{flip\_edge}\label{flip_edge}}
