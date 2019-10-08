@@ -1,6 +1,6 @@
 \documentclass[]{article}
 \usepackage{lmodern}
-\usepackage{amssymb,amsmath, natbib}
+\usepackage{amssymb,amsmath, natbib, soul}
 \usepackage{ifxetex,ifluatex}
 \usepackage{fixltx2e} % provides \textsubscript
 \ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
@@ -86,8 +86,8 @@
 \usepackage{booktabs}
 \usepackage{xcolor}
 \numberwithin{equation}{section}
-\counterwithin{figure}{section}
-\counterwithin{table}{section}
+%\counterwithin{figure}{section}
+%\counterwithin{table}{section}
 \usepackage{dcolumn}
 \usepackage{rotating}
 \usepackage{caption}
@@ -100,10 +100,13 @@
 \begin{document}
 \maketitle
 
+\dw{just commented out contents for now, can put it back in later. ANd very minor point you should probably ignore for now: there is huge amount of junk before you get to begin document - surely you don't need all that? }
 %{
 %\setcounter{tocdepth}{2}
 %\tableofcontents
 %}
+
+
 \hypertarget{intro}{%
 \section{Intro}\label{intro}}
 
@@ -137,16 +140,17 @@ disease counts that serves as the basis of the the extended graph model.
 
 The two components of the model are a simple Poisson branching process
 with autoregressive parameter \(\lambda\) and a seasonal component fit
-with a Fourier series. These components are described as the
+with a Fourier series.  These components are described as the
 ``epidemic'' and ``endemic'' components respectively. Additionally, the
 two-component model allows for the \(\lambda\) to change over time
 allowing for the disease to change infectivity over time.
 
+\dw{take some time to describe the model in more simple language - lots of people might not know what a Poisson branching process with an autoregrassive parameter is. YOu can give a plain english description in a paragraph or two}
 \hypertarget{two-component-model-notation}{%
 \subsection{Two-Component Model
 Notation}\label{two-component-model-notation}}
 
-Let \(Z = (Z_0, Z_1, ..., Z_n)\) be the infectious disease counts at
+Let \(Z = (Z_0, Z_1, ..., Z_n)\) be the infectious disease counts \dw{counts of what exactly? Use SIR type language} at
 each time step \(t\). The model is then specified through
 \(Z_t | Z_{t-1}\).
 
@@ -154,15 +158,16 @@ Each \(Z_t\) is determined as \(Z_t = Y_t + X_t,\ t \in \{1,\dots, N\}\)
 
 Where \(Y_t\) is the epidemic component and \(X_t\) is the endemic
 component. The epidemic component is modeled as Poisson distribution as
-\[Y_t|Z_{t-1} \sim Pois(\lambda_tZ_{t-1})\]
+\dw{use text Pois or text Poisson --- change throughout}
+\[Y_t|Z_{t-1} \sim \text{Pois}(\lambda_tZ_{t-1})\]
 
 \[ \lambda_t =  \begin{cases} \lambda^{(1)} & t < \theta_0 \\
 \lambda^{(k)}, & \theta_{k} \leq t < \theta_{(k-1)} \\
 \lambda^{(K+1)}, & t \geq \theta_K \end{cases}\]
 
-Where \(\lambda_t\) is piecewise constant depending on an unknown number
-of changepoints \(K\) and unknown locations
-\(\theta_1 < \cdots < \theta_K\).
+Where \(\lambda_t\) is piecewise constant depending on \st{an unknown number
+of}  \(K\)  changepoints and \st{unknown} locations
+\(\theta_1 < \cdots < \theta_K\). \dw{these are just parts of the model, you talk about the parts you know/will infer later on}
 
 The endemic component is also Poisson distributed with
 
@@ -191,7 +196,7 @@ random variables which itself is Poisson;
 
 In this model, the \(\lambda_t\) is allowed to vary over time. The
 parameter \(\lambda = (\lambda_1,\cdots,\lambda_n)\) is a piecewise
-constant function with unknown number of changepoints \(K\) and unknown
+constant function with \st{unknown number of} changepoints \(K\) and unknown
 location of changepoints \(\theta_1 < \cdots < \theta_K\) with
 \(\theta \in \{1,...,n-1\}\). If \(K = 0\) there is no changepoint and
 the \(\lambda\) parameter is constant throughout.
@@ -201,7 +206,7 @@ the \(\lambda\) parameter is constant throughout.
 
 For constant \(\lambda\), this is known as a Poisson branching process.
 For such a process, when \(\lambda > 1\) the process explodes and the
-number of infected goes to infinity with probability 1. When
+number of infected goes to infinity with probability 1 \dw{not probability 1 - can still die out, right?}. When
 \(\lambda < 1\) then the process ``goes extinct'' or reaches and remains
 at 0 with probability 1. Once the process reaches a point where
 \(Z_t = 0\), it remains there as there are no more infected to create
@@ -210,9 +215,9 @@ new infected at the next time step. When \(\lambda_t > 1\) an
 \(\lambda_t < 1\) the outbreak ends.
 
 Allowing \(\lambda_t\) to vary captures many scenarios, for example a
-particulary infectious strain of the flu could cause \(\lambda_t\) to
+particularly infectious strain of the flu could cause \(\lambda_t\) to
 increase above 1 and cause an outbreak. Later, better or new vaccines
-and quarentine procedures can cause the overall infectivity to decrease
+and quarantine procedures can cause the overall infectivity to decrease
 below 1.
 
 \hypertarget{endemic-component}{%
@@ -266,6 +271,7 @@ and \(\lambda_t\) piecewise function is described by
 \hypertarget{priors}{%
 \subsection{Priors}\label{priors}}
 
+\dw{move discussion of priors to after you discuss Bayesian Inference}
 The prior values for the \(\gamma\) parameters are Multivariate-Normal
 distributed with variance \(3I_3\) to describe the uncertainty.
 
