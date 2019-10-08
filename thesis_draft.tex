@@ -95,13 +95,15 @@
 \captionsetup{width=4.5in}
 \usepackage{algorithm}
 
+\newcommand{\dw}[1]{{\color{red}{#1}}}
+
 \begin{document}
 \maketitle
 
-{
-\setcounter{tocdepth}{2}
-\tableofcontents
-}
+%{
+%\setcounter{tocdepth}{2}
+%\tableofcontents
+%}
 \hypertarget{intro}{%
 \section{Intro}\label{intro}}
 
@@ -110,13 +112,12 @@ an outbreak of severe illness in Germany, with \textasciitilde{}3,950
 affected compared with \textasciitilde{}200 cases a year typically seen.
 Of those infected 53 died.
 
-In this - we extend a method presented by Held et al. \citet{held2006}
-(\protect\hyperlink{ref-held_two-component_2006}{2006}) for modeling
+In this - \dw{thesis} we \dw{perform inference on an extension of a model} presented by \citet{held2006} for modeling
 parameters of infectious disease counts in a Bayesian framework. Their
-method models the count data as a branching Poisson process with a
+method models the count data \dw{counts of what?} as a branching Poisson process with a
 cyclical endemic parameter.
 
-We then extend their model to incorporate a graph.
+We extend their model to incorporate a graph \dw{what does graph represent}.
 
 \hypertarget{comments}{%
 \subsection{Comments}\label{comments}}
@@ -124,13 +125,15 @@ We then extend their model to incorporate a graph.
 Expand and metion general ideas of epidemics spreading \& how we model
 them (\textasciitilde{}1 page)
 
+\dw{describe a basic SIS or SIR epidemic model here. A decent reference for all this stuff is \citet{keeling2011} - the library has a copy. Or look at eg refs used inthe Held paper or in the epinet papers.}
+
 \hypertarget{intro-to-two-component-model}{%
 \section{Intro to Two-Component
 Model}\label{intro-to-two-component-model}}
 
 Held et al. (\protect\hyperlink{ref-held_two-component_2006}{2006})
 presents a stochastic model for the statistical analysis of infectious
-disease counts that serves as the basis of the theextended graph model.
+disease counts that serves as the basis of the the extended graph model.
 
 The two components of the model are a simple Poisson branching process
 with autoregressive parameter \(\lambda\) and a seasonal component fit
