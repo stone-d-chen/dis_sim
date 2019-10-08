@@ -3,7 +3,7 @@ title: "Disease Modeling"
 link-citations: yes
 output:
   pdf_document:
-    toc: yes
+    toc: no
     fig_caption: yes
     number_sections: true
     keep_tex: true
@@ -37,7 +37,6 @@ library(igraph)
 ```
 
 
-
 # Intro 
 
 
@@ -58,7 +57,9 @@ Statistical methods to model infectious disease data typically use mechanistic m
 
 @held_two-component_2006 presents a stochastic model for the statistical analysis of infectious disease counts that serves as the basis of the theextended graph model.
 
-The two components of the model are a simple Poisson branching process with autoregressive parameter $\lambda$ and a seasonal component fit with a Fourier series. These components are described as the "epidemic" and "endemic" components respectively. Additionally, the two-component model allows for the $\lambda$ to change over time allowing for the disease to change infectivity over time.
+The two components of the model are a simple Poisson branching process with autoregressive parameter $\lambda$ and a seasonal component fit with a Fourier series.  These components are described as the "epidemic" and "endemic" components respectively. Additionally, the two-component model allows for the $\lambda$ to change over time allowing for the disease to change infectivity over time.
+
+A branching process is a model that is used to model the evolution @stirzaker of population over time over time. Suppose there's currently one parent alive. Then in a branching process, this individual would give birth to a random number of offspring and then immediately die. Then at the next step, each of those offspring become parents who individually give birth to a random number of offspring. If the random number of offspring comes from a Poisson distribution, then the process is known as a Poisson branching process. It's in this sense that $\lambda$ is an autoregressive parameter since it describes the relationship between the individuals in the previous time step to the current one. In thise cas we assume that the $\lambda$ value is constant across individuals and over time (e.g. $\lambda$ is some biological reproduction rate). In the case of the Two-Component model, is fixed for individuals at a given time, but is allowed to vary over time. This allows the model to capture the dynamics of disease outbreaks.
 
 ## Two-Component Model Notation
 
@@ -67,41 +68,23 @@ Let $Z = (Z_0, Z_1, ..., Z_n)$ be the infectious disease counts at each time ste
 Each $Z_t$ is determined as $Z_t = Y_t + X_t,\ t \in \{1,\dots, N\}$
 
 Where $Y_t$ is the epidemic component and $X_t$ is the endemic component.
-The epidemic component is modeled as Poisson distribution as
-$$Y_t|Z_{t-1} \sim Pois(\lambda_tZ_{t-1})$$
-
-
-$$ \lambda_t =  \begin{cases} \lambda^{(1)} & t < \theta_0 \\
-\lambda^{(k)}, & \theta_{k} \leq t < \theta_{(k-1)} \\
-\lambda^{(K+1)}, & t \geq \theta_K \end{cases}$$
-
-Where $\lambda_t$  is piecewise constant depending on an unknown number of changepoints $K$ and unknown locations $\theta_1 < \cdots < \theta_K$.
-
-The endemic component is also Poisson distributed with
-
-$$ X_t \sim Pois(\nu_t)$$
-
-Where $\log{\nu_t}$ is modeled as a Fourier series:
-
-$$ \log{\nu_t} = \gamma_0 + \sum_{l = 1}^L \big(\gamma_{2l-1}\sin(\rho l t)+\gamma_{2l}cos(\rho l t)\big) $$
-
 
 
 ## Epidemic Component
 
 The epidemic component is given by:
 
-$$Y_t|Z_{t-1} \sim Pois(\lambda_tZ_{t-1})$$
+$$Y_t|Z_{t-1} \sim\text{Pois}(\lambda_tZ_{t-1})$$
 
 Where $\lambda_t$ is the time varing infectivity parameter and $Z_{t-1}$ is the the infected count in the previous time step.
 
-We can think of $\lambda_t$ as the infectivity of the disease at time $t$ with an infected person causing new infections as $Pois(\lambda_t)$. Since each infected at time $Z_{t-1}$ generates new infected i.i.d $Pois(\lambda_t)$, then $Z_t$ is the sum of those random variables which itself is Poisson;  $\sum_1^{Z_{n-1}}Pois(\lambda_t) = Pois(\lambda_tZ_{n-1})$.
+We can think of $\lambda_t$ as the infectivity of the disease at time $t$ with an infected person causing new infections as $\text{Pois}(\lambda_t)$. Since each infected at time $Z_{t-1}$ generates new infected i.i.d $\text{Pois}(\lambda_t)$, then $Z_t$ is the sum of those random variables which itself is Poisson;  $\sum_1^{Z_{n-1}}\text{Pois}(\lambda_t) =\text{Pois}(\lambda_tZ_{n-1})$.
 
 In this model, the $\lambda_t$ is allowed to vary over time. The parameter $\lambda = (\lambda_1,\cdots,\lambda_n)$ is a piecewise constant function with unknown number of changepoints $K$ and unknown location of changepoints $\theta_1 < \cdots < \theta_K$ with $\theta \in \{1,...,n-1\}$. If $K = 0$ there is no changepoint and the $\lambda$ parameter is constant throughout.
 
 ## TK add references below
 
-For constant $\lambda$, this is known as a Poisson branching process. For such a process, when $\lambda > 1$ the process explodes and the number of infected goes to infinity with probability 1. When $\lambda < 1$ then the process "goes extinct" or reaches and remains at 0 with probability 1. Once the process reaches a point where $Z_t = 0$, it remains there as there are no more infected to create new infected at the next time step. When $\lambda_t > 1$ an "outbreak" occurs shown as the spike in the graph between. When $\lambda_t < 1$ the outbreak ends.
+For a Poisson process, when $\lambda > 1$ an outbreak occurs. When $\lambda < 1$ then the process "goes extinct" or reaches and remains at 0 with probability 1. Once the process reaches a point where $Z_t = 0$, it remains there as there are no more infected to create new infected at the next time step. When $\lambda_t > 1$ an "outbreak" occurs shown as the spike in the graph between. When $\lambda_t < 1$ the outbreak ends.
 
 Allowing $\lambda_t$ to vary captures many scenarios, for example a particulary infectious strain of the flu could cause $\lambda_t$ to increase above 1 and cause an outbreak. Later, better or new vaccines and quarentine procedures can cause the overall infectivity to decrease below 1.
 
@@ -110,7 +93,7 @@ Allowing $\lambda_t$ to vary captures many scenarios, for example a particulary 
 
 The endemic component in the model plays two roles. It allows capture of cyclical behaviors in disease counts (e.g. seasonal flu) and it also prevents the branching process from going extinct. The endemic count is modeled as
 
-$$X_t \sim Pois(\nu_t)$$
+$$X_t \sim \text{Pois}(\nu_t)$$
 $$\log{\nu_t} = \gamma_0 + \sum_{l = 1}^L (\gamma_{2l-1}\sin(\rho l t)+\gamma_{2l}cos(\rho l t))$$
 
 That is, $\log{\nu_t}$ is fit with a Fourier series which can approximate any function arbitrarily closely. Following, @held_two-component_2006 the series is computed with $L = 1$ since it was determined higher order frequencies were insignificant. That is the truncated series is still flexible enough to model cylical patterns seen in disease counts.
@@ -197,7 +180,7 @@ Then the probability of the full time series $Z$ given the initial starting coun
 
 $$P(Z|Z_0,\theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2 ) = \prod_{t=1}^b P(Z_t|Z_t{-1}, \theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2)$$
 Where $Z_t$ is distributed as sum of the Poisson endemic and epidemic components 
-$$Z_t|Z_{t-1}, \theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2 \sim Pois(\nu_t + \lambda_tZ_{t-1})$$
+$$Z_t|Z_{t-1}, \theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2 \sim\text{Pois}(\nu_t + \lambda_tZ_{t-1})$$
 where the endemic component $\nu_t$ is described as
 $$\log{\nu_t} = \gamma_0 +  \gamma_{1}\sin(\rho l t)+\gamma_{2}\cos(\rho l t)$$
 and $\lambda_t$ piecewise function is described by
@@ -206,26 +189,6 @@ $$ \lambda_t =  \begin{cases} \lambda^{(1)} & t < \theta_0 \\
 \lambda^{(K+1)}, & t \geq \theta_K \end{cases}$$
 
 
-## Priors
-
-The prior values for the $\gamma$ parameters are Multivariate-Normal distributed with variance $3I_3$ to describe the uncertainty.
-
-$$\gamma_i \sim N(0, 3I_3), i \in \{0,1,2\}$$ 
-
-Since the $\lambda$ values parameterize a Poisson distribution we set the prior to be Gamma(1, 1), it's conjugate distribution. If Gamma is interpreted as the sum of exponentials, then the shape = 1, rate = 1 parameterization represents seeing a single occurence in 1 unit of time and represents a vague prior.
-
-$$ \lambda^{(k)} \sim Gamma(1, 1),\ k \in \{1, \dots, K + 1\} $$
-
-
-The number of changepoints $K$ takes values in $\{1,\dots,N\}$ where $N$ is the total number of time points of counts collected. In the @held paper the number of changepoint is uniformly distributed  $P(K = k) = 1/N$ representing uncertainty in the number of changepoints. This is changed to 
-$$K \sim Pois(2)$$
-representing that idea that the disease count data is already of interest due to a potential change in the infectivity of the disease. $K \sim Pois(2)$ places the highest mass on $K = 2$ changepoints which can capture a spike in disease counts (as seen in the simulated data) before returning to a baseline endemic rate. It also places mass on $K = 1$ (e.g. capturing a long term decrease in infectivity due to intervention) and $K = 3$ changepoints. It also acts as a regularizer to help reduce overfitting the count time series where each time point is given a unique $\lambda_t$ value.
-
-The probability of a specfic location for a change point given the number of changepoints is uniformly distributed among all the possible changepoints
-$$P(\theta|K=k) = \binom{N}{k}^{-1}$$
-Then the unnormallized posterior is then the product of the likelihood and the priors
-$$ P(\theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2|Z)  \propto $$
-$$\prod_{t=1}^N P(Z_t|Z_{t-1},\theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2)*P(\theta|K)*P(K)*P(\prod_{k=1}^{K+1}\lambda^{(k)} )*P(\prod_{i=0}^2 \gamma_i)  $$
 
 
 # Graph Data Introduction
@@ -253,9 +216,9 @@ We then model the disease count of city $i$ at time $t$ as a function of $Z_{i,t
 $$X_{i,t}: \text{infected count in city } i \text{ at time step } t \text{, due to endemic factors}   $$
 $$Y_{i,t}|G : \text{infected count in city } i \text{ at time step } t \text{, due to epidemic factors}$$
 $$Z_{i,t}|G = X_{i,t} + Y_{i,t}|G: \text{infected count in city } i \text{ at time step } t $$
-As before we have the epidemic component as $X_{i,t} \sim Pois(\nu_t)$. For the epidemic component we now include the additional counts from connected cities as
+As before we have the epidemic component as $X_{i,t} \sim\text{Pois}(\nu_t)$. For the epidemic component we now include the additional counts from connected cities as
 
-$$Y_{i,t}|G \sim ~ Pois\big(\lambda_t*\sum_{j\neq i}^{N_v}Z_{j,t-1}*1[e_{ij}=1]+ \lambda_tZ_{i,t-1}\big)|G $$
+$$Y_{i,t}|G \sim ~ \text{Pois}\big(\lambda_t*\sum_{j\neq i}^{N_v}Z_{j,t-1}*1[e_{ij}=1]+ \lambda_tZ_{i,t-1}\big)|G $$
 Where $\lambda_t*\sum_{j\neq i}^{N_v}Z_{j,t}*1[e_{ij}=1]$ are the counts from cities connected to city $i$.
 
 That is the epidemic component for city $i$ is the sum of all counts in every city $j$ connected to $i$ in addition to the counts in city $i$.
@@ -265,12 +228,10 @@ That is the epidemic component for city $i$ is the sum of all counts in every ci
 One issue with this model is that connecting two isolated cities essentially doubles the infectivity parameter, since we include the counts from both cities. In this formulation a connection between two cities is equivalent to treating them a single city. To make the model more realistic, a migration parameter $m \in (0,1)$ is introduced.
 
 The migration parameter enters into the likelihood as
-$$Y_{i,t}|G \sim ~ Pois\big(m*\lambda_t*\sum_{j\neq i}^{N_v}Z_{j,t-1}*1[e_{ij}=1]+ \lambda_tZ_{i,t-1}\big)|G $$
+$$Y_{i,t}|G \sim ~ \text{Pois}\big(m*\lambda_t*\sum_{j\neq i}^{N_v}Z_{j,t-1}*1[e_{ij}=1]+ \lambda_tZ_{i,t-1}\big)|G $$
 The migration parameter $m$ is then the fraction of infected in city $j$ that can cause infections in city $i$, where $m = 1$ is equivalent to the previous model and all infected in city $j$ are counted and $m = 0$ is no infected are counted and is equivalent to the cities $i,j$ not being connected in graph $G$ (i.e, $e_{ij} \notin G$)
 
-## Full Likelihood
 
-$$\prod_{i=1}^{N_v}\prod_{t=1}^N P(Z_{i,t}|Z_{t-1},\theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2,G,p)P(\theta|K)P(K)P(\prod_{k=1}^{K+1}\lambda^{(k)} )P(\prod_{i=0}^2 \gamma_i)P(G|p)P(p)$$
 
 ### Future Extensions
 
@@ -280,6 +241,34 @@ While this thesis only covers a fixed migration rate, the end goal would be to m
 
 We model the graph $G$ modeled as an Erdos-Renyi random graph. An Erdos-Renyi random graph has a fixed vertex set $V(G) = \{1, \dots, N_v\}$ and is parameterized by $p \in (0,1)$. Then an edge $e_{ij}$ is in the edge set $E(G)$ with probability $p$ independent of every other edge. That is an ER graph $G_{N_v,E} \sim ER(p)$ and the likelihood of a graph $G$ given probability $p$ on an edge is $$\begin{aligned} G|p & = \prod_{i,j \in V(G),i \neq j} p^{1[e_{ij}=1]}(1-p)^{1-1[e_{ij}=1]} 
 \\ & = p^{N_e}(1-p)^{\binom{N_v}{2}-N_e} \end{aligned}$$ where $N_e$ is the number of edges.
+
+# Bayesian Inference
+In Bayesian analysis, we aim to estimate the distribution of the parameters on interest given the data via Bayes' theorem.
+$$ P(\theta|D) = \frac{P(D|\theta)P(\theta)}{P(D)} $$
+$P(\theta|D)$ is the posterior distribution of the parameters, $\theta$ given the data $D$. $P(D|\theta)$ is the likelihood of the data $D$ given the parameter value $\theta$. $P(\theta)$ is the prior distribution of $\theta$ and represents the belief that the parameters will take certain values. The prior distribution can be specified to by "uninformative" in the sense that the contribution to the posterior likelihood is much smaller than the likelihood. $P(D)$ is the probability of the data marginalized over the parameter space. One issue is the computation of $P(\text{data})$ which is given by $\int P(\text{data}|\text{parameters})P(\text{parameters})$ over the entire parameter space. With many parameters this integral it typically analytically intractable. To handle this Markov chain Monte-Carlo methods are used. We now specify the priors of the Two-Component and graph portions of the model.
+
+
+## Two-Component Priors
+
+The prior values for the $\gamma$ parameters are Multivariate-Normal distributed with variance $3I_3$ to describe the uncertainty.
+
+$$\gamma_i \sim N(0, 3I_3), i \in \{0,1,2\}$$ 
+
+Since the $\lambda$ values parameterize a Poisson distribution we set the prior to be Gamma(1, 1), it's conjugate distribution. If Gamma is interpreted as the sum of exponentials, then the shape = 1, rate = 1 parameterization represents seeing a single occurence in 1 unit of time and represents a vague prior.
+
+$$ \lambda^{(k)} \sim Gamma(1, 1),\ k \in \{1, \dots, K + 1\} $$
+
+
+The number of changepoints $K$ takes values in $\{1,\dots,N\}$ where $N$ is the total number of time points of counts collected. In the @held paper the number of changepoint is uniformly distributed  $P(K = k) = 1/N$ representing uncertainty in the number of changepoints. This is changed to 
+$$K \sim \text{Pois}(2)$$
+representing that idea that the disease count data is already of interest due to a potential change in the infectivity of the disease. $K \sim\text{Pois}(2)$ places the highest mass on $K = 2$ changepoints which can capture a spike in disease counts (as seen in the simulated data) before returning to a baseline endemic rate. It also places mass on $K = 1$ (e.g. capturing a long term decrease in infectivity due to intervention) and $K = 3$ changepoints. It also acts as a regularizer to help reduce overfitting the count time series where each time point is given a unique $\lambda_t$ value.
+
+The probability of a specfic location for a change point given the number of changepoints is uniformly distributed among all the possible changepoints
+$$P(\theta|K=k) = \binom{N}{k}^{-1}$$
+Then the unnormallized posterior is then the product of the likelihood and the priors
+$$ P(\theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2|Z)  \propto $$
+$$\prod_{t=1}^N P(Z_t|Z_{t-1},\theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2)*P(\theta|K)*P(K)*P(\prod_{k=1}^{K+1}\lambda^{(k)} )*P(\prod_{i=0}^2 \gamma_i)  $$
+
 
 ## Graph Prior
 
@@ -292,12 +281,12 @@ $$\begin{aligned}\frac{ P(G_{N_e = 2})}{P(G_{N_e = 1})}  &=  \frac{1/(\binom{N_v
 
 more likely. Then graphs with $N_e = \binom{N_v}{2}/2$ are more likely compared to all graphs with $|N_e| \in (0, N_v)$ and empty and complete graphs have the highest probability overall. We instead would like the probability of a graph to be uniform amongst all possible graphs. To do so we set a prior on the number of edges so that $P(G_{N_e}) = \binom{\binom{N_v}{2}}{N_e}$. It may be desirable to place a $Beta$ prior in $p$ with higher mass on lower probabilities. 
 
+##  Posterior
+
+$$\prod_{i=1}^{N_v}\prod_{t=1}^N P(Z_{i,t}|Z_{t-1},\theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2,G,p)P(\theta|K)P(K)P(\prod_{k=1}^{K+1}\lambda^{(k)} )P(\prod_{i=0}^2 \gamma_i)P(G|p)P(p)$$
 
 
-# Bayesian Inference
-In Bayesian analysis, we aim to estimate the distribution of the parameters on interest given the data via Bayes' theorem.
-$$ P(\theta|D) = \frac{P(D|\theta)P(\theta)}{P(D)} $$
-$P(\theta|D)$ is the posterior distribution of the parameters, $\theta$ given the data $D$. $P(D|\theta)$ is the likelihood of the data $D$ given the parameter value $\theta$. $P(\theta)$ is the prior distribution of $\theta$ and represents the belief that the parameters will take certain values. The prior distribution can be specified to by "uninformative" in the sense that the contribution to the posterior likelihood is much smaller than the likelihood. $P(D)$ is the probability of the data marginalized over the parameter space. One issue is the computation of $P(\text{data})$ which is given by $\int P(\text{data}|\text{parameters})P(\text{parameters})$ over the entire parameter space. With many parameters this integral it typically analytically intractable. To handle this Markov chain Monte-Carlo methods are used.
+
 
 ## Metropolis-Hastings Algorithm
 To compute samples from the posterior distribution, the Metropolis-Hastings algorithm (and its variant, the Metropolis-Hastings-Green algorithm) is used. The algorithm begins with an Markov chain with some arbitrary transition probabilities $q$, whose state space is the parameter space of the model, $\theta$. After initializing the Markov chain in some initial state $\theta_0$, the algorithm modifies the transition probabilities in such a way that the new transition probabilities has a stationary distribution that is the target posterior. That is the Markov chain will eventually enter states in proportion to the posterior distribution.
@@ -321,7 +310,7 @@ A similar issue is also seen when jumping between parameter spaces. To handle th
 
 
 
-# MCMC/ Implementation
+# Methods/ Implementation
 Here I describe the Metropolis Hastings algorithms used to draw samples from the posterior distributions of the parameters of interest. The algorithms are implemented in base R with some elements of the likelihood computation implemented in Rcpp. The operators generate and evaluate proposals. Each operator is a R function that accepts a list of parameters that represent the current state of the Markov chain, then proposes an new state for a given parameter (or set of parameters). The function then calculates the log acceptance ratio and determines whether to accepts it's proposal or reject it. It then returns the proposed parameters or returns the original parameters (in the case of rejecting).
 
 ## Likelihood Computation
@@ -331,9 +320,9 @@ Each operator receives the log-likelihood of its proposal by pass the proposal t
 This differs from @held and @green who perform separate likelihood computations for each three operators: birth (adding a changepoint), death (removing a changepoint) and changing a $\lambda$ value. Each of these operators changes only a portion of the total likelihood computation and as such, it is computationally more efficient to only compute the ratio of the changes. For example, let $\boldsymbol{\theta^*}$ be the proposed changepoint vector where $K^* = K + 1$ (i.e. a new changepoint is added). Let $m$ be the index of the proposed changepoint and the rest of the changepoints remain the same. Then the only part of the likelihood computation that changes is in the interval between timepoints $[\theta_{m-1}, \theta_{m+1})$ and since its the ratio between the likelihoods of the proposed vs the current parameter set is important, the parts that remain identical have a likelihood of 1 (or log-likelihood of 0) and all that remains of the likelihood computation is:
 
 Similar reductions in comptutation can be done following changes in the graph. If an edge $e^*_{ik}$ is proposed then only $Y_{i,t}$ and $Y_{k,t}$ and the corresponding $Z$'s are affected. As such only those two cities need to be updated. 
-$$Y^*_{i,t}|G^* \sim ~ Pois\big(m\lambda_tZ_{k,t-1} +m\lambda_t\sum_{j=1}^{N_v}Z_{j,t-1}1[e_{ij}\in E(G)]+ \lambda_tZ_{i,t-1}\big) $$
-$$Y^*_{k,t}|G^* \sim  Pois\big(m\lambda_tZ_{i,t-1} +m\lambda_t\sum_{j=1}^{N_v}Z_{j,t-1}1[e_{ij}\in E(G)]+ \lambda_tZ_{i,t-1}\big) $$
-$$\begin{aligned} Y^*_{j,t}|G^* &\sim Pois\big(m\lambda_t\sum_{l=1}^{N_v}Z_{j,t-1}1[e_{jl}\in E(G^*)]+ \lambda_tZ_{i,t-1}\big)\\ & \sim  Pois\big(m\lambda_t\sum_{l=1}^{N_v}Z_{j,t-1}1[e_{jl}\in E(G)]+ \lambda_tZ_{i,t-1}\big) \end{aligned}$$
+$$Y^*_{i,t}|G^* \sim ~ \text{Pois}\big(m\lambda_tZ_{k,t-1} +m\lambda_t\sum_{j=1}^{N_v}Z_{j,t-1}1[e_{ij}\in E(G)]+ \lambda_tZ_{i,t-1}\big) $$
+$$Y^*_{k,t}|G^* \sim  \text{Pois}\big(m\lambda_tZ_{i,t-1} +m\lambda_t\sum_{j=1}^{N_v}Z_{j,t-1}1[e_{ij}\in E(G)]+ \lambda_tZ_{i,t-1}\big) $$
+$$\begin{aligned} Y^*_{j,t}|G^* &\sim \text{Pois}\big(m\lambda_t\sum_{l=1}^{N_v}Z_{j,t-1}1[e_{jl}\in E(G^*)]+ \lambda_tZ_{i,t-1}\big)\\ & \sim  \text{Pois}\big(m\lambda_t\sum_{l=1}^{N_v}Z_{j,t-1}1[e_{jl}\in E(G)]+ \lambda_tZ_{i,t-1}\big) \end{aligned}$$
 
 Then the likelihood ratio can be computed as (dropping conditioning notation for clarity)
 
@@ -468,6 +457,12 @@ load("2c_sim_data.RData")
 
 
 
+
+
+Figure \ref{fig:lam_trace} are trace plots, which are time series of the parameter draws. Typically a "good" trace plot shows no obvious autocorrelation (which can indicate a proposal step that is too small) or flat portions (proposal steps that are too large). Trace plots with these patterns indicate that the sampler has not converged to the posterior distribution of the parameter. "Tuning" or adjusting the proposal jump size can help fix these patterns, with the end goal of being able to efficiently explore the posterior distribution of the parameter. The trace plots for the $\gamma$ parameters seem to rather well mixed though there is a slight pattern to the $\gamma_0$ trace plot. This is likely due to the correlation between $\gamma_0$, $\gamma_1$ and $\gamma_2$ due to their nature of parameterizing a cyclical function. The same is true for the $\theta$ parameters; they are constrained such that $\theta_1 < \theta_2 < \theta_3$. This autocorrelation seen in the trace plots could possibly be reduced via thinning or taking every $n$ samples instead of every sample.
+
+The $\theta_3$ trace plot is of note because it is only valid for when $K = 3$; the $\theta_3$ does not exist otherwise.
+
 ```{r, fig.cap = "\\label{fig:lam_trace}Trace plots for $\\boldsymbol{\\gamma}$ and $\\boldsymbol{\\theta}$. The trace plots seem relatively well mixed. The autocorrelation is likely a function of the correlation between the each set of $\\boldsymbol{\\gamma}$ and $\\boldsymbol{\\theta}$ respectively. Thinning could potentially reduce the autocorrelation between sample draws.", fig.ncol = 1}
 
 burnin = 40000
@@ -486,13 +481,9 @@ mtext(text="Iteration", side=1, line=2, outer=TRUE)
 
 ```
 
-Figure \ref{fig:lam_trace} are trace plots, which are time series of the parameter draws. Typically a "good" trace plot shows no obvious autocorrelation (which can indicate a proposal step that is too small) or flat portions (proposal steps that are too large). Trace plots with these patterns indicate that the sampler has not converged to the posterior distribution of the parameter. "Tuning" or adjusting the proposal jump size can help fix these patterns, with the end goal of being able to efficiently explore the posterior distribution of the parameter. The trace plots for the $\gamma$ parameters seem to rather well mixed though there is a slight pattern to the $\gamma_0$ trace plot. This is likely due to the correlation between $\gamma_0$, $\gamma_1$ and $\gamma_2$ due to their nature of parameterizing a cyclical function. The same is true for the $\theta$ parameters; they are constrained such that $\theta_1 < \theta_2 < \theta_3$. This autocorrelation seen in the trace plots could possibly be reduced via thinning or taking every $n$ samples instead of every sample.
-
-The $\theta_3$ trace plot is of note because it is only valid for when $K = 3$; the $\theta_3$ does not exist otherwise.
-
 ```{r, cor_gammas, fig.cap = "Plots of $\\gamma_0$ vs $\\gamma_1$ and $\\gamma_0$ vs $\\gamma_2$. Each point represents the corresponding parameter value at the same sample draw, i.e., the values of each parameter when the sample was accepted. The strong correlation between the parameters can lead to poor mixing. Note the tails are due to the initial values of the MCMC chain.", fig.ncol = 1}
 par(mfrow = c(1,2), las  = 0 )
-par(mar = c(4,4,1,2), oma = c(4,0,3,0), mgp = c(3,1,0))
+par(mar = c(1,4,1,2), oma = c(3,0,2,0), mgp = c(2,1,0))
 plot(res$gamma[,1][seq(1,length(res$gamma[,1]), length = 5000)], res$gamma[,2][seq(1,length(res$gamma[,1]), length = 5000)], xlab = expression(gamma[0]), ylab = expression(gamma[1]))
 plot(res$gamma[,1][seq(1,length(res$gamma[,1]), length = 5000)], res$gamma[,3][seq(1,length(res$gamma[,1]), length = 5000)], xlab = expression(gamma[0]), ylab = expression(gamma[2]))
 title(expression(paste("Correlation between ", gamma,"s"), outer = TRUE))
@@ -501,9 +492,10 @@ mtext(text="Iteration", side = 1, line = 2, outer = TRUE)
 
 
 
-```{r lambda_traces, fig.cap = "Trace plots for all $\\lambda$ values and filtered for K = 2. Overall the trace plots show that the samplers are mixing well with some minor autocorrelation that could potentially be resolved with thinning or more samples. The raw trace plots include the $\ambda$ values when there are 3 and 4 separate $\ambda$'s and is the cause of the random jumps.", fig.ncol = 1}
+```{r lambda_traces, fig.cap = "Trace plots for all $\\lambda$ values and filtered for K = 2. Overall the trace plots show that the samplers are mixing well with some minor autocorrelation that could potentially be resolved with thinning or more samples. The raw trace plots include the $\ambda$ values when there are 3 and 4 separate $\ambda$'s and is the cause of the random jumps.", fig.ncol = 1, fig.asp=1}
+burnin = 40000
 par(mfrow = c(2,2), las  = 0 )
-par(mar = c(4,4,1,2), oma = c(4,0,3,0), mgp = c(2,0.65,0))
+par(mar = c(1,4,1,2), oma = c(3,0,2,0), mgp = c(2,0.65,0))
 plot(res$lambda[-(1:burnin),1], type = "l", ylab =expression(lambda[1]), xlab = "")
 plot(res$lambda[-(1:burnin),2], type = "l", ylab =expression(lambda[2]), xlab = "")
 plot(res$lambda[-(1:burnin),3], type = "l", ylab =expression(lambda[3]), xlab = "")
@@ -511,11 +503,18 @@ plot(res$lambda[-(1:burnin),4], type = "l", ylab =expression(lambda[4]), xlab = 
 title(expression(paste(lambda, " Trace Plots")), outer = TRUE)
 mtext(text="Iteration", side = 1, line = 2, outer = TRUE)
 
-par(mfrow = c(1,2), las  = 0 )
-par(mar = c(4,4,1,2), oma = c(4,0,3,0), mgp = c(2,0.65,0))
+par(mfrow = c(2,2), las  = 0 )
+par(mar = c(2,6,1,1), oma = c(3,0,2,0), mgp = c(2,0.65,0))
 plot(res$lambda[(res$K == 2),2][-(1:burnin)], type = "l", ylab =expression(lambda[2]), xlab = "")
+mtext(text="K = 2", side = 2, line = 4)
+par(mar = c(2,3,1,1))
 plot(res$lambda[(res$K == 2),3][-(1:burnin)], type = "l", ylab =expression(lambda[3]), xlab = "")
-title(expression(paste(lambda, " Trace Plots for K = 2")), outer = TRUE)
+par(mar = c(2,6,1,1))
+plot(res$lambda[(res$K == 3),2], type = "l", ylab =expression(lambda[2]), xlab = "")
+mtext(text="K = 3", side = 2, line = 4)
+par(mar = c(2,3,1,1))
+plot(res$lambda[(res$K == 3),3], type = "l", ylab =expression(lambda[3]), xlab = "")
+title(expression(paste(lambda, " Trace Plots for K = 2 & K = 3")), outer = TRUE)
 mtext(text="Iteration", side = 1, line = 2, outer = TRUE)
 ```
 
@@ -526,7 +525,7 @@ The $\boldsymbol{\lambda}$ trace plots have interesting patterning, specifically
 
 ```{r density_plots, fig.asp = 1,fig.ncol=1}
 par(mfrow = c(3, 3), las = 0)
-par(mar = c(4,4,1,2), oma = c(4,0,3,0), mgp = c(2,0.65,0))
+par(mar = c(2,4,1,2), oma = c(3,0,2,0), mgp = c(2,0.65,0))
 plot(Z, type = "l", xlab = "time step", ylab = "counts")
 plot(density(res$K), title = "Data", xlab = "K: number of changepoints", main = "")
 plot(density(res$lambda[-(1:burnin), 1], bw=0.01), xlab = expression(lambda[1]), main = "")
