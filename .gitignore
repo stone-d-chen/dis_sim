@@ -1,0 +1,11 @@
+
+*.toc
+thesis_draft.synctex.gz
+thesis_draft.pdf
+thesis_draft.pdf
+*.out
+*.html
+*.log
+*.blg
+*.bbl
+*.aux

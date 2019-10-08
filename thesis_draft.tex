@@ -1,6 +1,6 @@
 \documentclass[]{article}
 \usepackage{lmodern}
-\usepackage{amssymb,amsmath}
+\usepackage{amssymb,amsmath, natbib}
 \usepackage{ifxetex,ifluatex}
 \usepackage{fixltx2e} % provides \textsubscript
 \ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
@@ -110,7 +110,7 @@ an outbreak of severe illness in Germany, with \textasciitilde{}3,950
 affected compared with \textasciitilde{}200 cases a year typically seen.
 Of those infected 53 died.
 
-In this - we extend a method presented by Held et al.
+In this - we extend a method presented by Held et al. \citet{held2006}
 (\protect\hyperlink{ref-held_two-component_2006}{2006}) for modeling
 parameters of infectious disease counts in a Bayesian framework. Their
 method models the count data as a branching Poisson process with a
@@ -820,16 +820,9 @@ Model}\label{graph-estimation-on-fixed-two-component-model}}
 \hypertarget{conclusiondiscussion}{%
 \section{Conclusion/Discussion}\label{conclusiondiscussion}}
 
-\hypertarget{citations}{%
-\section*{Citations}\label{citations}}
-\addcontentsline{toc}{section}{Citations}
 
-\hypertarget{refs}{}
-\leavevmode\hypertarget{ref-held_two-component_2006}{}%
-Held, Leonhard, Mathias Hofmann, Michael Höhle, and Volker Schmid. 2006.
-``A Two-Component Model for Counts of Infectious Diseases.''
-\emph{Biostatistics} 7 (3): 422--37.
-\url{https://doi.org/10.1093/biostatistics/kxj016}.
+\bibliographystyle{plainnat}
+\bibliography{thesisrefs} 
 
 
 \end{document}
