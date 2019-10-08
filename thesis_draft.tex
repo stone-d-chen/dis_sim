@@ -1,6 +1,6 @@
 \documentclass[]{article}
 \usepackage{lmodern}
-\usepackage{amssymb,amsmath, natbib}
+\usepackage{amssymb,amsmath}
 \usepackage{ifxetex,ifluatex}
 \usepackage{fixltx2e} % provides \textsubscript
 \ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
@@ -28,6 +28,7 @@
             pdfborder={0 0 0},
             breaklinks=true}
 \urlstyle{same}  % don't use monospace font for urls
+\usepackage{longtable,booktabs}
 \usepackage{graphicx,grffile}
 \makeatletter
 \def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
@@ -95,37 +96,70 @@
 \captionsetup{width=4.5in}
 \usepackage{algorithm}
 
-\newcommand{\dw}[1]{{\color{red}{#1}}}
-
 \begin{document}
 \maketitle
 
-%{
-%\setcounter{tocdepth}{2}
-%\tableofcontents
-%}
+{
+\setcounter{tocdepth}{2}
+\tableofcontents
+}
+\newcommand{\dw}[1]{{\color{red}{#1}}}
+
 \hypertarget{intro}{%
 \section{Intro}\label{intro}}
 
-Over May 2011, a strain \emph{Escherichia coli} (\emph{E. coli}) caused
-an outbreak of severe illness in Germany, with \textasciitilde{}3,950
-affected compared with \textasciitilde{}200 cases a year typically seen.
-Of those infected 53 died.
+In this thesis we perform inference on an extension of a model presented
+by Held et al. (\protect\hyperlink{ref-held_two-component_2006}{2006})
+for modeling parameters of infectious disease counts in a Bayesian
+framework. Their method models surveillance data of infectious disease
+counts as a branching Poisson process with a cyclical endemic parameter.
+The cyclical endemic parameter models ``seasonality'' of disease counts
+(e.g.~seasonal flu patterns) and occasional ``outbreaks'' (e.g.~swine
+flu, H1N1). Their method models a single time series of count data from
+a specific location or region. We attempt to extend their model to
+multiple time series of count data that are spatially related.
 
-In this - \dw{thesis} we \dw{perform inference on an extension of a model} presented by \citet{held2006} for modeling
-parameters of infectious disease counts in a Bayesian framework. Their
-method models the count data \dw{counts of what?} as a branching Poisson process with a
-cyclical endemic parameter.
+Specifically the dataset of interest contains data from 412
+administrative districts in Germany. Each district has surveillance data
+which contains the weekly case counts of severe gastroenteritis or
+stomach flu. The data spans May 2 and July 26 2011 when a strain of
+\emph{Escherichia coli} (\emph{E. coli}) caused an outbreak of severe
+illness in Germany. Over 3,950 people were affected compared with the
+typically seen \textasciitilde{}200 cases a year typically seen. Many
+developed severe complications and over 50 people died.
 
-We extend their model to incorporate a graph \dw{what does graph represent}.
+We attempt to extend their model to incorporate a graph. The graph
+represents a transmission network between the different spatial regions
+(e.g., the administration district) and allow dependencies between count
+data in those regions. The end goal will be to be able to estimate
+covariates that affect the probability of transmission between regions
+(e.g., the shipping network that transmitted the \emph{E. coli}
+contaminated food).
 
 \hypertarget{comments}{%
 \subsection{Comments}\label{comments}}
 
-Expand and metion general ideas of epidemics spreading \& how we model
-them (\textasciitilde{}1 page)
-
-\dw{describe a basic SIS or SIR epidemic model here. A decent reference for all this stuff is \citet{keeling2011} - the library has a copy. Or look at eg refs used inthe Held paper or in the epinet papers.}
+Statistical methods to model infectious disease data typically use
+mechanistic models (models that use expert knowledge of the underyling
+process) such as the Susceptible-(Exposed)-Infectious-Recovery
+(SIR/SEIR) model and other variants. In the SEIR model, the entire
+closed population of individuals is in one of the four states.
+susceptible individuals can become exposed when in contact with an
+infectious invidual, exposed individuals will eventually become
+infectious and infectious individuals will eventually be recovered and
+cannot be re-exposed or infect susceptibles (e.g.~by immunity). Given
+partial data on the susceptible, exposed, infectious and removed times
+parameters surrounding the epidemic of interest can be estimated. For
+example in ({\textbf{???}}), the time spent in each state is modeled
+with a Gamma random variables and the parameters of the random variables
+can be estimated from the data. Other parameters of interest such as the
+intial infected can also be estimated. They also estimate contact
+network between individuals, covariates affecting the formation of the
+contact network and a corresponding transmission tree. While effective,
+this sort of mechanistic model requires data at a granularity not
+typical of surveillance data, (such as information on the susceptibles)
+and often contains other problems such as underreporting
+({\textbf{???}})
 
 \hypertarget{intro-to-two-component-model}{%
 \section{Intro to Two-Component
@@ -133,7 +167,7 @@ Model}\label{intro-to-two-component-model}}
 
 Held et al. (\protect\hyperlink{ref-held_two-component_2006}{2006})
 presents a stochastic model for the statistical analysis of infectious
-disease counts that serves as the basis of the the extended graph model.
+disease counts that serves as the basis of the theextended graph model.
 
 The two components of the model are a simple Poisson branching process
 with autoregressive parameter \(\lambda\) and a seasonal component fit
@@ -307,11 +341,11 @@ priors
 
 We would like to extend our data from a univariate time series of counts
 \(Z_t\) to a multiple time series of counts \(Z_{i,t}\) where \(i\) now
-indexes separate time series. In this case, \(i\) indexes individual
-cities where \(Z_i\) represents the infectious disease counts in city
-\(i\). Now, a city \(i\)'s epidemic disease count at time \(t\) is
-modelled as a function of both it's counts \(Z_{i,t-1}\) and possibly
-other cities counts as well.
+indexes separate time series. In this case we will say the \(i\) indexes
+individual ``cities'' where \(Z_i\) represents the infectious disease
+counts in city \(i\). Now, a city \(i\)'s epidemic disease count at time
+\(t\) is modelled as a function of both it's counts \(Z_{i,t-1}\) and
+possibly other cities counts as well.
 
 This dependency between cities is represented with a fixed graph
 \(G_{N_v, E}\) where \(N_v\), the number of vertices in graph is fixed
@@ -812,9 +846,91 @@ rewiring (v1, v2), the Hastings ratio is 1
 \hypertarget{results}{%
 \section{Results}\label{results}}
 
+\hypertarget{results-1}{%
+\section{Results}\label{results-1}}
+
+\hypertarget{two-component-model}{%
+\subsection{Two-Component Model}\label{two-component-model}}
+
+In this paper, I have implemented an MCMC algorithm that estimates the
+Two-Component Model from simulated data. The simulation parameters are
+taken from ({\textbf{???}})
+
+\begin{longtable}[]{@{}cc@{}}
+\toprule
+parameters & simulation values\tabularnewline
+\midrule
+\endhead
+K: number of changespoints & 2\tabularnewline
+\(\boldsymbol{\lambda}\): epidemic parameters & 0.7, 1.2,
+0.7\tabularnewline
+\(\boldsymbol{\gamma}\): endemic parameters & log(10), 0.5,
+1.5\tabularnewline
+\(\boldsymbol{\theta}\): changepoints & 39, 49\tabularnewline
+\bottomrule
+\end{longtable}
+
+\begin{figure}
+\centering
+\includegraphics{thesis_draft_files/figure-latex/unnamed-chunk-2-1.pdf}
+\caption{\label{fig:lam_trace}Trace plots for \(\boldsymbol{\gamma}\)
+and \(\boldsymbol{\theta}\). The trace plots seem relatively well mixed.
+The autocorrelation is likely a function of the correlation between the
+each set of \(\boldsymbol{\gamma}\) and \(\boldsymbol{\theta}\)
+respectively. Thinning could potentially reduce the autocorrelation
+between sample draws.}
+\end{figure}
+
+Figure \ref{fig:lam_trace} are trace plots, which are time series of the
+parameter draws. Typically a ``good'' trace plot shows no obvious
+autocorrelation (which can indicate a proposal step that is too small)
+or flat portions (proposal steps that are too large). Trace plots with
+these patterns indicate that the sampler has not converged to the
+posterior distribution of the parameter. ``Tuning'' or adjusting the
+proposal jump size can help fix these patterns, with the end goal of
+being able to efficiently explore the posterior distribution of the
+parameter. The trace plots for the \(\gamma\) parameters seem to rather
+well mixed though there is a slight pattern to the \(\gamma_0\) trace
+plot. This is likely due to the correlation between \(\gamma_0\),
+\(\gamma_1\) and \(\gamma_2\) due to their nature of parameterizing a
+cyclical function. The same is true for the \(\theta\) parameters; they
+are constrained such that \(\theta_1 < \theta_2 < \theta_3\). This
+autocorrelation seen in the trace plots could possibly be reduced via
+thinning or taking every \(n\) samples instead of every sample.
+
+The \(\theta_3\) trace plot is of note because it is only valid for when
+\(K = 3\); the \(\theta_3\) does not exist otherwise.
+
+\begin{figure}
+\centering
+\includegraphics{thesis_draft_files/figure-latex/cor_gammas-1.pdf}
+\caption{Plots of \(\gamma_0\) vs \(\gamma_1\) and \(\gamma_0\) vs
+\(\gamma_2\). Each point represents the corresponding parameter value at
+the same sample draw, i.e., the values of each parameter when the sample
+was accepted. The strong correlation between the parameters can lead to
+poor mixing. Note the tails are due to the initial values of the MCMC
+chain.}
+\end{figure}
+
+\includegraphics{thesis_draft_files/figure-latex/lambda_traces-1.pdf}
+\includegraphics{thesis_draft_files/figure-latex/lambda_traces-2.pdf}
+
+The \(\boldsymbol{\lambda}\) trace plots have interesting patterning,
+specifically the \(\lambda_2\) and \(\lambda_3\) traces appear to fix
+tightly at \(1.2\) and \(0.7\) respectively while also jumping to
+\(0.7\) and \(1.2\) respectively. This is an artifact of the dimension
+change in the model. When \(K = 2\), \(\lambda_2\) is tightly fixed
+around \(1.2\) and \(\lambda_3\) at \(0.7\) but when \(K = 2\),
+\(\lambda_3\) can take the role of fitting the outbreak while
+\(\lambda_4\) models to the return \(0.7\), the baseline.
+
+\includegraphics{thesis_draft_files/figure-latex/density_plots-1.pdf}
+
 \hypertarget{two-component-model-on-simulated-data}{%
 \subsection{Two-Component Model on Simulated
 Data}\label{two-component-model-on-simulated-data}}
+
+Beginning with the simple
 
 \hypertarget{graph-estimation-on-fixed-two-component-model}{%
 \subsection{Graph Estimation on Fixed Two-Component
@@ -823,9 +939,16 @@ Model}\label{graph-estimation-on-fixed-two-component-model}}
 \hypertarget{conclusiondiscussion}{%
 \section{Conclusion/Discussion}\label{conclusiondiscussion}}
 
+\hypertarget{citations}{%
+\section*{Citations}\label{citations}}
+\addcontentsline{toc}{section}{Citations}
 
-\bibliographystyle{plainnat}
-\bibliography{thesisrefs} 
+\hypertarget{refs}{}
+\leavevmode\hypertarget{ref-held_two-component_2006}{}%
+Held, Leonhard, Mathias Hofmann, Michael Höhle, and Volker Schmid. 2006.
+``A Two-Component Model for Counts of Infectious Diseases.''
+\emph{Biostatistics} 7 (3): 422--37.
+\url{https://doi.org/10.1093/biostatistics/kxj016}.
 
 
 \end{document}
