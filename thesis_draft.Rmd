@@ -29,6 +29,7 @@ header-includes:
  - \captionsetup{width=4.5in}
  - \usepackage{algorithm}
 ---
+\newcommand{\dw}[1]{{\color{red}{#1}}}
 
 ```{r, setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
@@ -39,15 +40,19 @@ library(igraph)
 
 # Intro 
 
-Over May 2011, a strain *Escherichia coli* (*E. coli*) caused an outbreak of severe illness in Germany, with ~3,950 affected compared with ~200 cases a year typically seen. Of those infected 53 died.
 
-In this - we extend a method presented by @held_two-component_2006 for modeling parameters of infectious disease counts in a Bayesian framework. Their method models the count data as a branching Poisson process with a cyclical endemic parameter. 
+In this thesis we perform inference on an extension of a model presented by @held_two-component_2006 for modeling parameters of infectious disease counts in a Bayesian framework. Their method models surveillance data of infectious disease counts as a branching Poisson process with a cyclical endemic parameter. The cyclical endemic parameter models "seasonality" of disease counts (e.g. seasonal flu patterns) and occasional "outbreaks" (e.g. swine flu, H1N1).  Their method models a single time series of count data from a specific location or region. We attempt to extend their model to multiple time series of count data that are spatially related.
 
-We then extend their model to incorporate a graph.
+Specifically the dataset of interest contains data from 412 administrative districts in Germany. Each district has surveillance data which contains the weekly case counts of severe gastroenteritis or stomach flu. The data spans May 2 and July 26 2011 when a strain of *Escherichia coli* (*E. coli*) caused an outbreak of severe illness in Germany. Over 3,950 people were affected compared with the typically seen ~200 cases a year typically seen. Many developed severe complications and over 50 people died.
+
+We attempt to extend their model to incorporate a graph. The graph represents a transmission network between the different spatial regions (e.g., the administration district) and allow dependencies between count data in those regions. The end goal will be to be able to estimate covariates that affect the probability of transmission between regions (e.g., the shipping network that transmitted the *E. coli* contaminated food).
 
 ## Comments
 
-Expand and metion general ideas of epidemics spreading & how we model them (~1 page)
+Statistical methods to model infectious disease data typically use mechanistic models (models that use expert knowledge of the underyling process) such as the Susceptible-(Exposed)-Infectious-Recovery (SIR/SEIR) model and other variants. In the SEIR model, the entire closed population of individuals is in one of the four states. susceptible individuals can become exposed when in contact with an infectious invidual, exposed individuals will eventually become infectious and infectious individuals will eventually be recovered and cannot be re-exposed or infect susceptibles (e.g. by immunity). Given partial data on the susceptible, exposed, infectious and removed times parameters surrounding the epidemic of interest can be estimated. For example in @groendyke_2011, the time spent in each state is modeled with a Gamma random variables and the parameters of the random variables can be estimated from the data. Other parameters of interest such as the intial infected can also be estimated. They also estimate contact network between individuals, covariates affecting the formation of the contact network and a corresponding transmission tree. While effective, this sort of mechanistic model requires data at a granularity not typical of surveillance data, (such as information on the susceptibles) and often contains other problems such as underreporting @diggle
+
+
+
 
 # Intro to Two-Component Model
 
@@ -225,7 +230,7 @@ $$\prod_{t=1}^N P(Z_t|Z_{t-1},\theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, 
 
 # Graph Data Introduction
 
-We would like to extend our data from a univariate time series of counts $Z_t$ to a multiple time series of counts $Z_{i,t}$ where $i$ now indexes separate time series. In this case, $i$ indexes individual cities where $Z_i$ represents the infectious disease counts in city $i$. Now, a city $i$'s epidemic disease count at time $t$ is modelled as a function of both it's counts $Z_{i,t-1}$ and possibly other cities counts as well.
+We would like to extend our data from a univariate time series of counts $Z_t$ to a multiple time series of counts $Z_{i,t}$ where $i$ now indexes separate time series. In this case we will say the $i$ indexes individual "cities" where $Z_i$ represents the infectious disease counts in city $i$. Now, a city $i$'s epidemic disease count at time $t$ is modelled as a function of both it's counts $Z_{i,t-1}$ and possibly other cities counts as well.
 
 This dependency between cities is represented with a fixed graph $G_{N_v, E}$ where $N_v$, the number of vertices in graph is fixed and equal to the number of cities and $N_e$ is the number of edges in the graph, representing dependencies between cities' disease counts. We call $V = \{1,\dots,N_v \}$ the vertex set of the graph where $N_v$ is the number of cities/individual time series of disease counts, and $E(G)$ is a set of unordered pairs of vertices $\{i,j\}$ where $i,j \in V$ and $i \neq j$ that describes the edges present in graph $G$. We represent the edge $\{i,j\}$ as $e_{ij}$ and the indicator $1[e_{ij}=1]$ if $\{i,j\} \in E(G)$ and 0 otherwise. For clarity, the subscripts $N_v, E$ will be dropped and it's assumed that the true graph has fixed number of vertices and fixed edges.
 
@@ -443,7 +448,103 @@ Rewire randomly selects an edge (v1, v2) and deletes it from the adjacency list.
 
 # Results
 
+# Results
+
+## Two-Component Model
+In this paper, I have implemented an MCMC algorithm that estimates the Two-Component Model from simulated data. The simulation parameters are taken from @held 
+
+| parameters    | simulation values    |
+| :-------------: |:-------------:|
+| K: number of changespoints      |2 | 
+| $\boldsymbol{\lambda}$: epidemic parameters     | 0.7, 1.2, 0.7      |
+| $\boldsymbol{\gamma}$: endemic parameters | log(10), 0.5, 1.5     |
+|$\boldsymbol{\theta}$: changepoints | 39, 49 |
+
+```{r data load}
+load("2c_results.RData")
+load("2c_sim_data.RData")
+```
+
+
+
+
+```{r, fig.cap = "\\label{fig:lam_trace}Trace plots for $\\boldsymbol{\\gamma}$ and $\\boldsymbol{\\theta}$. The trace plots seem relatively well mixed. The autocorrelation is likely a function of the correlation between the each set of $\\boldsymbol{\\gamma}$ and $\\boldsymbol{\\theta}$ respectively. Thinning could potentially reduce the autocorrelation between sample draws.", fig.ncol = 1}
+
+burnin = 40000
+
+par(mfrow = c(2,3), las = 1)
+par(mar = c(1,4,2,2), oma = c(3,0,2,0),mgp = c(2,1,0))
+plot(res$gamma[-(1:burnin), 1], type = "l", ylab = expression(gamma[0]), xlab = "")
+plot(res$gamma[-(1:burnin), 2], type = "l", ylab = expression(gamma[1]), xlab = "")
+plot(res$gamma[-(1:burnin), 3], type = "l", ylab = expression(gamma[2]), xlab = "")
+
+plot(res$theta[-(1:burnin), 1], type = "l", ylab =expression(theta[1]), xlab = "")
+plot(res$theta[-(1:burnin), 2], type = "l", ylab =expression(theta[2]), xlab = "")
+plot(res$theta[(res$K == 3), 3], type = "l", ylab =expression(theta[3]), xlab = "")
+title(expression(paste("Trace Plots for ",gamma, " and ", theta)), outer = TRUE, line = 1)
+mtext(text="Iteration", side=1, line=2, outer=TRUE)
+
+```
+
+Figure \ref{fig:lam_trace} are trace plots, which are time series of the parameter draws. Typically a "good" trace plot shows no obvious autocorrelation (which can indicate a proposal step that is too small) or flat portions (proposal steps that are too large). Trace plots with these patterns indicate that the sampler has not converged to the posterior distribution of the parameter. "Tuning" or adjusting the proposal jump size can help fix these patterns, with the end goal of being able to efficiently explore the posterior distribution of the parameter. The trace plots for the $\gamma$ parameters seem to rather well mixed though there is a slight pattern to the $\gamma_0$ trace plot. This is likely due to the correlation between $\gamma_0$, $\gamma_1$ and $\gamma_2$ due to their nature of parameterizing a cyclical function. The same is true for the $\theta$ parameters; they are constrained such that $\theta_1 < \theta_2 < \theta_3$. This autocorrelation seen in the trace plots could possibly be reduced via thinning or taking every $n$ samples instead of every sample.
+
+The $\theta_3$ trace plot is of note because it is only valid for when $K = 3$; the $\theta_3$ does not exist otherwise.
+
+```{r, cor_gammas, fig.cap = "Plots of $\\gamma_0$ vs $\\gamma_1$ and $\\gamma_0$ vs $\\gamma_2$. Each point represents the corresponding parameter value at the same sample draw, i.e., the values of each parameter when the sample was accepted. The strong correlation between the parameters can lead to poor mixing. Note the tails are due to the initial values of the MCMC chain.", fig.ncol = 1}
+par(mfrow = c(1,2), las  = 0 )
+par(mar = c(4,4,1,2), oma = c(4,0,3,0), mgp = c(3,1,0))
+plot(res$gamma[,1][seq(1,length(res$gamma[,1]), length = 5000)], res$gamma[,2][seq(1,length(res$gamma[,1]), length = 5000)], xlab = expression(gamma[0]), ylab = expression(gamma[1]))
+plot(res$gamma[,1][seq(1,length(res$gamma[,1]), length = 5000)], res$gamma[,3][seq(1,length(res$gamma[,1]), length = 5000)], xlab = expression(gamma[0]), ylab = expression(gamma[2]))
+title(expression(paste("Correlation between ", gamma,"s"), outer = TRUE))
+mtext(text="Iteration", side = 1, line = 2, outer = TRUE)
+```
+
+
+
+```{r lambda_traces, fig.cap = "Trace plots for all $\\lambda$ values and filtered for K = 2. Overall the trace plots show that the samplers are mixing well with some minor autocorrelation that could potentially be resolved with thinning or more samples. The raw trace plots include the $\ambda$ values when there are 3 and 4 separate $\ambda$'s and is the cause of the random jumps.", fig.ncol = 1}
+par(mfrow = c(2,2), las  = 0 )
+par(mar = c(4,4,1,2), oma = c(4,0,3,0), mgp = c(2,0.65,0))
+plot(res$lambda[-(1:burnin),1], type = "l", ylab =expression(lambda[1]), xlab = "")
+plot(res$lambda[-(1:burnin),2], type = "l", ylab =expression(lambda[2]), xlab = "")
+plot(res$lambda[-(1:burnin),3], type = "l", ylab =expression(lambda[3]), xlab = "")
+plot(res$lambda[-(1:burnin),4], type = "l", ylab =expression(lambda[4]), xlab = "")
+title(expression(paste(lambda, " Trace Plots")), outer = TRUE)
+mtext(text="Iteration", side = 1, line = 2, outer = TRUE)
+
+par(mfrow = c(1,2), las  = 0 )
+par(mar = c(4,4,1,2), oma = c(4,0,3,0), mgp = c(2,0.65,0))
+plot(res$lambda[(res$K == 2),2][-(1:burnin)], type = "l", ylab =expression(lambda[2]), xlab = "")
+plot(res$lambda[(res$K == 2),3][-(1:burnin)], type = "l", ylab =expression(lambda[3]), xlab = "")
+title(expression(paste(lambda, " Trace Plots for K = 2")), outer = TRUE)
+mtext(text="Iteration", side = 1, line = 2, outer = TRUE)
+```
+
+The $\boldsymbol{\lambda}$ trace plots have interesting patterning, specifically the $\lambda_2$ and $\lambda_3$ traces appear to fix tightly at $1.2$ and $0.7$ respectively while also jumping to $0.7$ and $1.2$ respectively. This is an artifact of the dimension change in the model. When $K = 2$, $\lambda_2$ is tightly fixed around $1.2$ and $\lambda_3$ at $0.7$ but when $K = 2$, $\lambda_3$ can take the role of fitting the outbreak while $\lambda_4$ models to the return $0.7$, the baseline.
+
+
+
+
+```{r density_plots, fig.asp = 1,fig.ncol=1}
+par(mfrow = c(3, 3), las = 0)
+par(mar = c(4,4,1,2), oma = c(4,0,3,0), mgp = c(2,0.65,0))
+plot(Z, type = "l", xlab = "time step", ylab = "counts")
+plot(density(res$K), title = "Data", xlab = "K: number of changepoints", main = "")
+plot(density(res$lambda[-(1:burnin), 1], bw=0.01), xlab = expression(lambda[1]), main = "")
+plot(density(res$lambda[-(1:burnin), 2], bw=0.01), xlab = expression(lambda[2]), main = "")
+plot(density(res$lambda[-(1:burnin), 3], bw=0.01), xlab = expression(lambda[3]), main = "")
+plot(density(res$lambda[-(1:burnin), 4], bw=0.01), xlab = expression(lambda[4]), main = "")
+
+
+plot(density(res$theta[-(1:burnin), 1], bw=1), xlab =  expression(theta[1]), main = "")
+plot(density(res$theta[-(1:burnin), 2], bw=1), xlab =  expression(theta[2]), main = "")
+plot(density(res$theta[-(1:burnin), 3], bw=1), xlab =  expression(theta[3]), main = "")
+title(expression(paste("Actual Counts Density Plots")), outer = TRUE)
+mtext(text="Iteration",side=1,outer=TRUE)
+```
+
+
 ## Two-Component Model on Simulated Data
+Beginning with the simple
 
 ## Graph Estimation on Fixed Two-Component Model
 
