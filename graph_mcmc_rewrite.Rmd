@@ -21,7 +21,6 @@ inst = lapply(pkgs, library, character.only = TRUE)
 
 ```{R rcpp, eval = FALSE}
 #rcpp functions used to speed up parts of the likelihood computation
-
 #cpp version of an unnormalized dpois where log = TRUE
 #pre: two numeric vectors of the same length
 #post: unnormalized loglikelhood
@@ -223,9 +222,10 @@ compute_log_prior <- function(input){
   gamma = input$gamma
   
   adj = input$adj
-  count = input$ec[["count"]]
+  edge_count = input$edge_count
   
-   prior_star <- -log( choose( choose(length(adj), 2), count))
+  prior_star <-  -log( choose( choose(length(adj), 2), edge_count)) 
+  #+ dpois(edge_count, 10, log = TRUE)
   # -log(choose(N, K)) +
   #   sum(dgamma(lambda, 1, 1, log = TRUE)) +
   #   sum(dnorm(gamma, 0, 3, log = TRUE)) +
@@ -236,7 +236,8 @@ compute_log_prior <- function(input){
 }
 ```
 
-# compute_log_like
+# Likelihood
+
 ```{r graph likelihood}
 
 #' Computes and returns the unnormalized graph log likelihood of the parameters. 
@@ -255,14 +256,12 @@ compute_log_like <- function(input) {
   counts = input$counts
   migration = input$migration
   
-  
   #replicate lambda values to the correct length according to the changepoints
   if (K == 0) {
     vepi_star <- rep(lambda, N)
   } else {
     vepi_star <- rep(lambda, diff(c(0, theta, N)))
   }
-  
   
   #generate the infection counts matrix according to which vertices/cities are
   #adjacent
@@ -645,8 +644,6 @@ change_lambda <- function(input, componentwise = FALSE) {
 
 ```{r graph helpers}
 #------------helpers------
-#
-#
 
 remove_edge <- function(adj_star, ep) {
   m = which(adj_star[[ep[2]]] == ep[1])
@@ -664,7 +661,6 @@ add_edge <- function(adj_star, ep) {
   
   return(adj_star)
 }
-
 
 
 
@@ -728,34 +724,51 @@ add_edge_op <- function(input){
   INDEP = input$INDEP
   LL = input$LL
   
-  ec_star = input$ec
-  num_edges = input$ec$count
+ 
+  num_edges = input$edge_count
+  
   adj = input$adj
   ord = length(adj)
+  if (num_edges == choose(ord, 2)) {
+    return(input)
+  }
   
-  
-  # this is causing my issues
-  counts <- sapply(adj, length)
-  probs <- 1 - counts/ord
-  
-  v1 <- sample(1:ord, 1, prob = probs)
 
   
-  v2 <- sample(setdiff(1:ord, adj[[v1]]))
+  max = ord*(ord - 1) - 2*num_edges
+  A = sample(1:max, 1)
+  pos_edges = ord - 1
+  
+  for (i in 1:ord){
+    if (A > (pos_edges - length(adj[[i]])) ) {
+      A = A - (pos_edges - length(adj[[i]]) )
+    } else {
+      v1 = i
+      possible_neighbors = setdiff(1:ord, i)
+      to_add = setdiff(possible_neighbors, adj[[i]])
+      v2 = to_add[A]
+      break
+    }
+  }
+  
 
   
   adj_star <- add_edge(adj, c(v1, v2))
   
+  
+  
   input_star <- input
   input_star$adj <- adj_star
-  input_star$ec <- input$ec
-  input_star$ec$count <- input$ec$count + 1
-  
+  input_star$edge_count <- input$edge_count + 1
   
   
   LL_star <- compute_log_like(input_star)
   prior_star <- compute_log_prior(input_star)
-  hastings <- log( choose(ord, 2) - num_edges )  -log(num_edges + 1)
+  
+  
+  hastings <- log(ord*(ord - 1) - 2*num_edges)-log(2*(num_edges + 1))
+  
+  
   post_star <- LL_star + prior_star #new log posterior
   alpha <- post_star - LL + hastings
   
@@ -782,19 +795,22 @@ del_edge_op <- function(input){
   INDEP = input$INDEP
   LL = input$LL
   
-  num_edges = input$ec$count
+  num_edges = input$edge_count
+  edge_count <- input$edge_count
+
   
   if (num_edges == 0) {
     return(input)
   }
-  
-  ec_star = input$ec
+
   adj = input$adj
   ord = length(adj)
   
+  
+
+  
+ 
   counts = sapply(adj, length)
-  
-  
   v1s = sample(1:ord, 1, prob = counts)
   
   v11 <- v1s[1]
@@ -808,15 +824,17 @@ del_edge_op <- function(input){
   
   adj_star <- remove_edge(adj, c(v11, v12))
   
+  
   input_star <- input
   input_star$adj <- adj_star
-  input_star$ec <- input$ec
-  input_star$ec$count <- input$ec$count - 1
+  input_star$edge_count <- input$edge_count - 1
   
   
   LL_star <- compute_log_like(input_star)
   prior_star <- compute_log_prior(input_star)
-  hastings <- -log(choose(ord, 2) - (num_edges - 1) ) + log(num_edges)
+  
+  hastings <- log(2) + log(num_edges) - log(ord*(ord - 1) - 2*(num_edges - 1))
+  
   post_star <- LL_star + prior_star #new log posterior
   alpha <- post_star - LL + hastings
   
@@ -899,14 +917,9 @@ rewire <- function (input){
     input$graph <- 0
     return(input)
   }
-  
-  
-  
-  
+
 }
 
-
-#-----------------makes graph props-------------------
 degree_preserving <- function(input) {
   K = input$K
   theta = input$theta
@@ -938,10 +951,6 @@ degree_preserving <- function(input) {
       v12 = sample(adj[[v11]], 1, replace = TRUE)
     }
     
-    
-    
-    
-    
     if (v21 %in% c(v11, v12, adj[[v12]])) {
       next
     }
@@ -962,12 +971,6 @@ degree_preserving <- function(input) {
     
   }
   
-  
-  
-  
-  
-  
-  
   adj_star <- remove_edge(adj, c(v11, v12))
   adj_star <- remove_edge(adj_star, c(v21, v22))
   
@@ -976,8 +979,6 @@ degree_preserving <- function(input) {
   
   input_star <- input
   input_star$adj <- adj_star
-  
-  
   
   LL_star <- compute_log_like(input_star)
   prior_star <- compute_log_prior(input_star)
@@ -994,7 +995,6 @@ degree_preserving <- function(input) {
     input$graph <- 0
     return(input)
   }
-  
   
   
 }
@@ -1023,7 +1023,6 @@ flip_edge <- function(input, mig = FALSE) {
   LL = input$LL
   migration = input$migration
   
-  ec_star = input$ec 
   adj = input$adj
   ord = length(adj)
   
@@ -1108,9 +1107,6 @@ update_param_mig <- function(input) {
   
   return(output)
 }
-
-
-
 ```
 
 ```{r}
@@ -1122,17 +1118,6 @@ update_del_add <- function(input) {
   } else {
     output <- del_edge_op(input)
   }
-  
-  for (i in 1:15){
-    U <- runif(1)
-    if (U < 1/2) {
-      output <- add_edge_op(output)
-    } else {
-      output <- del_edge_op(output)
-    }
-    
-  }
-  output <- change_migration(output)
   return(output)
   
 }
@@ -1143,37 +1128,6 @@ update_add <- function(input){
   
 }
 
-update_add_del_rewire <- function(input) {
-  
-  U <- runif(1)
-  if (U < 1/2) {
-    output <- add_edge_op(input)
-  } else {
-    output <- del_edge_op(input)
-  }
-  for (i in 1:10){
-    output <- rewire(output)
-    output <- degree_preserving(output)
-  }
-  
-  
-  U <- runif(1)
-  if (U < 24/50) {
-    output <- add_edge_op(output)
-  } else if (U < 48/50) {
-    output <- del_edge_op(output)
-  } else {
-    output <- change_migration(output)
-  }
-  
-  
-  
-  
-  
-  
-  return(output)
-  
-}
 ```
 
 
@@ -1224,14 +1178,7 @@ update_param3 <- function(input) {
 
 
 
-update_param5 <- function(input){
-  U = runif(1)
-  if (U < 1) {
-    output <- flip_edge(input, mig = FALSE)
-  } else {
-    #output <- change_migration(output)
-  }
-}
+
 
 
 update_param_nr <- function(input){
@@ -1275,7 +1222,7 @@ lapply(ops, undebug)
 undebug(add_edge_op)
 undebug(del_edge_op)
 
-nSim <- 10000
+nSim <- 100000
 #pre-allocate
 res <- list(
   K = numeric(nSim),
@@ -1289,50 +1236,6 @@ res <- list(
 )
 
 
-
-# output <-
-#   list(
-#     K = 2,
-#     theta = c(39, 49),
-#     lambda = lambda,
-#     LL = -Inf,
-#     gamma = gamma,
-#     INDEP = INDEP,
-#     adj = full_adjlist,
-#     graph = 1,
-#     ec = edge_c_list
-#   )
-
-
-
-init_list <- vector(mode = "list", 15)
-
-edge_c_list = list()
-for (i in 1:15){
-  edge_c_list[as.character(i)] <- 14
-}
-edge_c_list$count = choose(15, 2)
-
-
-#---------initialize edge list ----#
-# #create names
-# edge_c.names = as.character(1:length(init_list))
-# #init vector
-# edge_c <- vector(mode = "list", length = length(init_list))
-# #name
-# names(edge_c) <- edge_c.names
-
-
-# fill edge list
-# for (i in 1:length(init_list)) {
-#   num_edge <- length(init_list[[i]])
-#   if (num_edge > 0) {
-#     edge_c[[i]] <- num_edge
-#   } else {
-#     edge_c[i] <- NULL
-#   }
-# }
-# --------------------------- #
 
 
 
@@ -1351,27 +1254,21 @@ output <-
     INDEP = INDEP,
     adj = init_list,
     graph = 1,
-    ec = edge_c_list,
+    edge_count = 0,
     counts = counts,
     migration = 0.1
   )
 
+
+
 set.seed(1)
+
 system.time(for (i in 1:nSim) {
   if (i < 5) {
     output <-  update_add(output)
-  } else if (i < 10000) {
+  } else  {
     output <-  update_del_add(output)
-  } else {
-    output <- update_add_del_rewire(output)
-  }
-  
-  if (i > 50000) {
-    #debug(compute_log_like)
-    # debug(flip_edge)
-    # debug(rewire)
-    # debug(degree_preserving)
-  }
+  } 
   
   k <- output$K
   res$K[i] <- k
@@ -1386,15 +1283,17 @@ system.time(for (i in 1:nSim) {
     c(output$lambda, rep(output$lambda[k + 1], N - k))
   res$gamma[i,] <- output$gamma
   res$accept[i] <- output$graph
-  res$count[i] <- output$ec$count
+  res$count[i] <- output$edge_count
   res$migration[i] <- output$migration
   
-
-  if (i %% 500 == 0) {
+  
+  if (i %% 10000 == 1) {
     plot(graph.adjlist(output$adj, mode = "all"))
-    
+
     print(output$LL)
     print(output$migration)
+    # debug(add_edge_op)
+    # debug(del_edge_op)
   }
   
  
@@ -1414,10 +1313,12 @@ plot(g_city)
 # 
 burnin = 1000
 
+
+
 par(mfrow = c(1,2))
 plot(graph.adjlist(output$adj, mode = "all"))
 mean(res$accept[-(1:burnin)] == 1)
-hist(res$count[-(1:burnin)])
+hist(res$count[seq(1, length(res$count), length = 5000)])
 plot(res$count, type = "l")
 plot(res$accept, type = "l")
 hist(res$accept[-(1:burnin)], freq = FALSE)
