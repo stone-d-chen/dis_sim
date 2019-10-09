@@ -95,6 +95,7 @@
 \usepackage{amsfonts}
 \captionsetup{width=4.5in}
 \usepackage{algorithm}
+\usepackage{soul}
 
 \begin{document}
 \maketitle
@@ -104,13 +105,15 @@
 \hypertarget{intro}{%
 \section{Intro}\label{intro}}
 
+\dw{you need to sort out the referencing and get some proper references in here, v important for this sort of work. Looks easier to do this direct in latex rather than via rmd?}
+
 In this thesis we perform inference on an extension of a model presented
 by Held et al. (\protect\hyperlink{ref-held_two-component_2006}{2006})
-for modeling parameters of infectious disease counts in a Bayesian
-framework. Their method models surveillance data of infectious disease
+for modeling \st{parameters} of infectious disease counts in a Bayesian
+framework. The \dw{origianl} method models surveillance data of infectious disease
 counts as a branching Poisson process with a cyclical endemic parameter.
 The cyclical endemic parameter models ``seasonality'' of disease counts
-(e.g.~seasonal flu patterns) and occasional ``outbreaks'' (e.g.~swine
+(e.g.~seasonal flu patterns) and occasional ``outbreaks'' \dw{outbreaks are not modeled using the cyclical endemic parameter} (e.g.~swine
 flu, H1N1). Their method models a single time series of count data from
 a specific location or region. We attempt to extend their model to
 multiple time series of count data that are spatially related.
@@ -270,7 +273,7 @@ where
 \begin{figure}
 \centering
 \includegraphics{thesis_draft_files/figure-latex/simulation figure-1.pdf}
-\caption{\label{fig:figs}plotting example}
+\caption{\label{fig:figs}plotting example}       
 \end{figure}
 
 \hypertarget{likelihood}{%
@@ -292,7 +295,7 @@ and \(\lambda_t\) piecewise function is described by
 \lambda^{(K+1)}, & t \geq \theta_K \end{cases}\]
 
 \hypertarget{graph-data-introduction}{%
-\section{Graph Data Introduction}\label{graph-data-introduction}}
+\section{\dw{Multiple locations connected by a graph}Graph Data Introduction}\label{graph-data-introduction}}
 
 We would like to extend our data from a univariate time series of counts
 \(Z_t\) to a multiple time series of counts \(Z_{i,t}\) where \(i\) now
@@ -302,7 +305,7 @@ counts in city \(i\). Now, a city \(i\)'s epidemic disease count at time
 \(t\) is modelled as a function of both it's counts \(Z_{i,t-1}\) and
 possibly other cities counts as well.
 
-This dependency between cities is represented with a fixed graph
+This dependency between cities is represented with a fixed graph \dw{change to nooation here - no point in introducing two subscripts never to use them. Just use $G = (V, E)$ as normal}
 \(G_{N_v, E}\) where \(N_v\), the number of vertices in graph is fixed
 and equal to the number of cities and \(N_e\) is the number of edges in
 the graph, representing dependencies between cities' disease counts. We
@@ -311,9 +314,9 @@ is the number of cities/individual time series of disease counts, and
 \(E(G)\) is a set of unordered pairs of vertices \(\{i,j\}\) where
 \(i,j \in V\) and \(i \neq j\) that describes the edges present in graph
 \(G\). We represent the edge \(\{i,j\}\) as \(e_{ij}\) and the indicator
-\(1[e_{ij}=1]\) if \(\{i,j\} \in E(G)\) and 0 otherwise. For clarity,
-the subscripts \(N_v, E\) will be dropped and it's assumed that the true
-graph has fixed number of vertices and fixed edges.
+\(1[e_{ij}=1]\) if \(\{i,j\} \in E(G)\) and 0 otherwise. \st{For clarity,
+the subscripts  will be dropped and it's assumed that the true
+graph has fixed number of vertices and fixed edges.}
 
 \begin{figure}
 \includegraphics[trim={1 2cm 0 2cm},clip]{thesis_draft_files/figure-latex/unnamed-chunk-1-1} \caption{\label{fig:graph example} A graph configuration. The vertices $i \in \{1,\dots, 10\}$ represent cities each with their own disease counts          $Z_{i,t}$. The edges between the graph represent whether the counts between the cities can affect each other. In this example city 1's disease counts at time $t$ are influenced by both it's own counts and cities 2, 4, 5 and 6's (i.e. every city connected to it) disease counts. City 10's disease counts are only it's own and city 9's.}\label{fig:unnamed-chunk-1}
@@ -329,7 +332,7 @@ as \(Z_t|Z_{t-1}, G = X_{i, t} + Y_{i,t}|G\) where
 \[Z_{i,t}|G = X_{i,t} + Y_{i,t}|G: \text{infected count in city } i \text{ at time step } t \]
 As before we have the epidemic component as
 \(X_{i,t} \sim\text{Pois}(\nu_t)\). For the epidemic component we now
-include the additional counts from connected cities as
+include the additional counts from connected cities as \dw{don't need * in these expressions}
 
 \[Y_{i,t}|G \sim ~ \text{Pois}\big(\lambda_t*\sum_{j\neq i}^{N_v}Z_{j,t-1}*1[e_{ij}=1]+ \lambda_tZ_{i,t-1}\big)|G \]
 Where \(\lambda_t*\sum_{j\neq i}^{N_v}Z_{j,t}*1[e_{ij}=1]\) are the
@@ -864,6 +867,8 @@ K: number of changespoints & 2\tabularnewline
 \(\boldsymbol{\theta}\): changepoints & 39, 49\tabularnewline
 \bottomrule
 \end{longtable}
+
+\dw{downsample the plots here --- they include loads of points so are large, just plot eg every 10th or 100th point to make more manageable}
 
 Figure \ref{fig:lam_trace} are trace plots, which are time series of the
 parameter draws. Typically a ``good'' trace plot shows no obvious
