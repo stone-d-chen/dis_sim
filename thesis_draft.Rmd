@@ -13,6 +13,7 @@ output:
     toc: yes
 geometry: "top=3cm,left=3cm,right=3cm"
 bibliography: disease_sim_proj.bib
+csl: journal-of-the-american-statistical-association.csl
 font-size: 11pt
 header-includes:
  - \usepackage{multirow}
@@ -39,16 +40,14 @@ library(igraph)
 
 # Intro 
 
+In this thesis we perform inference on an extension of a model presented by @held_two-component_2006 for modeling parameters of infectious disease counts in a Bayesian framework. Their method models surveillance data of infectious disease counts as a branching Poisson process with a cyclical endemic parameter. The cyclical endemic parameter models "seasonality" of disease counts (e.g. seasonal flu patterns) and the Poisson branching process occasional "outbreaks" (e.g. swine flu, H1N1).  Their method models a single time series of count data from a specific location or region. We attempt to extend their model to multiple time series of count data that are spatially related.
 
-In this thesis we perform inference on an extension of a model presented by @held_two-component_2006 for modeling parameters of infectious disease counts in a Bayesian framework. Their method models surveillance data of infectious disease counts as a branching Poisson process with a cyclical endemic parameter. The cyclical endemic parameter models "seasonality" of disease counts (e.g. seasonal flu patterns) and occasional "outbreaks" (e.g. swine flu, H1N1).  Their method models a single time series of count data from a specific location or region. We attempt to extend their model to multiple time series of count data that are spatially related.
-
-Specifically the dataset of interest contains data from 412 administrative districts in Germany. Each district has surveillance data which contains the weekly case counts of severe gastroenteritis or stomach flu. The data spans May 2 and July 26 2011 when a strain of *Escherichia coli* (*E. coli*) caused an outbreak of severe illness in Germany. Over 3,950 people were affected compared with the typically seen ~200 cases a year typically seen. Many developed severe complications and over 50 people died.
+Specifically the dataset of interest contains data from 412 administrative districts in Germany. Each district has surveillance data which contains the weekly case counts of severe gastroenteritis or stomach flu. The data spans May 2 and July 26 2011 when a strain of *Escherichia coli* (*E. coli*) caused an outbreak of severe illness in Germany. Over 3,950 people were affected compared with the typically seen ~200 cases a year typically seen. Many developed severe complications and over 50 people died [@noauthor_ehec_2011 , pp. 2-3, 11].
 
 We attempt to extend their model to incorporate a graph. The graph represents a transmission network between the different spatial regions (e.g., the administration district) and allow dependencies between count data in those regions. The end goal will be to be able to estimate covariates that affect the probability of transmission between regions (e.g., the shipping network that transmitted the *E. coli* contaminated food).
 
-## Comments
 
-Statistical methods to model infectious disease data typically use mechanistic models (models that use expert knowledge of the underyling process) such as the Susceptible-(Exposed)-Infectious-Recovery (SIR/SEIR) model and other variants. In the SEIR model, the entire closed population of individuals is in one of the four states. susceptible individuals can become exposed when in contact with an infectious invidual, exposed individuals will eventually become infectious and infectious individuals will eventually be recovered and cannot be re-exposed or infect susceptibles (e.g. by immunity). Given partial data on the susceptible, exposed, infectious and removed times parameters surrounding the epidemic of interest can be estimated. For example in @groendyke_2011, the time spent in each state is modeled with a Gamma random variables and the parameters of the random variables can be estimated from the data. Other parameters of interest such as the intial infected can also be estimated. They also estimate contact network between individuals, covariates affecting the formation of the contact network and a corresponding transmission tree. While effective, this sort of mechanistic model requires data at a granularity not typical of surveillance data, (such as information on the susceptibles) and often contains other problems such as underreporting @diggle
+Statistical methods to model infectious disease data typically use mechanistic models that is models that use expert knowledge of the underyling process [@pawitan_all_2001, ch. 1]. One such model is the Susceptible-(Exposed)-Infectious-Recovery (SIR/SEIR) [@keeling_modeling_2008 , pp. 41-43] model and other variants. In the SEIR model, the entire closed population of individuals is in one of the four states. susceptible individuals can become exposed when in contact with an infectious invidual, exposed individuals will eventually become infectious and infectious individuals will eventually be recovered and cannot be re-exposed or infect susceptibles (e.g. by immunity). Given partial data on the susceptible, exposed, infectious and removed times parameters surrounding the epidemic of interest can be estimated. For example, in @groendyke_bayesian_2011, the time spent in each state is modeled with a Gamma random variables and the parameters of the random variables can be estimated from the data. Other parameters of interest such as the intial infected can also be estimated. They also estimate contact network between individuals, covariates affecting the formation of the contact network and a corresponding transmission tree. While effective, this sort of mechanistic model requires data at a granularity not typical of surveillance data, (such as information on the susceptibles) and often contains other problems such as underreporting [@diggle_-line_2003 , pp. 233-266]
 
 
 
@@ -59,7 +58,7 @@ Statistical methods to model infectious disease data typically use mechanistic m
 
 The two components of the model are a simple Poisson branching process with autoregressive parameter $\lambda$ and a seasonal component fit with a Fourier series.  These components are described as the "epidemic" and "endemic" components respectively. Additionally, the two-component model allows for the $\lambda$ to change over time allowing for the disease to change infectivity over time.
 
-A branching process is a model that is used to model the evolution @stirzaker of population over time over time. Suppose there's currently one parent alive. Then in a branching process, this individual would give birth to a random number of offspring and then immediately die. Then at the next step, each of those offspring become parents who individually give birth to a random number of offspring. If the random number of offspring comes from a Poisson distribution, then the process is known as a Poisson branching process. It's in this sense that $\lambda$ is an autoregressive parameter since it describes the relationship between the individuals in the previous time step to the current one. In thise cas we assume that the $\lambda$ value is constant across individuals and over time (e.g. $\lambda$ is some biological reproduction rate). In the case of the Two-Component model, is fixed for individuals at a given time, but is allowed to vary over time. This allows the model to capture the dynamics of disease outbreaks.
+A branching process is a model that is used to model the evolution [@grimmett_probability_2004 , pp. 171-175, 243-255] of population over time over time. Suppose there's currently one parent alive. Then in a branching process, this individual would give birth to a random number of offspring and then immediately die. Then at the next step, each of those offspring become parents who individually give birth to a random number of offspring. If the random number of offspring comes from a Poisson distribution, then the process is known as a Poisson branching process. It's in this sense that $\lambda$ is an autoregressive parameter since it describes the relationship between the individuals in the previous time step to the current one. In thise cas we assume that the $\lambda$ value is constant across individuals and over time (e.g. $\lambda$ is some biological reproduction rate). In the case of the Two-Component model, is fixed for individuals at a given time, but is allowed to vary over time. This allows the model to capture the dynamics of disease outbreaks.
 
 ## Two-Component Model Notation
 
@@ -84,7 +83,7 @@ In this model, the $\lambda_t$ is allowed to vary over time. The parameter $\lam
 
 ## TK add references below
 
-For a Poisson process, when $\lambda > 1$ an outbreak occurs. When $\lambda < 1$ then the process "goes extinct" or reaches and remains at 0 with probability 1. Once the process reaches a point where $Z_t = 0$, it remains there as there are no more infected to create new infected at the next time step. When $\lambda_t > 1$ an "outbreak" occurs shown as the spike in the graph between. When $\lambda_t < 1$ the outbreak ends.
+For a Poisson process, when $\lambda > 1$ an outbreak occurs [@held_two-component_2006]. When $\lambda < 1$ then the process "goes extinct" or reaches and remains at 0 with probability 1 [@grimmett_probability_2004 , pp. 245]. Once the process reaches a point where $Z_t = 0$, it remains there as there are no more infected to create new infected at the next time step. When $\lambda_t > 1$ an "outbreak" occurs shown as the spike in the graph between. When $\lambda_t < 1$ the outbreak ends.
 
 Allowing $\lambda_t$ to vary captures many scenarios, for example a particulary infectious strain of the flu could cause $\lambda_t$ to increase above 1 and cause an outbreak. Later, better or new vaccines and quarentine procedures can cause the overall infectivity to decrease below 1.
 
@@ -191,12 +190,11 @@ $$ \lambda_t =  \begin{cases} \lambda^{(1)} & t < \theta_0 \\
 
 
 
-# Graph Data Introduction
+# Multiple locations connected by a graph
 
 We would like to extend our data from a univariate time series of counts $Z_t$ to a multiple time series of counts $Z_{i,t}$ where $i$ now indexes separate time series. In this case we will say the $i$ indexes individual "cities" where $Z_i$ represents the infectious disease counts in city $i$. Now, a city $i$'s epidemic disease count at time $t$ is modelled as a function of both it's counts $Z_{i,t-1}$ and possibly other cities counts as well.
 
-This dependency between cities is represented with a fixed graph $G_{N_v, E}$ where $N_v$, the number of vertices in graph is fixed and equal to the number of cities and $N_e$ is the number of edges in the graph, representing dependencies between cities' disease counts. We call $V = \{1,\dots,N_v \}$ the vertex set of the graph where $N_v$ is the number of cities/individual time series of disease counts, and $E(G)$ is a set of unordered pairs of vertices $\{i,j\}$ where $i,j \in V$ and $i \neq j$ that describes the edges present in graph $G$. We represent the edge $\{i,j\}$ as $e_{ij}$ and the indicator $1[e_{ij}=1]$ if $\{i,j\} \in E(G)$ and 0 otherwise. For clarity, the subscripts $N_v, E$ will be dropped and it's assumed that the true graph has fixed number of vertices and fixed edges.
-
+This dependency between cities is represented with a fixed graph $G$ where $N_v$, the number of vertices in graph is fixed and equal to the number of cities and $N_e$ is the number of edges in the graph, representing dependencies between cities' disease counts. We call $V = \{1,\dots,N_v \}$ the vertex set of the graph where $N_v$ is the number of cities/individual time series of disease counts, and $E(G)$ is a set of unordered pairs of vertices $\{i,j\}$ where $i,j \in V$ and $i \neq j$ that describes the edges present in graph $G$. We represent the edge $\{i,j\}$ as $e_{ij}$ and the indicator $1[e_{ij}=1]$ if $\{i,j\} \in E(G)$ and 0 otherwise. 
 
 
 ```{r  echo = FALSE,message = 'hide', warning= FALSE, fig.cap = "\\label{fig:graph example} A graph configuration. The vertices $i \\in \\{1,\\dots, 10\\}$ represent cities each with their own disease counts          $Z_{i,t}$. The edges between the graph represent whether the counts between the cities can affect each other. In this example city 1's disease counts at time $t$ are influenced by both it's own counts and cities 2, 4, 5 and 6's (i.e. every city connected to it) disease counts. City 10's disease counts are only it's own and city 9's.", fig.width=14, fig.height=8, out.extra='trim={1 2cm 0 2cm},clip'}
@@ -239,7 +237,7 @@ While this thesis only covers a fixed migration rate, the end goal would be to m
 
 ## Graph Likelihood
 
-We model the graph $G$ modeled as an Erdos-Renyi random graph. An Erdos-Renyi random graph has a fixed vertex set $V(G) = \{1, \dots, N_v\}$ and is parameterized by $p \in (0,1)$. Then an edge $e_{ij}$ is in the edge set $E(G)$ with probability $p$ independent of every other edge. That is an ER graph $G_{N_v,E} \sim ER(p)$ and the likelihood of a graph $G$ given probability $p$ on an edge is $$\begin{aligned} G|p & = \prod_{i,j \in V(G),i \neq j} p^{1[e_{ij}=1]}(1-p)^{1-1[e_{ij}=1]} 
+We model the graph $G$ modeled as an Erdos-Renyi random graph. An Erdos-Renyi random graph has a fixed vertex set $V(G) = \{1, \dots, N_v\}$ and is parameterized by $p \in (0,1)$. Then an edge $e_{ij}$ is in the edge set $E(G)$ with probability $p$ independent of every other edge. That is an ER graph $G \sim ER(p)$ and the likelihood of a graph $G$ given probability $p$ on an edge is $$\begin{aligned} G|p & = \prod_{i,j \in V(G),i \neq j} p^{1[e_{ij}=1]}(1-p)^{1-1[e_{ij}=1]} 
 \\ & = p^{N_e}(1-p)^{\binom{N_v}{2}-N_e} \end{aligned}$$ where $N_e$ is the number of edges.
 
 # Bayesian Inference
@@ -259,7 +257,7 @@ Since the $\lambda$ values parameterize a Poisson distribution we set the prior 
 $$ \lambda^{(k)} \sim Gamma(1, 1),\ k \in \{1, \dots, K + 1\} $$
 
 
-The number of changepoints $K$ takes values in $\{1,\dots,N\}$ where $N$ is the total number of time points of counts collected. In the @held paper the number of changepoint is uniformly distributed  $P(K = k) = 1/N$ representing uncertainty in the number of changepoints. This is changed to 
+The number of changepoints $K$ takes values in $\{1,\dots,N\}$ where $N$ is the total number of time points of counts collected. In the @held_two-component_2006 paper the number of changepoint is uniformly distributed  $P(K = k) = 1/N$ representing uncertainty in the number of changepoints. This is changed to 
 $$K \sim \text{Pois}(2)$$
 representing that idea that the disease count data is already of interest due to a potential change in the infectivity of the disease. $K \sim\text{Pois}(2)$ places the highest mass on $K = 2$ changepoints which can capture a spike in disease counts (as seen in the simulated data) before returning to a baseline endemic rate. It also places mass on $K = 1$ (e.g. capturing a long term decrease in infectivity due to intervention) and $K = 3$ changepoints. It also acts as a regularizer to help reduce overfitting the count time series where each time point is given a unique $\lambda_t$ value.
 
@@ -317,12 +315,12 @@ Here I describe the Metropolis Hastings algorithms used to draw samples from the
 
 Each operator receives the log-likelihood of its proposal by pass the proposal to the `compute_log_like` function. The `compute_log_like` function returns the unnormalized log-likelihood of the proposed parameters. This is computationally faster since computing the normalized likelihood of a Poisson distribution requires the evalution of $Z_{t}!$ for each data point. The naive method of computing the entire log-likelihood was used as it was computationally fast enough on the simulated dataset (without the graph).
 
-This differs from @held and @green who perform separate likelihood computations for each three operators: birth (adding a changepoint), death (removing a changepoint) and changing a $\lambda$ value. Each of these operators changes only a portion of the total likelihood computation and as such, it is computationally more efficient to only compute the ratio of the changes. For example, let $\boldsymbol{\theta^*}$ be the proposed changepoint vector where $K^* = K + 1$ (i.e. a new changepoint is added). Let $m$ be the index of the proposed changepoint and the rest of the changepoints remain the same. Then the only part of the likelihood computation that changes is in the interval between timepoints $[\theta_{m-1}, \theta_{m+1})$ and since its the ratio between the likelihoods of the proposed vs the current parameter set is important, the parts that remain identical have a likelihood of 1 (or log-likelihood of 0) and all that remains of the likelihood computation is:
+This differs from @held_two-component_2006 and @green_reversible_1995 who perform separate likelihood computations for each three operators: birth (adding a changepoint), death (removing a changepoint) and changing a $\lambda$ value. Each of these operators changes only a portion of the total likelihood computation and as such, it is computationally more efficient to only compute the ratio of the changes. For example, let $\boldsymbol{\theta^*}$ be the proposed changepoint vector where $K^* = K + 1$ (i.e. a new changepoint is added). Let $m$ be the index of the proposed changepoint and the rest of the changepoints remain the same. Then the only part of the likelihood computation that changes is in the interval between timepoints $[\theta_{m-1}, \theta_{m+1})$ and since its the ratio between the likelihoods of the proposed vs the current parameter set is important, the parts that remain identical have a likelihood of 1 (or log-likelihood of 0) and all that remains of the likelihood computation is:
 
 Similar reductions in comptutation can be done following changes in the graph. If an edge $e^*_{ik}$ is proposed then only $Y_{i,t}$ and $Y_{k,t}$ and the corresponding $Z$'s are affected. As such only those two cities need to be updated. 
-$$Y^*_{i,t}|G^* \sim ~ \text{Pois}\big(m\lambda_tZ_{k,t-1} +m\lambda_t\sum_{j=1}^{N_v}Z_{j,t-1}1[e_{ij}\in E(G)]+ \lambda_tZ_{i,t-1}\big) $$
-$$Y^*_{k,t}|G^* \sim  \text{Pois}\big(m\lambda_tZ_{i,t-1} +m\lambda_t\sum_{j=1}^{N_v}Z_{j,t-1}1[e_{ij}\in E(G)]+ \lambda_tZ_{i,t-1}\big) $$
-$$\begin{aligned} Y^*_{j,t}|G^* &\sim \text{Pois}\big(m\lambda_t\sum_{l=1}^{N_v}Z_{j,t-1}1[e_{jl}\in E(G^*)]+ \lambda_tZ_{i,t-1}\big)\\ & \sim  \text{Pois}\big(m\lambda_t\sum_{l=1}^{N_v}Z_{j,t-1}1[e_{jl}\in E(G)]+ \lambda_tZ_{i,t-1}\big) \end{aligned}$$
+$$Y^*_{i,t}|G \sim ~ \text{Pois}\big(m\lambda_tZ_{k,t-1} +m\lambda_t\sum_{j=1}^{N_v}Z_{j,t-1}1[e_{ij}\in E(G)]+ \lambda_tZ_{i,t-1}\big) $$
+$$Y^*_{k,t}|G \sim  \text{Pois}\big(m\lambda_tZ_{i,t-1} +m\lambda_t\sum_{j=1}^{N_v}Z_{j,t-1}1[e_{ij}\in E(G)]+ \lambda_tZ_{i,t-1}\big) $$
+$$\begin{aligned} Y_{j,t}|G &\sim \text{Pois}\big(m\lambda_t\sum_{l=1}^{N_v}Z_{j,t-1}1[e_{jl}\in E(G^*)]+ \lambda_tZ_{i,t-1}\big)\\ & \sim  \text{Pois}\big(m\lambda_t\sum_{l=1}^{N_v}Z_{j,t-1}1[e_{jl}\in E(G)]+ \lambda_tZ_{i,t-1}\big) \end{aligned}$$
 
 Then the likelihood ratio can be computed as (dropping conditioning notation for clarity)
 
@@ -351,7 +349,7 @@ $$ \lambda_t =  \begin{cases} \lambda^{(1)} & t < \theta_0 \\
 Since the proposal is generated uniformly at random between $\theta_{k-1}$ and $\theta_{k+1}$ the proposal probability is $q(\theta_{k^*}|\theta_k) = 1/(\theta_{k+1}-\theta_{k-1}-2) = q(\theta_k|\theta_k^*)$. Furthermore the the $\lambda$ values are deterministically generated from current $\lambda_k$ values and the $\theta_k^*$ values. The Hastings ratio is then 1 and the acceptance rate is the ratio of the likelihoods.
 
 ## birth/death_theta reversible jump mcmc
-The `birth_theta()` and `death_theta()` operators allow for an increase and decrease in the number of changepoints. Then the parameter space can jump between a collection of possible models $\{M_K, K \in \{0,1,\cdots,n-1\}\}$ where $K$ indexes the number of changepoints. However models from different $M_K$'s have different dimensions of $\boldsymbol{\theta_k}$ and the likelihoods are not directly comparable (since they are not defined on the same probability space). To handle this we use a Reversible Jump MCMC (RJMCMC) as proposed in @green. 
+The `birth_theta()` and `death_theta()` operators allow for an increase and decrease in the number of changepoints. Then the parameter space can jump between a collection of possible models $\{M_K, K \in \{0,1,\cdots,n-1\}\}$ where $K$ indexes the number of changepoints. However models from different $M_K$'s have different dimensions of $\boldsymbol{\theta_k}$ and the likelihoods are not directly comparable (since they are not defined on the same probability space). To handle this we use a Reversible Jump MCMC (RJMCMC) as proposed in @green_reversible_1995. 
 
 ### Birth
 
@@ -373,7 +371,7 @@ $$= 1*\frac{\frac{1}{K+1}}{\frac{1}{N-K}*1} = \frac{N-K}{K+1} $$
 
 The $P(birth)$ and $P(death)$ are the probabilities of proposing a birth and death step respectively and are selected such that $P(birth) = P(death)$.
 The $q_{(K+1\rightarrow K)}(\theta|\theta^*)$ term is transition probability from a parameter state with $K$ $\theta$'s to $K+1$. The probability of being in the proposed state $\theta^*$ and proposing jumping back to the current state $\theta$ is the probability of selecting the newly added changepoint $\theta_{k^*}$ and deleting it. This occurs with probability $1/K+1$ since the changepoints are selected uniformly at random and there are $K+1$ changepoints in the proposed state. Similarly the probability of the current proposal state is $1/N-K$ since there are $N-K$ possible timesteps to add. Since $u \sim U(0,1)$ then $P(u) = 1$ and the reverse move is deterministic so it's probability is also 1 (and omitted from the equation).
-Finally the Jacobian is given by $$ |J_{birth}| = \frac{(\lambda_1 + \lambda_2)^2}{\lambda_0}$$
+Finally the Jacobian is given by $$ |J_{birth}| = \frac{(\lambda_1 + \lambda_2)^2}{\lambda_0}$$ .
 
 
 ### Death
@@ -414,7 +412,7 @@ $$\frac{q(G|G^*)}{q(G^*|G)} = \frac{\frac{1}{N_e+1}}{\frac{2}{N_v(N_v-1) - 2N_e}
 and the Hastings ratio for removing an edge is given by
 
 
-$$ \begin{aligned} \frac{q(G|G^* deleted)}{q(G^* deleted|G)} & = \frac{\frac{1}{N_v(N_v-1) - 2(N_e-1)}}{\frac{1}{N_e}} \\ &= \frac{N_e}{N_v(N_v-1) - 2(N_e-1)} \end{aligned} $$
+$$ \begin{aligned} \frac{q(G|G^* deleted)}{q(G^* deleted|G)} & = \frac{\frac{2}{N_v(N_v-1) - 2(N_e-1)}}{\frac{1}{N_e}} \\ &= \frac{2N_e}{N_v(N_v-1) - 2(N_e-1)} \end{aligned} $$
 
 
 ## flip_edge
@@ -440,7 +438,7 @@ Rewire randomly selects an edge (v1, v2) and deletes it from the adjacency list.
 # Results
 
 ## Two-Component Model
-In this paper, I have implemented an MCMC algorithm that estimates the Two-Component Model from simulated data. The simulation parameters are taken from @held 
+In this paper, I have implemented an MCMC algorithm that estimates the Two-Component Model from simulated data. The simulation parameters are taken from @held_two-component_2006 
 
 | parameters    | simulation values    |
 | :-------------: |:-------------:|
@@ -456,66 +454,154 @@ load("2c_sim_data.RData")
 
 
 
-
-
-
 Figure \ref{fig:lam_trace} are trace plots, which are time series of the parameter draws. Typically a "good" trace plot shows no obvious autocorrelation (which can indicate a proposal step that is too small) or flat portions (proposal steps that are too large). Trace plots with these patterns indicate that the sampler has not converged to the posterior distribution of the parameter. "Tuning" or adjusting the proposal jump size can help fix these patterns, with the end goal of being able to efficiently explore the posterior distribution of the parameter. The trace plots for the $\gamma$ parameters seem to rather well mixed though there is a slight pattern to the $\gamma_0$ trace plot. This is likely due to the correlation between $\gamma_0$, $\gamma_1$ and $\gamma_2$ due to their nature of parameterizing a cyclical function. The same is true for the $\theta$ parameters; they are constrained such that $\theta_1 < \theta_2 < \theta_3$. This autocorrelation seen in the trace plots could possibly be reduced via thinning or taking every $n$ samples instead of every sample.
 
 The $\theta_3$ trace plot is of note because it is only valid for when $K = 3$; the $\theta_3$ does not exist otherwise.
 
 ```{r, fig.cap = "\\label{fig:lam_trace}Trace plots for $\\boldsymbol{\\gamma}$ and $\\boldsymbol{\\theta}$. The trace plots seem relatively well mixed. The autocorrelation is likely a function of the correlation between the each set of $\\boldsymbol{\\gamma}$ and $\\boldsymbol{\\theta}$ respectively. Thinning could potentially reduce the autocorrelation between sample draws.", fig.ncol = 1}
 
-burnin = 40000
+burnin = 400000
 
-par(mfrow = c(2,3), las = 1)
-par(mar = c(1,4,2,2), oma = c(3,0,2,0),mgp = c(2,1,0))
-plot(res$gamma[-(1:burnin), 1], type = "l", ylab = expression(gamma[0]), xlab = "")
-plot(res$gamma[-(1:burnin), 2], type = "l", ylab = expression(gamma[1]), xlab = "")
-plot(res$gamma[-(1:burnin), 3], type = "l", ylab = expression(gamma[2]), xlab = "")
+#downsample = seq(1, length(res$K), by = 1)
 
-plot(res$theta[-(1:burnin), 1], type = "l", ylab =expression(theta[1]), xlab = "")
-plot(res$theta[-(1:burnin), 2], type = "l", ylab =expression(theta[2]), xlab = "")
-plot(res$theta[(res$K == 3), 3], type = "l", ylab =expression(theta[3]), xlab = "")
-title(expression(paste("Trace Plots for ",gamma, " and ", theta)), outer = TRUE, line = 1)
-mtext(text="Iteration", side=1, line=2, outer=TRUE)
+par(
+  mar = c(1, 4, 2, 2),
+  oma = c(3, 0, 2, 0),
+  mgp = c(2, 1, 0),
+  mfrow = c(2, 3),
+  las = 1
+)
+plot(res$gamma[-c(1:burnin), 1],
+     type = "l",
+     ylab = expression(gamma[0]),
+     xlab = "")
+plot(res$gamma[-(1:burnin), 2],
+     type = "l",
+     ylab = expression(gamma[1]),
+     xlab = "")
+plot(res$gamma[-(1:burnin), 3],
+     type = "l",
+     ylab = expression(gamma[2]),
+     xlab = "")
+
+plot(res$theta[-(1:burnin), 1],
+     type = "l",
+     ylab = expression(theta[1]),
+     xlab = "")
+plot(res$theta[-(1:burnin), 2],
+     type = "l",
+     ylab = expression(theta[2]),
+     xlab = "")
+plot(res$theta[(res$K == 3), 3],
+     type = "l",
+     ylab = expression(theta[3]),
+     xlab = "")
+title(expression(paste("Trace Plots for ", gamma, " and ", theta)), outer = TRUE, line = 1)
+mtext(
+  text = "Iteration",
+  side = 1,
+  line = 2,
+  outer = TRUE
+)
 
 ```
 
 ```{r, cor_gammas, fig.cap = "Plots of $\\gamma_0$ vs $\\gamma_1$ and $\\gamma_0$ vs $\\gamma_2$. Each point represents the corresponding parameter value at the same sample draw, i.e., the values of each parameter when the sample was accepted. The strong correlation between the parameters can lead to poor mixing. Note the tails are due to the initial values of the MCMC chain.", fig.ncol = 1}
-par(mfrow = c(1,2), las  = 0 )
-par(mar = c(1,4,1,2), oma = c(3,0,2,0), mgp = c(2,1,0))
-plot(res$gamma[,1][seq(1,length(res$gamma[,1]), length = 5000)], res$gamma[,2][seq(1,length(res$gamma[,1]), length = 5000)], xlab = expression(gamma[0]), ylab = expression(gamma[1]))
-plot(res$gamma[,1][seq(1,length(res$gamma[,1]), length = 5000)], res$gamma[,3][seq(1,length(res$gamma[,1]), length = 5000)], xlab = expression(gamma[0]), ylab = expression(gamma[2]))
-title(expression(paste("Correlation between ", gamma,"s"), outer = TRUE))
-mtext(text="Iteration", side = 1, line = 2, outer = TRUE)
+par(mfrow = c(1, 2), las  = 0)
+par(
+  mar = c(1, 4, 1, 2),
+  oma = c(3, 0, 2, 0),
+  mgp = c(2, 1, 0)
+)
+plot(res$gamma[, 1][seq(1, length(res$gamma[, 1]), length = 5000)],
+     res$gamma[, 2][seq(1, length(res$gamma[, 1]), length = 5000)],
+     xlab = expression(gamma[0]),
+     ylab = expression(gamma[1]))
+plot(res$gamma[, 1][seq(1, length(res$gamma[, 1]), length = 5000)],
+     res$gamma[, 3][seq(1, length(res$gamma[, 1]), length = 5000)],
+     xlab = expression(gamma[0]),
+     ylab = expression(gamma[2]))
+title(expression(paste("Correlation between ", gamma, "s"), outer = TRUE))
+mtext(
+  text = "Iteration",
+  side = 1,
+  line = 2,
+  outer = TRUE
+)
 ```
 
 
 
 ```{r lambda_traces, fig.cap = "Trace plots for all $\\lambda$ values and filtered for K = 2. Overall the trace plots show that the samplers are mixing well with some minor autocorrelation that could potentially be resolved with thinning or more samples. The raw trace plots include the $\ambda$ values when there are 3 and 4 separate $\ambda$'s and is the cause of the random jumps.", fig.ncol = 1, fig.asp=1}
-burnin = 40000
-par(mfrow = c(2,2), las  = 0 )
-par(mar = c(1,4,1,2), oma = c(3,0,2,0), mgp = c(2,0.65,0))
-plot(res$lambda[-(1:burnin),1], type = "l", ylab =expression(lambda[1]), xlab = "")
-plot(res$lambda[-(1:burnin),2], type = "l", ylab =expression(lambda[2]), xlab = "")
-plot(res$lambda[-(1:burnin),3], type = "l", ylab =expression(lambda[3]), xlab = "")
-plot(res$lambda[-(1:burnin),4], type = "l", ylab =expression(lambda[4]), xlab = "")
+burnin = 400000
+par(mfrow = c(2, 2), las  = 0)
+par(
+  mar = c(1, 4, 1, 2),
+  oma = c(3, 0, 2, 0),
+  mgp = c(2, 0.65, 0)
+)
+plot(res$lambda[-(1:burnin), 1],
+     type = "l",
+     ylab = expression(lambda[1]),
+     xlab = "")
+plot(res$lambda[-(1:burnin), 2],
+     type = "l",
+     ylab = expression(lambda[2]),
+     xlab = "")
+plot(res$lambda[-(1:burnin), 3],
+     type = "l",
+     ylab = expression(lambda[3]),
+     xlab = "")
+plot(res$lambda[-(1:burnin), 4],
+     type = "l",
+     ylab = expression(lambda[4]),
+     xlab = "")
 title(expression(paste(lambda, " Trace Plots")), outer = TRUE)
-mtext(text="Iteration", side = 1, line = 2, outer = TRUE)
+mtext(
+  text = "Iteration",
+  side = 1,
+  line = 2,
+  outer = TRUE
+)
 
-par(mfrow = c(2,2), las  = 0 )
-par(mar = c(2,6,1,1), oma = c(3,0,2,0), mgp = c(2,0.65,0))
-plot(res$lambda[(res$K == 2),2][-(1:burnin)], type = "l", ylab =expression(lambda[2]), xlab = "")
-mtext(text="K = 2", side = 2, line = 4)
-par(mar = c(2,3,1,1))
-plot(res$lambda[(res$K == 2),3][-(1:burnin)], type = "l", ylab =expression(lambda[3]), xlab = "")
-par(mar = c(2,6,1,1))
-plot(res$lambda[(res$K == 3),2], type = "l", ylab =expression(lambda[2]), xlab = "")
-mtext(text="K = 3", side = 2, line = 4)
-par(mar = c(2,3,1,1))
-plot(res$lambda[(res$K == 3),3], type = "l", ylab =expression(lambda[3]), xlab = "")
+par(mfrow = c(2, 2), las  = 0)
+par(
+  mar = c(2, 6, 1, 1),
+  oma = c(3, 0, 2, 0),
+  mgp = c(2, 0.65, 0)
+)
+plot(
+  res$lambda[(res$K == 2), 2][-(1:burnin)],
+  type = "l",
+  ylab = expression(lambda[2]),
+  xlab = ""
+)
+mtext(text = "K = 2", side = 2, line = 4)
+par(mar = c(2, 3, 1, 1))
+plot(
+  res$lambda[(res$K == 2), 3][-(1:burnin)],
+  type = "l",
+  ylab = expression(lambda[3]),
+  xlab = ""
+)
+par(mar = c(2, 6, 1, 1))
+plot(res$lambda[(res$K == 3), 2],
+     type = "l",
+     ylab = expression(lambda[2]),
+     xlab = "")
+mtext(text = "K = 3", side = 2, line = 4)
+par(mar = c(2, 3, 1, 1))
+plot(res$lambda[(res$K == 3), 3],
+     type = "l",
+     ylab = expression(lambda[3]),
+     xlab = "")
 title(expression(paste(lambda, " Trace Plots for K = 2 & K = 3")), outer = TRUE)
-mtext(text="Iteration", side = 1, line = 2, outer = TRUE)
+mtext(
+  text = "Iteration",
+  side = 1,
+  line = 2,
+  outer = TRUE
+)
 ```
 
 The $\boldsymbol{\lambda}$ trace plots have interesting patterning, specifically the $\lambda_2$ and $\lambda_3$ traces appear to fix tightly at $1.2$ and $0.7$ respectively while also jumping to $0.7$ and $1.2$ respectively. This is an artifact of the dimension change in the model. When $K = 2$, $\lambda_2$ is tightly fixed around $1.2$ and $\lambda_3$ at $0.7$ but when $K = 2$, $\lambda_3$ can take the role of fitting the outbreak while $\lambda_4$ models to the return $0.7$, the baseline.
@@ -525,20 +611,44 @@ The $\boldsymbol{\lambda}$ trace plots have interesting patterning, specifically
 
 ```{r density_plots, fig.asp = 1,fig.ncol=1}
 par(mfrow = c(3, 3), las = 0)
-par(mar = c(2,4,1,2), oma = c(3,0,2,0), mgp = c(2,0.65,0))
-plot(Z, type = "l", xlab = "time step", ylab = "counts")
-plot(density(res$K), title = "Data", xlab = "K: number of changepoints", main = "")
-plot(density(res$lambda[-(1:burnin), 1], bw=0.01), xlab = expression(lambda[1]), main = "")
-plot(density(res$lambda[-(1:burnin), 2], bw=0.01), xlab = expression(lambda[2]), main = "")
-plot(density(res$lambda[-(1:burnin), 3], bw=0.01), xlab = expression(lambda[3]), main = "")
-plot(density(res$lambda[-(1:burnin), 4], bw=0.01), xlab = expression(lambda[4]), main = "")
+par(
+  mar = c(2, 4, 1, 2),
+  oma = c(3, 0, 2, 0),
+  mgp = c(2, 0.65, 0)
+)
+plot(Z,
+     type = "l",
+     xlab = "time step",
+     ylab = "counts")
+plot(density(res$K),
+     title = "Data",
+     xlab = "K: number of changepoints",
+     main = "")
+plot(density(res$lambda[-(1:burnin), 1], bw = 0.01),
+     xlab = expression(lambda[1]),
+     main = "")
+plot(density(res$lambda[-(1:burnin), 2], bw = 0.01),
+     xlab = expression(lambda[2]),
+     main = "")
+plot(density(res$lambda[-(1:burnin), 3], bw = 0.01),
+     xlab = expression(lambda[3]),
+     main = "")
+plot(density(res$lambda[-(1:burnin), 4], bw = 0.01),
+     xlab = expression(lambda[4]),
+     main = "")
 
 
-plot(density(res$theta[-(1:burnin), 1], bw=1), xlab =  expression(theta[1]), main = "")
-plot(density(res$theta[-(1:burnin), 2], bw=1), xlab =  expression(theta[2]), main = "")
-plot(density(res$theta[-(1:burnin), 3], bw=1), xlab =  expression(theta[3]), main = "")
+plot(density(res$theta[-(1:burnin), 1], bw = 1),
+     xlab =  expression(theta[1]),
+     main = "")
+plot(density(res$theta[-(1:burnin), 2], bw = 1),
+     xlab =  expression(theta[2]),
+     main = "")
+plot(density(res$theta[-(1:burnin), 3], bw = 1),
+     xlab =  expression(theta[3]),
+     main = "")
 title(expression(paste("Actual Counts Density Plots")), outer = TRUE)
-mtext(text="Iteration",side=1,outer=TRUE)
+mtext(text = "Iteration", side = 1, outer = TRUE)
 ```
 
 

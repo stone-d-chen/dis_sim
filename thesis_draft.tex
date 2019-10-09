@@ -95,7 +95,6 @@
 \usepackage{amsfonts}
 \captionsetup{width=4.5in}
 \usepackage{algorithm}
-\usepackage{soul}
 
 \begin{document}
 \maketitle
@@ -105,18 +104,17 @@
 \hypertarget{intro}{%
 \section{Intro}\label{intro}}
 
-\dw{you need to sort out the referencing and get some proper references in here, v important for this sort of work. Looks easier to do this direct in latex rather than via rmd?}
-
 In this thesis we perform inference on an extension of a model presented
 by Held et al. (\protect\hyperlink{ref-held_two-component_2006}{2006})
-for modeling \st{parameters} of infectious disease counts in a Bayesian
-framework. The \dw{origianl} method models surveillance data of infectious disease
+for modeling parameters of infectious disease counts in a Bayesian
+framework. Their method models surveillance data of infectious disease
 counts as a branching Poisson process with a cyclical endemic parameter.
 The cyclical endemic parameter models ``seasonality'' of disease counts
-(e.g.~seasonal flu patterns) and occasional ``outbreaks'' \dw{outbreaks are not modeled using the cyclical endemic parameter} (e.g.~swine
-flu, H1N1). Their method models a single time series of count data from
-a specific location or region. We attempt to extend their model to
-multiple time series of count data that are spatially related.
+(e.g.~seasonal flu patterns) and the Poisson branching process
+occasional ``outbreaks'' (e.g.~swine flu, H1N1). Their method models a
+single time series of count data from a specific location or region. We
+attempt to extend their model to multiple time series of count data that
+are spatially related.
 
 Specifically the dataset of interest contains data from 412
 administrative districts in Germany. Each district has surveillance data
@@ -125,7 +123,8 @@ stomach flu. The data spans May 2 and July 26 2011 when a strain of
 \emph{Escherichia coli} (\emph{E. coli}) caused an outbreak of severe
 illness in Germany. Over 3,950 people were affected compared with the
 typically seen \textasciitilde{}200 cases a year typically seen. Many
-developed severe complications and over 50 people died.
+developed severe complications and over 50 people died (\emph{EHEC O104}
+\protect\hyperlink{ref-noauthor_ehec_2011}{2011} , pp.~2-3, 11).
 
 We attempt to extend their model to incorporate a graph. The graph
 represents a transmission network between the different spatial regions
@@ -135,30 +134,32 @@ covariates that affect the probability of transmission between regions
 (e.g., the shipping network that transmitted the \emph{E. coli}
 contaminated food).
 
-\hypertarget{comments}{%
-\subsection{Comments}\label{comments}}
-
 Statistical methods to model infectious disease data typically use
-mechanistic models (models that use expert knowledge of the underyling
-process) such as the Susceptible-(Exposed)-Infectious-Recovery
-(SIR/SEIR) model and other variants. In the SEIR model, the entire
-closed population of individuals is in one of the four states.
-susceptible individuals can become exposed when in contact with an
-infectious invidual, exposed individuals will eventually become
-infectious and infectious individuals will eventually be recovered and
-cannot be re-exposed or infect susceptibles (e.g.~by immunity). Given
-partial data on the susceptible, exposed, infectious and removed times
-parameters surrounding the epidemic of interest can be estimated. For
-example in ({\textbf{???}}), the time spent in each state is modeled
-with a Gamma random variables and the parameters of the random variables
-can be estimated from the data. Other parameters of interest such as the
-intial infected can also be estimated. They also estimate contact
-network between individuals, covariates affecting the formation of the
-contact network and a corresponding transmission tree. While effective,
-this sort of mechanistic model requires data at a granularity not
-typical of surveillance data, (such as information on the susceptibles)
-and often contains other problems such as underreporting
-({\textbf{???}})
+mechanistic models that is models that use expert knowledge of the
+underyling process (Pawitan
+\protect\hyperlink{ref-pawitan_all_2001}{2001}, ch.~1). One such model
+is the Susceptible-(Exposed)-Infectious-Recovery (SIR/SEIR) (Keeling and
+Rohani \protect\hyperlink{ref-keeling_modeling_2008}{2008} , pp.~41-43)
+model and other variants. In the SEIR model, the entire closed
+population of individuals is in one of the four states. susceptible
+individuals can become exposed when in contact with an infectious
+invidual, exposed individuals will eventually become infectious and
+infectious individuals will eventually be recovered and cannot be
+re-exposed or infect susceptibles (e.g.~by immunity). Given partial data
+on the susceptible, exposed, infectious and removed times parameters
+surrounding the epidemic of interest can be estimated. For example, in
+Groendyke et al.
+(\protect\hyperlink{ref-groendyke_bayesian_2011}{2011}), the time spent
+in each state is modeled with a Gamma random variables and the
+parameters of the random variables can be estimated from the data. Other
+parameters of interest such as the intial infected can also be
+estimated. They also estimate contact network between individuals,
+covariates affecting the formation of the contact network and a
+corresponding transmission tree. While effective, this sort of
+mechanistic model requires data at a granularity not typical of
+surveillance data, (such as information on the susceptibles) and often
+contains other problems such as underreporting (Diggle et al.
+\protect\hyperlink{ref-diggle_-line_2003}{2003} , pp.~233-266)
 
 \hypertarget{intro-to-two-component-model}{%
 \section{Intro to Two-Component
@@ -176,10 +177,12 @@ two-component model allows for the \(\lambda\) to change over time
 allowing for the disease to change infectivity over time.
 
 A branching process is a model that is used to model the evolution
-({\textbf{???}}) of population over time over time. Suppose there's
-currently one parent alive. Then in a branching process, this individual
-would give birth to a random number of offspring and then immediately
-die. Then at the next step, each of those offspring become parents who
+(Grimmett and Stirzaker
+\protect\hyperlink{ref-grimmett_probability_2004}{2004} , pp.~171-175,
+243-255) of population over time over time. Suppose there's currently
+one parent alive. Then in a branching process, this individual would
+give birth to a random number of offspring and then immediately die.
+Then at the next step, each of those offspring become parents who
 individually give birth to a random number of offspring. If the random
 number of offspring comes from a Poisson distribution, then the process
 is known as a Poisson branching process. It's in this sense that
@@ -232,13 +235,15 @@ the \(\lambda\) parameter is constant throughout.
 \hypertarget{tk-add-references-below}{%
 \subsection{TK add references below}\label{tk-add-references-below}}
 
-For a Poisson process, when \(\lambda > 1\) an outbreak occurs. When
+For a Poisson process, when \(\lambda > 1\) an outbreak occurs (Held et
+al. \protect\hyperlink{ref-held_two-component_2006}{2006}). When
 \(\lambda < 1\) then the process ``goes extinct'' or reaches and remains
-at 0 with probability 1. Once the process reaches a point where
-\(Z_t = 0\), it remains there as there are no more infected to create
-new infected at the next time step. When \(\lambda_t > 1\) an
-``outbreak'' occurs shown as the spike in the graph between. When
-\(\lambda_t < 1\) the outbreak ends.
+at 0 with probability 1 (Grimmett and Stirzaker
+\protect\hyperlink{ref-grimmett_probability_2004}{2004} , pp.~245). Once
+the process reaches a point where \(Z_t = 0\), it remains there as there
+are no more infected to create new infected at the next time step. When
+\(\lambda_t > 1\) an ``outbreak'' occurs shown as the spike in the graph
+between. When \(\lambda_t < 1\) the outbreak ends.
 
 Allowing \(\lambda_t\) to vary captures many scenarios, for example a
 particulary infectious strain of the flu could cause \(\lambda_t\) to
@@ -273,7 +278,7 @@ where
 \begin{figure}
 \centering
 \includegraphics{thesis_draft_files/figure-latex/simulation figure-1.pdf}
-\caption{\label{fig:figs}plotting example}       
+\caption{\label{fig:figs}plotting example}
 \end{figure}
 
 \hypertarget{likelihood}{%
@@ -294,8 +299,9 @@ and \(\lambda_t\) piecewise function is described by
 \lambda^{(k)}, & \theta_{k} \leq t < \theta_{(k-1)} \\
 \lambda^{(K+1)}, & t \geq \theta_K \end{cases}\]
 
-\hypertarget{graph-data-introduction}{%
-\section{\dw{Multiple locations connected by a graph}Graph Data Introduction}\label{graph-data-introduction}}
+\hypertarget{multiple-locations-connected-by-a-graph}{%
+\section{Multiple locations connected by a
+graph}\label{multiple-locations-connected-by-a-graph}}
 
 We would like to extend our data from a univariate time series of counts
 \(Z_t\) to a multiple time series of counts \(Z_{i,t}\) where \(i\) now
@@ -305,18 +311,16 @@ counts in city \(i\). Now, a city \(i\)'s epidemic disease count at time
 \(t\) is modelled as a function of both it's counts \(Z_{i,t-1}\) and
 possibly other cities counts as well.
 
-This dependency between cities is represented with a fixed graph \dw{change to nooation here - no point in introducing two subscripts never to use them. Just use $G = (V, E)$ as normal}
-\(G_{N_v, E}\) where \(N_v\), the number of vertices in graph is fixed
-and equal to the number of cities and \(N_e\) is the number of edges in
-the graph, representing dependencies between cities' disease counts. We
-call \(V = \{1,\dots,N_v \}\) the vertex set of the graph where \(N_v\)
-is the number of cities/individual time series of disease counts, and
+This dependency between cities is represented with a fixed graph \(G\)
+where \(N_v\), the number of vertices in graph is fixed and equal to the
+number of cities and \(N_e\) is the number of edges in the graph,
+representing dependencies between cities' disease counts. We call
+\(V = \{1,\dots,N_v \}\) the vertex set of the graph where \(N_v\) is
+the number of cities/individual time series of disease counts, and
 \(E(G)\) is a set of unordered pairs of vertices \(\{i,j\}\) where
 \(i,j \in V\) and \(i \neq j\) that describes the edges present in graph
 \(G\). We represent the edge \(\{i,j\}\) as \(e_{ij}\) and the indicator
-\(1[e_{ij}=1]\) if \(\{i,j\} \in E(G)\) and 0 otherwise. \st{For clarity,
-the subscripts  will be dropped and it's assumed that the true
-graph has fixed number of vertices and fixed edges.}
+\(1[e_{ij}=1]\) if \(\{i,j\} \in E(G)\) and 0 otherwise.
 
 \begin{figure}
 \includegraphics[trim={1 2cm 0 2cm},clip]{thesis_draft_files/figure-latex/unnamed-chunk-1-1} \caption{\label{fig:graph example} A graph configuration. The vertices $i \in \{1,\dots, 10\}$ represent cities each with their own disease counts          $Z_{i,t}$. The edges between the graph represent whether the counts between the cities can affect each other. In this example city 1's disease counts at time $t$ are influenced by both it's own counts and cities 2, 4, 5 and 6's (i.e. every city connected to it) disease counts. City 10's disease counts are only it's own and city 9's.}\label{fig:unnamed-chunk-1}
@@ -332,7 +336,7 @@ as \(Z_t|Z_{t-1}, G = X_{i, t} + Y_{i,t}|G\) where
 \[Z_{i,t}|G = X_{i,t} + Y_{i,t}|G: \text{infected count in city } i \text{ at time step } t \]
 As before we have the epidemic component as
 \(X_{i,t} \sim\text{Pois}(\nu_t)\). For the epidemic component we now
-include the additional counts from connected cities as \dw{don't need * in these expressions}
+include the additional counts from connected cities as
 
 \[Y_{i,t}|G \sim ~ \text{Pois}\big(\lambda_t*\sum_{j\neq i}^{N_v}Z_{j,t-1}*1[e_{ij}=1]+ \lambda_tZ_{i,t-1}\big)|G \]
 Where \(\lambda_t*\sum_{j\neq i}^{N_v}Z_{j,t}*1[e_{ij}=1]\) are the
@@ -380,8 +384,8 @@ Erdos-Renyi random graph has a fixed vertex set
 \(V(G) = \{1, \dots, N_v\}\) and is parameterized by \(p \in (0,1)\).
 Then an edge \(e_{ij}\) is in the edge set \(E(G)\) with probability
 \(p\) independent of every other edge. That is an ER graph
-\(G_{N_v,E} \sim ER(p)\) and the likelihood of a graph \(G\) given
-probability \(p\) on an edge is
+\(G \sim ER(p)\) and the likelihood of a graph \(G\) given probability
+\(p\) on an edge is
 \[\begin{aligned} G|p & = \prod_{i,j \in V(G),i \neq j} p^{1[e_{ij}=1]}(1-p)^{1-1[e_{ij}=1]} 
 \\ & = p^{N_e}(1-p)^{\binom{N_v}{2}-N_e} \end{aligned}\] where \(N_e\)
 is the number of edges.
@@ -425,8 +429,9 @@ and represents a vague prior.
 
 The number of changepoints \(K\) takes values in \(\{1,\dots,N\}\) where
 \(N\) is the total number of time points of counts collected. In the
-({\textbf{???}}) paper the number of changepoint is uniformly
-distributed \(P(K = k) = 1/N\) representing uncertainty in the number of
+Held et al. (\protect\hyperlink{ref-held_two-component_2006}{2006})
+paper the number of changepoint is uniformly distributed
+\(P(K = k) = 1/N\) representing uncertainty in the number of
 changepoints. This is changed to \[K \sim \text{Pois}(2)\] representing
 that idea that the disease count data is already of interest due to a
 potential change in the infectivity of the disease.
@@ -563,7 +568,9 @@ The naive method of computing the entire log-likelihood was used as it
 was computationally fast enough on the simulated dataset (without the
 graph).
 
-This differs from ({\textbf{???}}) and ({\textbf{???}}) who perform
+This differs from Held et al.
+(\protect\hyperlink{ref-held_two-component_2006}{2006}) and Green
+(\protect\hyperlink{ref-green_reversible_1995}{1995}) who perform
 separate likelihood computations for each three operators: birth (adding
 a changepoint), death (removing a changepoint) and changing a
 \(\lambda\) value. Each of these operators changes only a portion of the
@@ -584,9 +591,9 @@ Similar reductions in comptutation can be done following changes in the
 graph. If an edge \(e^*_{ik}\) is proposed then only \(Y_{i,t}\) and
 \(Y_{k,t}\) and the corresponding \(Z\)'s are affected. As such only
 those two cities need to be updated.
-\[Y^*_{i,t}|G^* \sim ~ \text{Pois}\big(m\lambda_tZ_{k,t-1} +m\lambda_t\sum_{j=1}^{N_v}Z_{j,t-1}1[e_{ij}\in E(G)]+ \lambda_tZ_{i,t-1}\big) \]
-\[Y^*_{k,t}|G^* \sim  \text{Pois}\big(m\lambda_tZ_{i,t-1} +m\lambda_t\sum_{j=1}^{N_v}Z_{j,t-1}1[e_{ij}\in E(G)]+ \lambda_tZ_{i,t-1}\big) \]
-\[\begin{aligned} Y^*_{j,t}|G^* &\sim \text{Pois}\big(m\lambda_t\sum_{l=1}^{N_v}Z_{j,t-1}1[e_{jl}\in E(G^*)]+ \lambda_tZ_{i,t-1}\big)\\ & \sim  \text{Pois}\big(m\lambda_t\sum_{l=1}^{N_v}Z_{j,t-1}1[e_{jl}\in E(G)]+ \lambda_tZ_{i,t-1}\big) \end{aligned}\]
+\[Y^*_{i,t}|G \sim ~ \text{Pois}\big(m\lambda_tZ_{k,t-1} +m\lambda_t\sum_{j=1}^{N_v}Z_{j,t-1}1[e_{ij}\in E(G)]+ \lambda_tZ_{i,t-1}\big) \]
+\[Y^*_{k,t}|G \sim  \text{Pois}\big(m\lambda_tZ_{i,t-1} +m\lambda_t\sum_{j=1}^{N_v}Z_{j,t-1}1[e_{ij}\in E(G)]+ \lambda_tZ_{i,t-1}\big) \]
+\[\begin{aligned} Y_{j,t}|G &\sim \text{Pois}\big(m\lambda_t\sum_{l=1}^{N_v}Z_{j,t-1}1[e_{jl}\in E(G^*)]+ \lambda_tZ_{i,t-1}\big)\\ & \sim  \text{Pois}\big(m\lambda_t\sum_{l=1}^{N_v}Z_{j,t-1}1[e_{jl}\in E(G)]+ \lambda_tZ_{i,t-1}\big) \end{aligned}\]
 
 Then the likelihood ratio can be computed as (dropping conditioning
 notation for clarity)
@@ -664,7 +671,7 @@ changepoints. However models from different \(M_K\)'s have different
 dimensions of \(\boldsymbol{\theta_k}\) and the likelihoods are not
 directly comparable (since they are not defined on the same probability
 space). To handle this we use a Reversible Jump MCMC (RJMCMC) as
-proposed in ({\textbf{???}}).
+proposed in Green (\protect\hyperlink{ref-green_reversible_1995}{1995}).
 
 \hypertarget{birth}{%
 \subsubsection{Birth}\label{birth}}
@@ -715,7 +722,7 @@ the current proposal state is \(1/N-K\) since there are \(N-K\) possible
 timesteps to add. Since \(u \sim U(0,1)\) then \(P(u) = 1\) and the
 reverse move is deterministic so it's probability is also 1 (and omitted
 from the equation). Finally the Jacobian is given by
-\[ |J_{birth}| = \frac{(\lambda_1 + \lambda_2)^2}{\lambda_0}\]
+\[ |J_{birth}| = \frac{(\lambda_1 + \lambda_2)^2}{\lambda_0}\] .
 
 \hypertarget{death}{%
 \subsubsection{Death}\label{death}}
@@ -805,7 +812,7 @@ occurs with probability \(2/2(N_e+1) = 1/(N_e+1)\)
 \[\frac{q(G|G^*)}{q(G^*|G)} = \frac{\frac{1}{N_e+1}}{\frac{2}{N_v(N_v-1) - 2N_e}} = \frac{N_v(N_v-1) - 2N_e}{2(N_e+1)} \]
 and the Hastings ratio for removing an edge is given by
 
-\[ \begin{aligned} \frac{q(G|G^* deleted)}{q(G^* deleted|G)} & = \frac{\frac{1}{N_v(N_v-1) - 2(N_e-1)}}{\frac{1}{N_e}} \\ &= \frac{N_e}{N_v(N_v-1) - 2(N_e-1)} \end{aligned} \]
+\[ \begin{aligned} \frac{q(G|G^* deleted)}{q(G^* deleted|G)} & = \frac{\frac{2}{N_v(N_v-1) - 2(N_e-1)}}{\frac{1}{N_e}} \\ &= \frac{2N_e}{N_v(N_v-1) - 2(N_e-1)} \end{aligned} \]
 
 \hypertarget{flip_edge}{%
 \subsection{flip\_edge}\label{flip_edge}}
@@ -852,7 +859,8 @@ rewiring (v1, v2), the Hastings ratio is 1
 
 In this paper, I have implemented an MCMC algorithm that estimates the
 Two-Component Model from simulated data. The simulation parameters are
-taken from ({\textbf{???}})
+taken from Held et al.
+(\protect\hyperlink{ref-held_two-component_2006}{2006})
 
 \begin{longtable}[]{@{}cc@{}}
 \toprule
@@ -867,8 +875,6 @@ K: number of changespoints & 2\tabularnewline
 \(\boldsymbol{\theta}\): changepoints & 39, 49\tabularnewline
 \bottomrule
 \end{longtable}
-
-\dw{downsample the plots here --- they include loads of points so are large, just plot eg every 10th or 100th point to make more manageable}
 
 Figure \ref{fig:lam_trace} are trace plots, which are time series of the
 parameter draws. Typically a ``good'' trace plot shows no obvious
@@ -944,11 +950,45 @@ Model}\label{graph-estimation-on-fixed-two-component-model}}
 \addcontentsline{toc}{section}{Citations}
 
 \hypertarget{refs}{}
+\leavevmode\hypertarget{ref-diggle_-line_2003}{}%
+Diggle, P., Knorr-Held, L., Rowlingson, B., Su, T., Hawtin, P., and
+Bryant, T. (2003), ``On-line Monitoring of Public Health Surveillance
+Data,'' pp. 233--266.
+\url{https://doi.org/10.1093/acprof:oso/9780195146493.003.0009}.
+
+\leavevmode\hypertarget{ref-noauthor_ehec_2011}{}%
+\emph{EHEC O104:H4 Outbreak Germany 2011} (2011), report, Robert
+Koch-Institut; Robert Koch-Institut, Infektionsepidemiologie.
+\url{https://doi.org/http://dx.doi.org/10.25646/88}.
+
+\leavevmode\hypertarget{ref-green_reversible_1995}{}%
+Green, P. J. (1995), ``Reversible jump Markov chain Monte Carlo
+computation and Bayesian model determination.''
+\url{https://doi.org/10.1093/biomet/82.4.711}.
+
+\leavevmode\hypertarget{ref-grimmett_probability_2004}{}%
+Grimmett, G., and Stirzaker, D. (2004), \emph{Probability and random
+processes}, Oxford Oxford University Press.
+
+\leavevmode\hypertarget{ref-groendyke_bayesian_2011}{}%
+Groendyke, C., Welch, D., and Hunter, D. R. (2011), ``Bayesian Inference
+for Contact Networks Given Epidemic Data,'' \emph{Scandinavian Journal
+of Statistics}, 38, 600--616.
+\url{https://doi.org/10.1111/j.1467-9469.2010.00721.x}.
+
 \leavevmode\hypertarget{ref-held_two-component_2006}{}%
-Held, Leonhard, Mathias Hofmann, Michael Höhle, and Volker Schmid. 2006.
-``A Two-Component Model for Counts of Infectious Diseases.''
-\emph{Biostatistics} 7 (3): 422--37.
+Held, L., Hofmann, M., Höhle, M., and Schmid, V. (2006), ``A
+two-component model for counts of infectious diseases,''
+\emph{Biostatistics}, 7, 422--437.
 \url{https://doi.org/10.1093/biostatistics/kxj016}.
+
+\leavevmode\hypertarget{ref-keeling_modeling_2008}{}%
+Keeling, M. J., and Rohani, P. (2008), \emph{Modeling Infectious
+Diseases in Humans and Animals}, Princeton University Press.
+
+\leavevmode\hypertarget{ref-pawitan_all_2001}{}%
+Pawitan, Y. (2001), \emph{In All Likelihood: Statistical Modelling and
+Inference Using Likelihood}, OUP Oxford.
 
 
 \end{document}
