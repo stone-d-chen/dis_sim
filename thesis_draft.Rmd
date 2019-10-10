@@ -15,6 +15,7 @@ geometry: "top=3cm,left=3cm,right=3cm"
 bibliography: disease_sim_proj.bib
 csl: journal-of-the-american-statistical-association.csl
 fontsize: 11pt
+classoption: a4paper
 header-includes:
  - \usepackage{multirow}
  - \usepackage{multicol}
@@ -28,7 +29,7 @@ header-includes:
  - \usepackage{caption}
  - \usepackage{amsfonts}
  - \captionsetup{width=4.5in}
- - \usepackage{algorithm}
+ - \usepackage{mathtools}
 ---
 \newcommand{\dw}[1]{{\color{red}{#1}}}
 
@@ -280,10 +281,12 @@ $$\begin{aligned}\frac{ P(G_{N_e = 2})}{P(G_{N_e = 1})}  &=  \frac{1/(\binom{N_v
 more likely. Then graphs with $N_e = \binom{N_v}{2}/2$ are more likely compared to all graphs with $|N_e| \in (0, N_v)$ and empty and complete graphs have the highest probability overall. We instead would like the probability of a graph to be uniform amongst all possible graphs. To do so we set a prior on the number of edges so that $P(G_{N_e}) = \binom{\binom{N_v}{2}}{N_e}$. It may be desirable to place a $Beta$ prior in $p$ with higher mass on lower probabilities. 
 
 ##  Posterior
+To summarize posterior is proportional to the product of the likelihood, graph and non-graph priors
 
-$$\prod_{i=1}^{N_v}\prod_{t=1}^N P(Z_{i,t}|Z_{t-1},\theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2,G,p)P(\theta|K)P(K)P(\prod_{k=1}^{K+1}\lambda^{(k)} )P(\prod_{i=0}^2 \gamma_i)P(G|p)P(p)$$
+$$ P(\vec{\theta}, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2, G,p|Z)  \propto $$
+$$\begin{aligned}\prod_{i=1}^{N_v}\prod_{t=1}^N P(Z_{i,t}|Z_{t-1},\theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2,G,p)*\\P(\theta|K)P(K)P(\prod_{k=1}^{K+1}\lambda^{(k)} )P(\prod_{i=0}^2 \gamma_i)P(G|p)P(p) \end{aligned} $$
 
-
+Where $\vec{\theta}$ is a  $K$ dimensional vector of locations of change points (and takes values in $\{1,\dots,N\}$ where $n$ is end of the time series),  $\lambda^{(1)}, \dots, \lambda^{(K+1)}$ parameterize the epidemic component at the corresponding change points, $\gamma_0, \gamma_1, \gamma_2$ parameterize the Fourier series that drives the endemic component, $G$ is Erdos-Renyi (ER) random graph that represents the dependencies between cities and $p \in (0,1)$ parameterizes the ER graphs and is the probability of an edge being in the graph.
 
 
 ## Metropolis-Hastings Algorithm
@@ -456,7 +459,7 @@ Rewire randomly selects an edge (v1, v2) and deletes it from the adjacency list.
 
 
 
-# Results
+# Results/Discussion
 
 ## Two-Component Model
 In this paper, I have implemented an MCMC algorithm that estimates the Two-Component Model from simulated data. The simulation parameters are taken from @held_two-component_2006 
@@ -476,8 +479,7 @@ load("2c_sim_data.RData")
 
 
 
-```{r, lambda_traces_plot, fig.cap = "\\label{fig:lam_trace}Trace plots for $\\boldsymbol{\\gamma}$ and $\\boldsymbol{\\theta}$. The trace plots seem relatively well mixed. The autocorrelation is likely a function of the correlation between the each set of $\\boldsymbol{\\gamma}$ and $\\boldsymbol{\\theta}$ respectively. Thinning could potentially reduce the autocorrelation between sample draws.", fig.asp = 2/3.5}
-
+```{r, lambda_traces_plot, fig.cap = "\\label{fig:lam_trace}Trace plots for $\\boldsymbol{\\gamma}$ and $\\boldsymbol{\\theta}$. The trace plots seem relatively well mixed. The autocorrelation is likely a function of the correlation between the each set of $\\boldsymbol{\\gamma}$ and $\\boldsymbol{\\theta}$ respectively. Thinning could potentially reduce the autocorrelation between sample draws.", fig.asp = 0.6}
 
 burnin = 10000
 
@@ -639,8 +641,7 @@ The $\boldsymbol{\lambda}$ trace plots have interesting patterning, specifically
 
 
 
-# more figs
-```{r, fig.asp = 1}
+```{r, fig.asp = 1, fig.cap = "\\label{fig:2c_dens} Density plots for the count data, $K$", include = FALSE }
 par(mfrow = c(3, 3), las = 0)
 par(
   mar = c(2, 4, 1, 2),
@@ -686,12 +687,80 @@ mtext(text = "Iteration", side = 1, outer = TRUE)
 
 I also performed calibration checks
 
-## Two-Component Model on Simulated Data
-Beginning with the simple
+```{r}
+load("prior_check.RData")
+```
+
+
+```{r, prior_checks_2c, fig.cap = "\\label{fig:pc_2c} Prior Checks for $\\gamma$, $\\lambda$ and $K$. Only 3 $\\lambda$ values are displayed. The KDE smoothed distribution of values are plotted against the true density values of the priors (that is $P(\\lambda) \\sim \text{Gamma}(1,1)$ and $P(\\gamma) \\sim \\text{Norm}(0,3)$. The differences appear to be artifacts of the smoothing procedure."}
+
+burnin=0
+
+par(mfrow = c(2, 3))
+par(
+  mar = c(1, 4, 2, 2),
+  oma = c(3, 0, 2, 0),
+  mgp = c(3, 1, 0),
+  las = 1
+)
+plot(density(res_save$lambda[-(1:burnin), 1], bw = 0.05), main = "", xlab = "")
+lines(seq(0, 14, length = 100), dgamma(seq(0, 14, length = 100), 1, 1), col = "red")
+plot(density(res_save$lambda[-(1:burnin), 2], bw = 0.05), main = "", xlab = "")
+lines(seq(0, 14, length = 100), dgamma(seq(0, 14, length = 100), 1, 1), col = "red")
+plot(density(res_save$lambda[-(1:burnin), 3], bw = 0.05), main = "", xlab = "")
+lines(seq(0, 14, length = 1000), dgamma(seq(0, 14, length = 1000), 1, 1), col = "red")
+plot(density(res_save$gamma[-(1:burnin), 1], bw=0.2), main = "", xlab = "")
+lines(seq(-10, 10, length = 1000), dnorm(seq(-10, 10, length = 1000), 0, 3), col = "red")
+plot(density(res_save$gamma[-(1:burnin), 2], bw=0.2), main = "", xlab = "")
+lines(seq(-10, 10, length = 1000), dnorm(seq(-10, 10, length = 1000), 0, 3), col = "red")
+plot(density(res_save$gamma[-(1:burnin), 3], bw=0.2), main = "", xlab = "")
+lines(seq(-10, 10, length = 1000), dnorm(seq(-10, 10, length = 1000), 0, 3), col = "red")
+title(expression(paste(lambda, " and ", gamma, " Prior Checks")), outer = TRUE)
+
+
+
+```
+The following data was collected by running 100,000 iterations (thinned to 10,000 samples) of proposing to update either the $\lambda$ vector, $\gamma$ vector, adding a change point  ($K \rightarrow K + 1$) or removing a change point ($K \rightarrow K - 1$). The likelihood ratio for set to 1 so the only factor in accepting or rejecting a state was the priors. As such we would expect to see the parameter values posterior distribution to be their prior distributions. The priors are
+$$\vec\lambda \sim \text{Gamma}(1,1)$$
+$$\vec\gamma \sim \text{Norm}(0,3)$$
+$$K \sim \text{Unif}(0,N)$$
+
+In Figure \ref{fig:pc_2c} we have plots of the samples of the $\lambda$ values (first 3) and the $\gamma$ values. Each is overlayed with the density of their respective priors in red. Overall there appears to be a good match between the sampled values and their prior distributions.
+
+In figure \ref{fig:pois_hist} we have a frequency histogram of the sampled values of $K$ (the number of change points) overlayed with a red circle. The red circle represents the appropriate density value from the prior distribution of $K$. Overall we see a good qualitative fit between the values sampled from the posterior and the prior distribution. The following table gives the sample frequency and the actual probability (from the prior distibution). If these probabilities did not match, then there is likely a bug in the code or some unknown prior assumption on the model. Note that the sample frequency was computed from a thinned sample of 10,000 hence why 11, 25, and 51 have sample probabilities of 0.0001, there was 1 occurence of each.
+```{r, fig.cap="\\label{fig:pois_hist} Sample probabilities of $K$ overlayed with true probabilities. Overall this shows a good agreement between the sample probabilities and the true probabilties."}
+load("prior_check_pois.RData")
+hist(res_save$K[res_save$K < 12],breaks = seq(-1,12,1), freq = FALSE)
+points(seq(0,11,by = 1)-0.5, dpois(seq(0,11,by = 1),2), col = "red")
+# df =data.frame(sample=as.numeric(table(res_save$K)/length(res_save$K)), actual = dpois(c(0:9,c(11,25,51)),2))
+# knitr::kable(df, format = "latex")
+```
+
+
+
+| K    | sample    | actual|
+| :-------------: |:-------------:|:-------------:|
+|0 | 0.136 | 0.135|
+|1|  0.270| 0.270|
+|2|  0.2681| 0.271|
+|3|  0.185| 0.180|
+|4|  0.0899| 0.902|
+|5|  0.0365| 0.361|
+|6|  0.0113 |0.012|
+|7  |0.0029| 0.0034|
+|8  |0.0007| 0.0008|
+|9| 0.0001| 0.00019|
+|11| 0.0001| 6.94e-6|
+|25| 0.0001| 2.97e-19|
+|51| 0.0001| 1.96e-52|
+
+
 
 ## Graph Estimation on Fixed Two-Component Model
 
-# Conclusion/Discussion
+## Graph Priors
+
+# Conclusion
 
 
 

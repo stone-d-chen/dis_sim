@@ -1,4 +1,4 @@
-\documentclass[]{article}
+\documentclass[11pt,a4paper]{article}
 \usepackage{lmodern}
 \usepackage{amssymb,amsmath}
 \usepackage{ifxetex,ifluatex}
@@ -94,7 +94,7 @@
 \usepackage{caption}
 \usepackage{amsfonts}
 \captionsetup{width=4.5in}
-\usepackage{algorithm}
+\usepackage{mathtools}
 
 \begin{document}
 \maketitle
@@ -478,7 +478,21 @@ place a \(Beta\) prior in \(p\) with higher mass on lower probabilities.
 \hypertarget{posterior}{%
 \subsection{Posterior}\label{posterior}}
 
-\[\prod_{i=1}^{N_v}\prod_{t=1}^N P(Z_{i,t}|Z_{t-1},\theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2,G,p)P(\theta|K)P(K)P(\prod_{k=1}^{K+1}\lambda^{(k)} )P(\prod_{i=0}^2 \gamma_i)P(G|p)P(p)\]
+To summarize posterior is proportional to the product of the likelihood,
+graph and non-graph priors
+
+\[ P(\vec{\theta}, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2, G,p|Z)  \propto \]
+\[\begin{aligned}\prod_{i=1}^{N_v}\prod_{t=1}^N P(Z_{i,t}|Z_{t-1},\theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2,G,p)*\\P(\theta|K)P(K)P(\prod_{k=1}^{K+1}\lambda^{(k)} )P(\prod_{i=0}^2 \gamma_i)P(G|p)P(p) \end{aligned} \]
+
+Where \(\vec{\theta}\) is a \(K\) dimensional vector of locations of
+change points (and takes values in \(\{1,\dots,N\}\) where \(n\) is end
+of the time series), \(\lambda^{(1)}, \dots, \lambda^{(K+1)}\)
+parameterize the epidemic component at the corresponding change points,
+\(\gamma_0, \gamma_1, \gamma_2\) parameterize the Fourier series that
+drives the endemic component, \(G\) is Erdos-Renyi (ER) random graph
+that represents the dependencies between cities and \(p \in (0,1)\)
+parameterizes the ER graphs and is the probability of an edge being in
+the graph.
 
 \hypertarget{metropolis-hastings-algorithm}{%
 \subsection{Metropolis-Hastings
@@ -539,6 +553,65 @@ A similar issue is also seen when jumping between parameter spaces. To
 handle this the Metropolis-Hastings-Green algorithm is introduced which
 adds an additional Jacobian term \(|J|\) to handle the change in
 dimension. This is described further below.
+
+\hypertarget{model-checking}{%
+\subsection{Model Checking}\label{model-checking}}
+
+An important step in all statistical modelling is checking the model.
+
+\hypertarget{prior-checks}{%
+\subsubsection{Prior Checks}\label{prior-checks}}
+
+The priors can be checked by setting likelihood to 1. Then the posterior
+is only a function of the priors
+
+\[\begin{aligned} P(\theta|D) & \propto P(D|\theta)P(\theta) \\ & \propto 1*P(\theta)  \end{aligned} \]
+that is the samples returned by the MCMC should be drawn from the prior
+distribution. This helps shows that the prior distributions are properly
+implemented in the model as well as show potentially unintended
+assumptions about the priors.
+
+Other prior analysis include prior sensitivity analysis where the effect
+of different priors on the posterior distribution are examined. This is
+less important when the datasets are large sense the likelihood portion
+generally dominates the posterior calculation.
+
+\hypertarget{well-calibrated}{%
+\subsubsection{Well-Calibrated}\label{well-calibrated}}
+
+A goal of frequentist statistical inference is to obtain confidence
+intervals (CI), where a 95\% CI for a parameter would capture the true
+parameter in 95\% of replications.
+
+A credible interval plays a similar role in Bayesian inference. We would
+like a 95\% credible interval for a parameter to capture the ``true''
+parameter value 95\% of the time. If this is the case, then the model is
+considered ``well-calibrated''. To do this for Bayesian models, we draw
+samples of the estimated parameters from their prior distributions
+\(\theta_{sample_1} \sim P(\theta)\) and then using the sampled
+parameters we simulate data according to the likelihood function
+\(D_{1} \sim P(D|\theta_{sample_1})\). The model is then used to compute
+95\% credible intervals as if it were real data. This process is
+repeated for
+\((\theta_{sample_2}, D_2), \dots, (\theta_{sample_N}, D_N)\) and their
+corresponding credible intervals are collected. We can then compare to
+see if the 95\% credible intervals from the \(N\) parameter samples,
+covers the true sampled parameter 95\% of the time (Carpenter
+\protect\hyperlink{ref-carpenter_bayesian_2017}{2017},p.
+@cook\_validation\_2006).
+
+\hypertarget{posterior-predictive-checking}{%
+\subsubsection{Posterior Predictive
+Checking}\label{posterior-predictive-checking}}
+
+If the model is a good fit for the data, then simulating data by
+sampling according the posterior distribution, should result in
+simulated data that looks similar to the true data. If this is not the
+case, the model potentially inadequate for capturing important features
+of the data. This can be done in a qualitative manner where obviously
+poor models can be investigated (Gelman et al.
+\protect\hyperlink{ref-gelman_bayesian_2013}{2013},pp. 141--159;
+Kruschke \protect\hyperlink{ref-kruschke_doing_2014}{2014},pp. 130--131)
 
 \hypertarget{methods-implementation}{%
 \section{Methods/ Implementation}\label{methods-implementation}}
@@ -605,10 +678,12 @@ notation for clarity)
 change\_lambda}\label{change_gamma-change_lambda}}
 
 The gamma and lambda parameters are updated in blocks via a standard
-Metropolis-Hastings step. The gamma and lambda proposals are each drawn
-from Multivariate Normal (MVN) distributions centered at the current
-parameter values. That is the proposed parameter vectors \(\gamma^*\)
-and \(\lambda^*\) are drawn from \(MVN(\gamma, \sigma_\gamma I_3)\) and
+Metropolis-Hastings step (Gelman et al.
+\protect\hyperlink{ref-gelman_bayesian_2013}{2013},p. 280). The gamma
+and lambda proposals are each drawn from Multivariate Normal (MVN)
+distributions centered at the current parameter values. That is the
+proposed parameter vectors \(\gamma^*\) and \(\lambda^*\) are drawn from
+\(MVN(\gamma, \sigma_\gamma I_3)\) and
 \(MVN(\lambda, \sigma_\lambda I_{K+1})\) where \(I_n\) is the identity
 matrix of dimension \(n\). The variance of the distributions is scaled
 as \(\sigma_\gamma\) and \(\sigma_\lambda\) which are hand selected to
@@ -848,11 +923,8 @@ adjacency list. It then randomly samples a vertex v3 and forms the edge
 (v2, v3). Since the reverse move is selecting the edge (v2, v3) and then
 rewiring (v1, v2), the Hastings ratio is 1
 
-\hypertarget{results}{%
-\section{Results}\label{results}}
-
-\hypertarget{results-1}{%
-\section{Results}\label{results-1}}
+\hypertarget{resultsdiscussion}{%
+\section{Results/Discussion}\label{resultsdiscussion}}
 
 \hypertarget{two-component-model}{%
 \subsection{Two-Component Model}\label{two-component-model}}
@@ -876,29 +948,9 @@ K: number of changespoints & 2\tabularnewline
 \bottomrule
 \end{longtable}
 
-Figure \ref{fig:lam_trace} are trace plots, which are time series of the
-parameter draws. Typically a ``good'' trace plot shows no obvious
-autocorrelation (which can indicate a proposal step that is too small)
-or flat portions (proposal steps that are too large). Trace plots with
-these patterns indicate that the sampler has not converged to the
-posterior distribution of the parameter. ``Tuning'' or adjusting the
-proposal jump size can help fix these patterns, with the end goal of
-being able to efficiently explore the posterior distribution of the
-parameter. The trace plots for the \(\gamma\) parameters seem to rather
-well mixed though there is a slight pattern to the \(\gamma_0\) trace
-plot. This is likely due to the correlation between \(\gamma_0\),
-\(\gamma_1\) and \(\gamma_2\) due to their nature of parameterizing a
-cyclical function. The same is true for the \(\theta\) parameters; they
-are constrained such that \(\theta_1 < \theta_2 < \theta_3\). This
-autocorrelation seen in the trace plots could possibly be reduced via
-thinning or taking every \(n\) samples instead of every sample.
-
-The \(\theta_3\) trace plot is of note because it is only valid for when
-\(K = 3\); the \(\theta_3\) does not exist otherwise.
-
 \begin{figure}
 \centering
-\includegraphics{thesis_draft_files/figure-latex/unnamed-chunk-2-1.pdf}
+\includegraphics{thesis_draft_files/figure-latex/lambda_traces_plot-1.pdf}
 \caption{\label{fig:lam_trace}Trace plots for \(\boldsymbol{\gamma}\)
 and \(\boldsymbol{\theta}\). The trace plots seem relatively well mixed.
 The autocorrelation is likely a function of the correlation between the
@@ -907,19 +959,49 @@ respectively. Thinning could potentially reduce the autocorrelation
 between sample draws.}
 \end{figure}
 
+Figure \ref{fig:lam_trace} are trace plots, which are time series of the
+parameter draws. Typically a ``good'' trace plot shows no obvious
+autocorrelation (which can indicate a proposal step that is too small)
+or flat portions (proposal steps that are too large). Trace plots with
+these patterns indicate that the sampler has not converged to the
+posterior distribution of the parameter. ``Tuning'' or adjusting the
+proposal jump size can help fix these patterns, with the end goal of
+being able to efficiently explore the posterior distribution of the
+parameter (Gelman et al.
+\protect\hyperlink{ref-gelman_bayesian_2013}{2013},p. 296). The trace
+plots for the \(\gamma\) parameters seem to rather well mixed though
+there is a slight pattern to the \(\gamma_0\) trace plot.
+
 \begin{figure}
 \centering
-\includegraphics{thesis_draft_files/figure-latex/cor_gammas-1.pdf}
-\caption{Plots of \(\gamma_0\) vs \(\gamma_1\) and \(\gamma_0\) vs
-\(\gamma_2\). Each point represents the corresponding parameter value at
-the same sample draw, i.e., the values of each parameter when the sample
-was accepted. The strong correlation between the parameters can lead to
-poor mixing. Note the tails are due to the initial values of the MCMC
-chain.}
+\includegraphics{thesis_draft_files/figure-latex/unnamed-chunk-2-1.pdf}
+\caption{\label{fig:cor_gammas}Plots of \(\gamma_0\) vs \(\gamma_1\) and
+\(\gamma_0\) vs \(\gamma_2\). Each point represents the corresponding
+parameter value at the same sample draw, i.e., the values of each
+parameter when the sample was accepted. The strong correlation between
+the parameters can lead to poor mixing. Note the tails are due to the
+initial values of the MCMC chain.}
 \end{figure}
 
-\includegraphics{thesis_draft_files/figure-latex/lambda_traces-1.pdf}
-\includegraphics{thesis_draft_files/figure-latex/lambda_traces-2.pdf}
+This is likely due to the correlation (see Figure \ref{fig:cor_gammas})
+between \(\gamma_0\), \(\gamma_1\) and \(\gamma_2\) due to their nature
+of parameterizing a cyclical function. The same is true for the
+\(\theta\) parameters; they are constrained such that
+\(\theta_1 < \theta_2 < \theta_3\). The dependence can cause inefficient
+sampling by proposing moves that are outside these narrow
+regions/combinations of parameter values (Turner et al.
+\protect\hyperlink{ref-turner_method_2013}{2013}). This autocorrelation
+seen in the trace plots could possibly be reduced via thinning
+i.e.~taking every \(k\) samples instead of every sample. Gelman et al.
+(\protect\hyperlink{ref-gelman_bayesian_2013}{2013}) mentions that they
+have found it useful to store no more than a total of \(1000\)
+iterations.
+
+The \(\theta_3\) trace plot is of note because it is only valid for when
+\(K = 3\); the \(\theta_3\) does not exist otherwise.
+
+\includegraphics{thesis_draft_files/figure-latex/unnamed-chunk-3-1.pdf}
+\includegraphics{thesis_draft_files/figure-latex/unnamed-chunk-3-2.pdf}
 
 The \(\boldsymbol{\lambda}\) trace plots have interesting patterning,
 specifically the \(\lambda_2\) and \(\lambda_3\) traces appear to fix
@@ -930,26 +1012,87 @@ around \(1.2\) and \(\lambda_3\) at \(0.7\) but when \(K = 2\),
 \(\lambda_3\) can take the role of fitting the outbreak while
 \(\lambda_4\) models to the return \(0.7\), the baseline.
 
-\includegraphics{thesis_draft_files/figure-latex/density_plots-1.pdf}
+\hypertarget{prior-checks-1}{%
+\subsubsection{Prior Checks}\label{prior-checks-1}}
 
-\hypertarget{two-component-model-on-simulated-data}{%
-\subsection{Two-Component Model on Simulated
-Data}\label{two-component-model-on-simulated-data}}
+I also performed calibration checks
 
-Beginning with the simple
+\includegraphics{thesis_draft_files/figure-latex/prior_checks_2c-1.pdf}
+The following data was collected by running 100,000 iterations (thinned
+to 10,000 samples) of proposing to update either the \(\lambda\) vector,
+\(\gamma\) vector, adding a change point (\(K \rightarrow K + 1\)) or
+removing a change point (\(K \rightarrow K - 1\)). The likelihood ratio
+for set to 1 so the only factor in accepting or rejecting a state was
+the priors. As such we would expect to see the parameter values
+posterior distribution to be their prior distributions. The priors are
+\[\vec\lambda \sim \text{Gamma}(1,1)\]
+\[\vec\gamma \sim \text{Norm}(0,3)\] \[K \sim \text{Unif}(0,N)\]
+
+In Figure \ref{fig:pc_2c} we have plots of the samples of the
+\(\lambda\) values (first 3) and the \(\gamma\) values. Each is
+overlayed with the density of their respective priors in red. Overall
+there appears to be a good match between the sampled values and their
+prior distributions.
+
+In figure \ref{fig:pois_hist} we have a frequency histogram of the
+sampled values of \(K\) (the number of change points) overlayed with a
+red circle. The red circle represents the appropriate density value from
+the prior distribution of \(K\). Overall we see a good qualitative fit
+between the values sampled from the posterior and the prior
+distribution. The following table gives the sample frequency and the
+actual probability (from the prior distibution). If these probabilities
+did not match, then there is likely a bug in the code or some unknown
+prior assumption on the model. Note that the sample frequency was
+computed from a thinned sample of 10,000 hence why 11, 25, and 51 have
+sample probabilities of 0.0001, there was 1 occurence of each.
+\includegraphics{thesis_draft_files/figure-latex/unnamed-chunk-6-1.pdf}
+
+\begin{longtable}[]{@{}ccc@{}}
+\toprule
+K & sample & actual\tabularnewline
+\midrule
+\endhead
+0 & 0.136 & 0.135\tabularnewline
+1 & 0.270 & 0.270\tabularnewline
+2 & 0.2681 & 0.271\tabularnewline
+3 & 0.185 & 0.180\tabularnewline
+4 & 0.0899 & 0.902\tabularnewline
+5 & 0.0365 & 0.361\tabularnewline
+6 & 0.0113 & 0.012\tabularnewline
+7 & 0.0029 & 0.0034\tabularnewline
+8 & 0.0007 & 0.0008\tabularnewline
+9 & 0.0001 & 0.00019\tabularnewline
+11 & 0.0001 & 6.94e-6\tabularnewline
+25 & 0.0001 & 2.97e-19\tabularnewline
+51 & 0.0001 & 1.96e-52\tabularnewline
+\bottomrule
+\end{longtable}
 
 \hypertarget{graph-estimation-on-fixed-two-component-model}{%
 \subsection{Graph Estimation on Fixed Two-Component
 Model}\label{graph-estimation-on-fixed-two-component-model}}
 
-\hypertarget{conclusiondiscussion}{%
-\section{Conclusion/Discussion}\label{conclusiondiscussion}}
+\hypertarget{graph-priors}{%
+\subsection{Graph Priors}\label{graph-priors}}
+
+\hypertarget{conclusion}{%
+\section{Conclusion}\label{conclusion}}
 
 \hypertarget{citations}{%
 \section*{Citations}\label{citations}}
 \addcontentsline{toc}{section}{Citations}
 
 \hypertarget{refs}{}
+\leavevmode\hypertarget{ref-carpenter_bayesian_2017}{}%
+Carpenter, B. (2017), ``Bayesian Posteriors are Calibrated by
+Definition,'' \emph{Statistical Modeling, Causal Inference, and Social
+Science}.
+
+\leavevmode\hypertarget{ref-cook_validation_2006}{}%
+Cook, S. R., Gelman, A., and Rubin, D. B. (2006), ``Validation of
+Software for Bayesian Models Using Posterior Quantiles,'' \emph{Journal
+of Computational and Graphical Statistics}, 15, 675--692.
+
 \leavevmode\hypertarget{ref-diggle_-line_2003}{}%
 Diggle, P., Knorr-Held, L., Rowlingson, B., Su, T., Hawtin, P., and
 Bryant, T. (2003), ``On-line Monitoring of Public Health Surveillance
@@ -960,6 +1103,11 @@ Data,'' pp. 233--266.
 \emph{EHEC O104:H4 Outbreak Germany 2011} (2011), report, Robert
 Koch-Institut; Robert Koch-Institut, Infektionsepidemiologie.
 \url{https://doi.org/http://dx.doi.org/10.25646/88}.
+
+\leavevmode\hypertarget{ref-gelman_bayesian_2013}{}%
+Gelman, A., Carlin, J. B., Stern, H. S., Dunson, D. B., Vehtari, A., and
+Rubin, D. B. (2013), \emph{Bayesian Data Analysis, Third Edition}, CRC
+Press.
 
 \leavevmode\hypertarget{ref-green_reversible_1995}{}%
 Green, P. J. (1995), ``Reversible jump Markov chain Monte Carlo
@@ -986,9 +1134,19 @@ two-component model for counts of infectious diseases,''
 Keeling, M. J., and Rohani, P. (2008), \emph{Modeling Infectious
 Diseases in Humans and Animals}, Princeton University Press.
 
+\leavevmode\hypertarget{ref-kruschke_doing_2014}{}%
+Kruschke, J. (2014), \emph{Doing Bayesian Data Analysis: A Tutorial with
+R, JAGS, and Stan}, Academic Press.
+
 \leavevmode\hypertarget{ref-pawitan_all_2001}{}%
 Pawitan, Y. (2001), \emph{In All Likelihood: Statistical Modelling and
 Inference Using Likelihood}, OUP Oxford.
+
+\leavevmode\hypertarget{ref-turner_method_2013}{}%
+Turner, B. M., Sederberg, P. B., Brown, S. D., and Steyvers, M. (2013),
+``A Method for Efficiently Sampling From Distributions With Correlated
+Dimensions,'' \emph{Psychological methods}, 18, 368--384.
+\url{https://doi.org/10.1037/a0032222}.
 
 
 \end{document}
