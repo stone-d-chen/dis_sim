@@ -225,7 +225,7 @@ compute_log_prior <- function(input){
   edge_count = input$edge_count
   
   prior_star <- -log( choose( choose(length(adj), 2), edge_count)) 
-  + dpois(edge_count, 10, log = TRUE)
+  #+ dpois(edge_count, 10, log = TRUE)
   # -log(choose(N, K)) +
   #   sum(dgamma(lambda, 1, 1, log = TRUE)) +
   #   sum(dnorm(gamma, 0, 3, log = TRUE)) +
@@ -371,10 +371,10 @@ compute_log_like <- function(input) {
 
 #-------for prior testing--------
 
- compute_log_like <- function(input){
-
-   0
- }
+ # compute_log_like <- function(input){
+ # 
+ #   0
+ # }
 ```
 
 # base operators
@@ -839,22 +839,23 @@ add_edge_op <- function(input){
   input_star$edge_count <- input$edge_count + 1
   
   
-  #LL_star <- compute_log_like(input_star)
   
-  #prior_star <- compute_log_prior(input_star)
-  
-  
-  hastings <- log(ord*(ord - 1) - 2*num_edges)-log(2*(num_edges + 1))
-  
-  
-  #post_star <- LL_star + prior_star #new log posterior
-  #alpha <- post_star - LL + hastings
-  
+    hastings <- log(ord*(ord - 1) - 2*num_edges)-log(2*(num_edges + 1))
+    
+    
+  # LL_star <- compute_log_like(input_star)
+  # 
+  # prior_star <- compute_log_prior(input_star)
+  # 
+  # post_star <- LL_star + prior_star #new log posterior
+  # alpha <- post_star - LL + hastings
+  # 
   
   rat <- compute_log_like_rat(input_star, adj, v1, v2)
   prior_old <- compute_log_prior(input)
   prior_star <- compute_log_prior(input_star)
   alpha <- rat  + hastings + prior_star - prior_old
+  post_star <- 0
   
   
   
@@ -862,7 +863,7 @@ add_edge_op <- function(input){
   
   if (log(U) < alpha) {
     input_star$graph = 1
-    input_star$LL <- 0
+    input_star$LL <- post_star
     return(input_star)
     
   } else {
@@ -915,24 +916,26 @@ del_edge_op <- function(input){
   input_star$edge_count <- input$edge_count - 1
   
   
-  #LL_star <- compute_log_like(input_star)
-  #prior_star <- compute_log_prior(input_star)
+ 
   
   hastings <- log(2) + log(num_edges) - log(ord*(ord - 1) - 2*(num_edges - 1))
-  
-  #post_star <- LL_star + prior_star #new log posterior
-  #alpha <- post_star - LL + hastings
-  
+
+  # LL_star <- compute_log_like(input_star)
+  # prior_star <- compute_log_prior(input_star)
+  # post_star <- LL_star + prior_star #new log posterior
+  # alpha <- post_star - LL + hastings
+
   rat <- compute_log_like_rat(input_star, adj, v11, v12)
   prior_old <- compute_log_prior(input)
   prior_star <- compute_log_prior(input_star)
   alpha <- rat  + hastings + prior_star - prior_old
+  post_star <- 0
   
   U = runif(1)
   
   if (log(U) < alpha) {
     input_star$graph = 1
-    input_star$LL <- 0
+    input_star$LL <- post_star
     return(input_star)
     
   } else {
@@ -1312,7 +1315,7 @@ lapply(ops, undebug)
 undebug(add_edge_op)
 undebug(del_edge_op)
 
-nSim <- 100000
+nSim <- 200000
 #pre-allocate
 res <- list(
   K = numeric(nSim),

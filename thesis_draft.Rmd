@@ -14,7 +14,7 @@ output:
 geometry: "top=3cm,left=3cm,right=3cm"
 bibliography: disease_sim_proj.bib
 csl: journal-of-the-american-statistical-association.csl
-font-size: 11pt
+fontsize: 11pt
 header-includes:
  - \usepackage{multirow}
  - \usepackage{multicol}
@@ -33,7 +33,7 @@ header-includes:
 \newcommand{\dw}[1]{{\color{red}{#1}}}
 
 ```{r, setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 library(igraph)
 ```
 
@@ -306,6 +306,28 @@ The fraction $\frac{q(\theta^*|\theta)}{q(\theta|\theta^*)}$ is known as the Has
 
 A similar issue is also seen when jumping between parameter spaces. To handle this the Metropolis-Hastings-Green algorithm is introduced which adds an additional Jacobian term $|J|$ to handle the change in dimension. This is described further below.
 
+## Model Checking
+
+An important step in all statistical modelling is checking the model.
+
+### Prior Checks
+
+The priors can be checked by setting likelihood to 1. Then the posterior is only a function of the priors
+
+$$\begin{aligned} P(\theta|D) & \propto P(D|\theta)P(\theta) \\ & \propto 1*P(\theta)  \end{aligned} $$
+that is the samples returned by the MCMC should be drawn from the prior distribution. This helps shows that the prior distributions are properly implemented in the model as well as show potentially unintended assumptions about the priors.
+
+Other prior analysis include prior sensitivity analysis where the effect of different priors on the posterior distribution are examined. This is less important when the datasets are large sense the likelihood portion generally dominates the posterior calculation.
+
+### Well-Calibrated
+
+A goal of frequentist statistical inference is to obtain confidence intervals (CI), where a 95\% CI for a parameter would capture the true parameter in 95\% of replications. 
+
+A credible interval plays a similar role in Bayesian inference. We would like a 95\% credible interval for a parameter to capture the "true" parameter value 95\% of the time. If this is the case, then the model is considered "well-calibrated". To do this for Bayesian models, we draw samples of the estimated parameters from their prior distributions $\theta_{sample_1} \sim P(\theta)$ and then using the sampled parameters we simulate data according to the likelihood function $D_{1} \sim P(D|\theta_{sample_1})$. The model is then used to compute 95\% credible intervals as if it were real data. This process is repeated for $(\theta_{sample_2}, D_2), \dots, (\theta_{sample_N}, D_N)$ and their corresponding credible intervals are collected. We can then compare to see if the 95\% credible intervals from the $N$ parameter samples, covers the true sampled parameter 95\% of the time [@carpenter_bayesian_2017, @cook_validation_2006].
+
+### Posterior Predictive Checking
+
+If the model is a good fit for the data, then simulating data by sampling according the posterior distribution, should result in simulated data that looks similar to the true data. If this is not the case, the model potentially inadequate for capturing important features of the data. This can be done in a qualitative manner where obviously poor models can be investigated [@gelman_bayesian_2013, pp. 141-159; @kruschke_doing_2014, pp. 130-131]
 
 
 # Methods/ Implementation
@@ -330,7 +352,7 @@ $$ \frac{P(Z^*_{i,t})P(Z^*_{k,t})}{P(Z_{i,t})P(Z_k,t)}\frac{\prod_j P(Z_{j})}{\p
 
 ## change_gamma, change_lambda
 
-The gamma and lambda parameters are updated in blocks via a standard Metropolis-Hastings step. The gamma and lambda proposals are each drawn from Multivariate Normal (MVN) distributions centered at the current parameter values. That is the proposed parameter vectors $\gamma^*$ and $\lambda^*$ are drawn from $MVN(\gamma, \sigma_\gamma I_3)$ and $MVN(\lambda, \sigma_\lambda I_{K+1})$ where $I_n$ is the identity matrix of dimension $n$. The variance of the distributions is scaled as $\sigma_\gamma$ and $\sigma_\lambda$ which are hand selected to improve mixing. 
+The gamma and lambda parameters are updated in blocks via a standard Metropolis-Hastings step [@gelman_bayesian_2013, pp. 280]. The gamma and lambda proposals are each drawn from Multivariate Normal (MVN) distributions centered at the current parameter values. That is the proposed parameter vectors $\gamma^*$ and $\lambda^*$ are drawn from $MVN(\gamma, \sigma_\gamma I_3)$ and $MVN(\lambda, \sigma_\lambda I_{K+1})$ where $I_n$ is the identity matrix of dimension $n$. The variance of the distributions is scaled as $\sigma_\gamma$ and $\sigma_\lambda$ which are hand selected to improve mixing. 
 
 Since the Normal distribution is symmetric, the Hastings ratio is 1 so the acceptance ratio is the ratio of the log-likelihoods between the current and proposed steps.
 
@@ -433,7 +455,6 @@ The degree preserving swap was implemented to allow changes to the graph structu
 Rewire randomly selects an edge (v1, v2) and deletes it from the adjacency list. It then randomly samples a vertex v3 and forms the edge (v2, v3). Since the reverse move is selecting the edge (v2, v3) and then rewiring (v1, v2), the Hastings ratio is 1
 
 
-# Results
 
 # Results
 
@@ -454,20 +475,18 @@ load("2c_sim_data.RData")
 
 
 
-Figure \ref{fig:lam_trace} are trace plots, which are time series of the parameter draws. Typically a "good" trace plot shows no obvious autocorrelation (which can indicate a proposal step that is too small) or flat portions (proposal steps that are too large). Trace plots with these patterns indicate that the sampler has not converged to the posterior distribution of the parameter. "Tuning" or adjusting the proposal jump size can help fix these patterns, with the end goal of being able to efficiently explore the posterior distribution of the parameter. The trace plots for the $\gamma$ parameters seem to rather well mixed though there is a slight pattern to the $\gamma_0$ trace plot. This is likely due to the correlation between $\gamma_0$, $\gamma_1$ and $\gamma_2$ due to their nature of parameterizing a cyclical function. The same is true for the $\theta$ parameters; they are constrained such that $\theta_1 < \theta_2 < \theta_3$. This autocorrelation seen in the trace plots could possibly be reduced via thinning or taking every $n$ samples instead of every sample.
 
-The $\theta_3$ trace plot is of note because it is only valid for when $K = 3$; the $\theta_3$ does not exist otherwise.
+```{r, lambda_traces_plot, fig.cap = "\\label{fig:lam_trace}Trace plots for $\\boldsymbol{\\gamma}$ and $\\boldsymbol{\\theta}$. The trace plots seem relatively well mixed. The autocorrelation is likely a function of the correlation between the each set of $\\boldsymbol{\\gamma}$ and $\\boldsymbol{\\theta}$ respectively. Thinning could potentially reduce the autocorrelation between sample draws.", fig.asp = 2/3.5}
 
-```{r, fig.cap = "\\label{fig:lam_trace}Trace plots for $\\boldsymbol{\\gamma}$ and $\\boldsymbol{\\theta}$. The trace plots seem relatively well mixed. The autocorrelation is likely a function of the correlation between the each set of $\\boldsymbol{\\gamma}$ and $\\boldsymbol{\\theta}$ respectively. Thinning could potentially reduce the autocorrelation between sample draws.", fig.ncol = 1}
 
-burnin = 400000
+burnin = 10000
 
-#downsample = seq(1, length(res$K), by = 1)
+downsample = seq(1, length(res$K), length = 1000)
 
 par(
   mar = c(1, 4, 2, 2),
   oma = c(3, 0, 2, 0),
-  mgp = c(2, 1, 0),
+  mgp = c(3, 1, 0),
   mfrow = c(2, 3),
   las = 1
 )
@@ -496,6 +515,7 @@ plot(res$theta[(res$K == 3), 3],
      type = "l",
      ylab = expression(theta[3]),
      xlab = "")
+
 title(expression(paste("Trace Plots for ", gamma, " and ", theta)), outer = TRUE, line = 1)
 mtext(
   text = "Iteration",
@@ -503,36 +523,47 @@ mtext(
   line = 2,
   outer = TRUE
 )
-
 ```
 
-```{r, cor_gammas, fig.cap = "Plots of $\\gamma_0$ vs $\\gamma_1$ and $\\gamma_0$ vs $\\gamma_2$. Each point represents the corresponding parameter value at the same sample draw, i.e., the values of each parameter when the sample was accepted. The strong correlation between the parameters can lead to poor mixing. Note the tails are due to the initial values of the MCMC chain.", fig.ncol = 1}
-par(mfrow = c(1, 2), las  = 0)
+
+Figure \ref{fig:lam_trace} are trace plots, which are time series of the parameter draws. Typically a "good" trace plot shows no obvious autocorrelation (which can indicate a proposal step that is too small) or flat portions (proposal steps that are too large). Trace plots with these patterns indicate that the sampler has not converged to the posterior distribution of the parameter. "Tuning" or adjusting the proposal jump size can help fix these patterns, with the end goal of being able to efficiently explore the posterior distribution of the parameter [@gelman_bayesian_2013, pp. 296]. The trace plots for the $\gamma$ parameters seem to rather well mixed though there is a slight pattern to the $\gamma_0$ trace plot. 
+
+```{r, fig.cap = "\\label{fig:cor_gammas}Plots of $\\gamma_0$ vs $\\gamma_1$ and $\\gamma_0$ vs $\\gamma_2$. Each point represents the corresponding parameter value at the same sample draw, i.e., the values of each parameter when the sample was accepted. The strong correlation between the parameters can lead to poor mixing. Note the tails are due to the initial values of the MCMC chain.", fig.asp = 0.5}
+
+
+
+
 par(
-  mar = c(1, 4, 1, 2),
+  mar = c(1, 4, 2, 2),
   oma = c(3, 0, 2, 0),
-  mgp = c(2, 1, 0)
+  mgp = c(2, 1, 0),
+  mfrow = c(1, 2),
+  las = 0
 )
-plot(res$gamma[, 1][seq(1, length(res$gamma[, 1]), length = 5000)],
-     res$gamma[, 2][seq(1, length(res$gamma[, 1]), length = 5000)],
+plot(res$gamma[, 1][seq(1, length(res$gamma[, 1]), length = 1000)],
+     res$gamma[, 2][seq(1, length(res$gamma[, 1]), length = 1000)],
      xlab = expression(gamma[0]),
      ylab = expression(gamma[1]))
-plot(res$gamma[, 1][seq(1, length(res$gamma[, 1]), length = 5000)],
-     res$gamma[, 3][seq(1, length(res$gamma[, 1]), length = 5000)],
+plot(res$gamma[, 1][seq(1, length(res$gamma[, 1]), length = 1000)],
+     res$gamma[, 3][seq(1, length(res$gamma[, 1]), length = 1000)],
      xlab = expression(gamma[0]),
      ylab = expression(gamma[2]))
-title(expression(paste("Correlation between ", gamma, "s"), outer = TRUE))
+title(expression(paste("Correlation between ", gamma, "s")), outer = TRUE, line = 1)
 mtext(
   text = "Iteration",
   side = 1,
   line = 2,
   outer = TRUE
 )
+
 ```
 
+This is likely due to the correlation (see Figure \ref{fig:cor_gammas}) between $\gamma_0$, $\gamma_1$ and $\gamma_2$ due to their nature of parameterizing a cyclical function. The same is true for the $\theta$ parameters; they are constrained such that $\theta_1 < \theta_2 < \theta_3$. The dependence can cause inefficient sampling by proposing moves that are outside these narrow regions/combinations of parameter values [@turner_method_2013]. This autocorrelation seen in the trace plots could possibly be reduced via thinning i.e. taking every $k$ samples instead of every sample. @gelman_bayesian_2013 mentions that they have found it useful to store no more than a total of $1000$ iterations. 
 
 
-```{r lambda_traces, fig.cap = "Trace plots for all $\\lambda$ values and filtered for K = 2. Overall the trace plots show that the samplers are mixing well with some minor autocorrelation that could potentially be resolved with thinning or more samples. The raw trace plots include the $\ambda$ values when there are 3 and 4 separate $\ambda$'s and is the cause of the random jumps.", fig.ncol = 1, fig.asp=1}
+The $\theta_3$ trace plot is of note because it is only valid for when $K = 3$; the $\theta_3$ does not exist otherwise.
+
+```{r, fig.cap = "Trace plots for all $\\lambda$ values and filtered for K = 2. Overall the trace plots show that the samplers are mixing well with some minor autocorrelation that could potentially be resolved with thinning or more samples. The raw trace plots include the $\ambda$ values when there are 3 and 4 separate $\\lambda$'s and is the cause of the random jumps.", fig.asp=0.8}
 burnin = 400000
 par(mfrow = c(2, 2), las  = 0)
 par(
@@ -566,7 +597,7 @@ mtext(
 
 par(mfrow = c(2, 2), las  = 0)
 par(
-  mar = c(2, 6, 1, 1),
+  mar = c(1, 6, 1, 1),
   oma = c(3, 0, 2, 0),
   mgp = c(2, 0.65, 0)
 )
@@ -577,24 +608,24 @@ plot(
   xlab = ""
 )
 mtext(text = "K = 2", side = 2, line = 4)
-par(mar = c(2, 3, 1, 1))
+par(mar = c(1, 6, 1, 1))
 plot(
   res$lambda[(res$K == 2), 3][-(1:burnin)],
   type = "l",
   ylab = expression(lambda[3]),
   xlab = ""
 )
-par(mar = c(2, 6, 1, 1))
+par(mar = c(1, 6, 1, 1))
 plot(res$lambda[(res$K == 3), 2],
      type = "l",
      ylab = expression(lambda[2]),
-     xlab = "")
+     xlab = "", asp = 1)
 mtext(text = "K = 3", side = 2, line = 4)
-par(mar = c(2, 3, 1, 1))
+par(mar = c(1, 6, 1, 1))
 plot(res$lambda[(res$K == 3), 3],
      type = "l",
      ylab = expression(lambda[3]),
-     xlab = "")
+     xlab = "", asp = 1)
 title(expression(paste(lambda, " Trace Plots for K = 2 & K = 3")), outer = TRUE)
 mtext(
   text = "Iteration",
@@ -608,8 +639,8 @@ The $\boldsymbol{\lambda}$ trace plots have interesting patterning, specifically
 
 
 
-
-```{r density_plots, fig.asp = 1,fig.ncol=1}
+# more figs
+```{r, fig.asp = 1}
 par(mfrow = c(3, 3), las = 0)
 par(
   mar = c(2, 4, 1, 2),
@@ -651,6 +682,9 @@ title(expression(paste("Actual Counts Density Plots")), outer = TRUE)
 mtext(text = "Iteration", side = 1, outer = TRUE)
 ```
 
+### Prior Checks
+
+I also performed calibration checks
 
 ## Two-Component Model on Simulated Data
 Beginning with the simple
