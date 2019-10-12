@@ -134,7 +134,7 @@
 	month = nov,
 	year = {2014},
 	note = {Google-Books-ID: FzvLAwAAQBAJ},
-	keywords = {Mathematics / Applied, Mathematics / Mathematical Analysis, Mathematics / Probability \& Statistics / General}
+	keywords = {Mathematics / Probability \& Statistics / General, Mathematics / Applied, Mathematics / Mathematical Analysis}
 }
 
 @book{gelman_bayesian_2013,
@@ -147,7 +147,7 @@
 	month = nov,
 	year = {2013},
 	note = {Google-Books-ID: ZXL6AQAAQBAJ},
-	keywords = {Computers / Mathematical \& Statistical Software, Mathematics / Probability \& Statistics / General, Psychology / Research \& Methodology}
+	keywords = {Mathematics / Probability \& Statistics / General, Computers / Mathematical \& Statistical Software, Psychology / Research \& Methodology}
 }
 
 @article{cook_validation_2006,
@@ -193,4 +193,61 @@
 	pmcid = {PMC4140408},
 	pages = {368--384},
 	file = {PubMed Central Full Text PDF:C\:\\Users\\chens\\Zotero\\storage\\WK6RKQKB\\Turner et al. - 2013 - A Method for Efficiently Sampling From Distributio.pdf:application/pdf}
+}
+
+@book{r_core_team_r_2019,
+	address = {Vienna, Austria},
+	title = {R: {A} {Language} and {Environment} for {Statistical} {Computing}},
+	url = {https://www.R-project.org/},
+	publisher = {R Foundation for Statistical Computing},
+	author = {{R Core Team}},
+	year = {2019}
+}
+
+@article{eddelbuettel_rcpp_2011,
+	title = {Rcpp: {Seamless} {R} and {C}++ {Integration}},
+	volume = {40},
+	url = {http://www.jstatsoft.org/v40/i08/},
+	doi = {10.18637/jss.v040.i08},
+	number = {8},
+	journal = {Journal of Statistical Software},
+	author = {Eddelbuettel, Dirk and François, Romain},
+	year = {2011},
+	pages = {1--18}
+}
+
+@book{eddelbuettel_seamless_2013,
+	address = {New York},
+	title = {Seamless {R} and {C}++ {Integration} with {Rcpp}},
+	publisher = {Springer},
+	author = {Eddelbuettel, Dirk},
+	year = {2013},
+	doi = {10.1007/978-1-4614-6868-4}
+}
+
+@article{eddelbuettel_extending_2017,
+	title = {Extending {extitR} with {extitC}++: {A} {Brief} {Introduction} to {extitRcpp}},
+	volume = {5},
+	issn = {2167-9843},
+	url = {https://doi.org/10.7287/peerj.preprints.3188v1},
+	doi = {10.7287/peerj.preprints.3188v1},
+	journal = {PeerJ Preprints},
+	author = {Eddelbuettel, Dirk and Balamuta, James Joseph},
+	month = aug,
+	year = {2017},
+	pages = {e3188v1}
+}
+
+@misc{horner_hash_2015,
+	title = {Hash {Table} {Performance} in {R}: {Part} {I}},
+	shorttitle = {Hash {Table} {Performance} in {R}},
+	url = {https://www.r-bloggers.com/hash-table-performance-in-r-part-i/},
+	abstract = {What Is It?A hash table, or associative array, is a well known key-value data structure. In R there is no equivalent, but you do have some options. You can use a vector of any type, a list, or an environment.But as you’ll see with all of these options their performance is compromised in some way. In the average case a lookupash tabl for a key should perform in constant time, or O(1), while in the worst case it will perform in O(n) time, n being the number of elements in the hash table.For the tests below, we’ll implement a hash table with a few R data structures and make some comparisons. We’ll create hash tables with only unique keys and then perform a search for every key in the table. Here’s our unique random string creator function:library(plyr) library(ggplot2)  \# Create n unique strings. We use upper and lower case letters only. Create \# length 1 strings first, and if we haven't satisfied the number of strings \# requested, we'll create length 2 strings, and so on until we've created n \# strings. \# \# Returns them in random order \# unique\_strings},
+	language = {en-US},
+	urldate = {2019-10-12},
+	journal = {R-bloggers},
+	author = {Horner, Jeffrey},
+	month = mar,
+	year = {2015},
+	file = {Snapshot:C\:\\Users\\chens\\Zotero\\storage\\2LYPU6K9\\hash-table-performance-in-r-part-i.html:text/html}
 }

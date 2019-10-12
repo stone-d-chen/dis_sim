@@ -326,7 +326,7 @@ Other prior analysis include prior sensitivity analysis where the effect of diff
 
 A goal of frequentist statistical inference is to obtain confidence intervals (CI), where a 95\% CI for a parameter would capture the true parameter in 95\% of replications. 
 
-A credible interval plays a similar role in Bayesian inference. We would like a 95\% credible interval for a parameter to capture the "true" parameter value 95\% of the time. If this is the case, then the model is considered "well-calibrated". To do this for Bayesian models, we draw samples of the estimated parameters from their prior distributions $\theta_{sample_1} \sim P(\theta)$ and then using the sampled parameters we simulate data according to the likelihood function $D_{1} \sim P(D|\theta_{sample_1})$. The model is then used to compute 95\% credible intervals as if it were real data. This process is repeated for $(\theta_{sample_2}, D_2), \dots, (\theta_{sample_N}, D_N)$ and their corresponding credible intervals are collected. We can then compare to see if the 95\% credible intervals from the $N$ parameter samples, covers the true sampled parameter 95\% of the time [@carpenter_bayesian_2017, @cook_validation_2006].
+A credible interval plays a similar role in Bayesian inference. We would like a 95\% credible interval for a parameter to capture the "true" parameter value 95\% of the time. If this is the case, then the model is considered "well-calibrated". To do this for Bayesian models, we draw samples of the estimated parameters from their prior distributions $\theta_{sample_1} \sim P(\theta)$ and then using the sampled parameters we simulate data according to the likelihood function $D_{1} \sim P(D|\theta_{sample_1})$. The model is then used to compute 95\% credible intervals as if it were real data. This process is repeated for $(\theta_{sample_2}, D_2), \dots, (\theta_{sample_N}, D_N)$ and their corresponding credible intervals are collected. We can then compare to see if the 95\% credible intervals from the $N$ parameter samples, covers the true sampled parameter 95\% of the time [@carpenter_bayesian_2017; @cook_validation_2006].
 
 ### Posterior Predictive Checking
 
@@ -334,26 +334,26 @@ If the model is a good fit for the data, then simulating data by sampling accord
 
 
 # Methods/ Implementation
-Here I describe the Metropolis Hastings algorithms used to draw samples from the posterior distributions of the parameters of interest. The algorithms are implemented in base R with some elements of the likelihood computation implemented in Rcpp. The operators generate and evaluate proposals. Each operator is a R function that accepts a list of parameters that represent the current state of the Markov chain, then proposes an new state for a given parameter (or set of parameters). The function then calculates the log acceptance ratio and determines whether to accepts it's proposal or reject it. It then returns the proposed parameters or returns the original parameters (in the case of rejecting).
+Here I describe the Metropolis Hastings algorithms used to draw samples from the posterior distributions of the parameters of interest. The algorithms are implemented in base R [@r_core_team_r_2019] with some elements of the likelihood computation implemented in Rcpp [@eddelbuettel_rcpp_2011]. The operators generate and evaluate proposals. Each operator is a R function that accepts a list of parameters that represent the current state of the Markov chain, then proposes an new state for a given parameter (or set of parameters). The function then calculates the log acceptance ratio and determines whether to accepts it's proposal or reject it. It then returns the proposed parameters or returns the original parameters (in the case of rejecting).
 
 ## Likelihood Computation
 
-Each operator receives the log-likelihood of its proposal by pass the proposal to the `compute_log_like` function. The `compute_log_like` function returns the unnormalized log-likelihood of the proposed parameters. This is computationally faster since computing the normalized likelihood of a Poisson distribution requires the evalution of $Z_{t}!$ for each data point. The naive method of computing the entire log-likelihood was used as it was computationally fast enough on the simulated dataset (without the graph).
+Each operator receives the log-likelihood of its proposal by passing the proposal to either `compute_log_like()` function or the `compute_log_like_rat()` function. The `compute_log_like()` function returns the unnormalized log-likelihood of the proposed parameters. This is computationally faster since computing the normalized likelihood of a Poisson distribution requires the evalution of $Z_{t}!$ for each data point. The naive method of computing the entire log-likelihood was used as it was computationally fast enough on the simulated dataset (without the graph).
 
-This differs from @held_two-component_2006 and @green_reversible_1995 who perform separate likelihood computations for each three operators: birth (adding a changepoint), death (removing a changepoint) and changing a $\lambda$ value. Each of these operators changes only a portion of the total likelihood computation and as such, it is computationally more efficient to only compute the ratio of the changes. For example, let $\boldsymbol{\theta^*}$ be the proposed changepoint vector where $K^* = K + 1$ (i.e. a new changepoint is added). Let $m$ be the index of the proposed changepoint and the rest of the changepoints remain the same. Then the only part of the likelihood computation that changes is in the interval between timepoints $[\theta_{m-1}, \theta_{m+1})$ and since its the ratio between the likelihoods of the proposed vs the current parameter set is important, the parts that remain identical have a likelihood of 1 (or log-likelihood of 0) and all that remains of the likelihood computation is:
+This differs from @held_two-component_2006 and @green_reversible_1995 who perform separate likelihood computations for each three operators: birth (adding a changepoint), death (removing a changepoint) and changing a $\lambda$ value. Each of these operators changes only a portion of the total likelihood computation and as such, it is computationally more efficient to only compute the ratio of the changes. For example, let $\boldsymbol{\theta^*}$ be the proposed changepoint vector where $K^* = K + 1$ (i.e. a new changepoint is added). Let $m$ be the index of the proposed changepoint and the rest of the changepoints remain the same. Then the only part of the likelihood computation that changes is in the interval between timepoints $[\theta_{m-1}, \theta_{m+1})$ and since its the ratio between the likelihoods of the proposed vs the current parameter set is important, the parts that remain identical have a likelihood of 1 (or log-likelihood of 0) and all that remains of the likelihood computation is
 
-Similar reductions in comptutation can be done following changes in the graph. If an edge $e^*_{ik}$ is proposed then only $Y_{i,t}$ and $Y_{k,t}$ and the corresponding $Z$'s are affected. As such only those two cities need to be updated. 
+Similar reductions in comptutation can be done following changes in the graph and. If an edge $e^*_{ik}$ is proposed then only $Y_{i,t}$ and $Y_{k,t}$ and the corresponding $Z$'s are affected. As such only those two cities need to be updated. 
 $$Y^*_{i,t}|G \sim ~ \text{Pois}\big(m\lambda_tZ_{k,t-1} +m\lambda_t\sum_{j=1}^{N_v}Z_{j,t-1}1[e_{ij}\in E(G)]+ \lambda_tZ_{i,t-1}\big) $$
 $$Y^*_{k,t}|G \sim  \text{Pois}\big(m\lambda_tZ_{i,t-1} +m\lambda_t\sum_{j=1}^{N_v}Z_{j,t-1}1[e_{ij}\in E(G)]+ \lambda_tZ_{i,t-1}\big) $$
 $$\begin{aligned} Y_{j,t}|G &\sim \text{Pois}\big(m\lambda_t\sum_{l=1}^{N_v}Z_{j,t-1}1[e_{jl}\in E(G^*)]+ \lambda_tZ_{i,t-1}\big)\\ & \sim  \text{Pois}\big(m\lambda_t\sum_{l=1}^{N_v}Z_{j,t-1}1[e_{jl}\in E(G)]+ \lambda_tZ_{i,t-1}\big) \end{aligned}$$
 
 Then the likelihood ratio can be computed as (dropping conditioning notation for clarity)
 
-$$ \frac{P(Z^*_{i,t})P(Z^*_{k,t})}{P(Z_{i,t})P(Z_k,t)}\frac{\prod_j P(Z_{j})}{\prod_{j}P( Z_{j})} $$
+$$ \frac{P(Z^*_{i,t})P(Z^*_{k,t})}{P(Z_{i,t})P(Z_k,t)}\frac{\prod_j P(Z_{j})}{\prod_{j}P( Z_{j})} = \frac{P(Z^*_{i,t})P(Z^*_{k,t})}{P(Z_{i,t})P(Z_k,t)} $$
+This is currently implemented for the `add_edge_op()` and `del_edge_op()` operators.
 
 
-
-## change_gamma, change_lambda
+## `change_gamma()`, `change_lambda()`
 
 The gamma and lambda parameters are updated in blocks via a standard Metropolis-Hastings step [@gelman_bayesian_2013, pp. 280]. The gamma and lambda proposals are each drawn from Multivariate Normal (MVN) distributions centered at the current parameter values. That is the proposed parameter vectors $\gamma^*$ and $\lambda^*$ are drawn from $MVN(\gamma, \sigma_\gamma I_3)$ and $MVN(\lambda, \sigma_\lambda I_{K+1})$ where $I_n$ is the identity matrix of dimension $n$. The variance of the distributions is scaled as $\sigma_\gamma$ and $\sigma_\lambda$ which are hand selected to improve mixing. 
 
@@ -361,7 +361,7 @@ Since the Normal distribution is symmetric, the Hastings ratio is 1 so the accep
 
 One potential issue is that gamma and lambda are used to compute the parameter of a Poisson distribution, but the Normal distribution proposals could potentially propose invalid parameter values. To remedy this, the proposal operator checks to see whether the proposed parameter value is valid (in this case positive) and automatically rejects the proposed state (staying in the current state). This can lead to inefficient mixing as a step is "wasted". This inefficiency can be resolved by using a non-symmetric proposal distribution such as log-normal or a truncated normal and an adjustment of the Hastings ratio to compensate for the asymmetry. However this does not seem to be an issue in the simulated cases, the initial values are positive and the jump ($\sigma$) size is small enough not to propose negative values.
 
-## change_theta
+## `change_theta()`
 
 This operator proposes a new location for one of the current change points $\theta_1,\dots, \theta_K$. A change point$\theta_k, k \in \{1, \dots, K\}$ is selected uniformly at random from all current change points. Then the proposed location $\theta_k^*$ is selected from values between $\{\theta_{k-1}+1,\dots, \theta_{k+1}-1\}$ uniformly at random. For $\theta_1$ and $\theta_k$ the proposed values are from $\{0,\dots, \theta_1-1\}$ and $\{\theta_K+1,\dots, N\}$ respectively.
 
@@ -373,10 +373,10 @@ $$ \lambda_t =  \begin{cases} \lambda^{(1)} & t < \theta_0 \\
 
 Since the proposal is generated uniformly at random between $\theta_{k-1}$ and $\theta_{k+1}$ the proposal probability is $q(\theta_{k^*}|\theta_k) = 1/(\theta_{k+1}-\theta_{k-1}-2) = q(\theta_k|\theta_k^*)$. Furthermore the the $\lambda$ values are deterministically generated from current $\lambda_k$ values and the $\theta_k^*$ values. The Hastings ratio is then 1 and the acceptance rate is the ratio of the likelihoods.
 
-## birth/death_theta reversible jump mcmc
+## `birth/death_theta` and Reversible Jump MCMC
 The `birth_theta()` and `death_theta()` operators allow for an increase and decrease in the number of changepoints. Then the parameter space can jump between a collection of possible models $\{M_K, K \in \{0,1,\cdots,n-1\}\}$ where $K$ indexes the number of changepoints. However models from different $M_K$'s have different dimensions of $\boldsymbol{\theta_k}$ and the likelihoods are not directly comparable (since they are not defined on the same probability space). To handle this we use a Reversible Jump MCMC (RJMCMC) as proposed in @green_reversible_1995. 
 
-### Birth
+### `birth_theta()`
 
 For a birth step a new changepoint is chosen uniformly at random from all possible time steps $\{1,\dots,N\}$ that aren't currently change points $\{\theta_1,\dots,\theta_K\}$ and then added to the current set of change points 
 
@@ -399,7 +399,7 @@ The $q_{(K+1\rightarrow K)}(\theta|\theta^*)$ term is transition probability fro
 Finally the Jacobian is given by $$ |J_{birth}| = \frac{(\lambda_1 + \lambda_2)^2}{\lambda_0}$$ .
 
 
-### Death
+### `death_theta()`
 
 For the death proposal we randomly select any of the current change points uniformly at random and remove it. Then the two $\lambda$ values associated with the removed change point (call them $\lambda_1$ and $\lambda_2$ to match the above notation) are recombined deterministically as
 
@@ -413,56 +413,86 @@ The probability of proposing the death of change point $\theta_m$ is $1/K$ since
 And the Jacobian is $$|J_{death}| = 1/|J_{birth}| = \lambda_0/(\lambda_1 + \lambda_2)^2$$ since the function is invertible.
 
 # Graph Proposals
-The proposed graph is stored as an adjacency list. To create make proposals in the graph space the follow operators are used. 
+The data structure for the graph is an adjacency list and is implemented using a list of numeric vector in R. While not a true hashmap, numerically indexing the list allows for near $O(1)$ look-ups [@horner_hash_2015]. To make proposals in the graph space the following operators are used. 
 
-## add and delete
-The `add_edge_op()` functions proposes adding an edge to the graph by sampling uniformly at random from all edges in not currently in the graph. Let $M = \binom{N_v}{2}$ be the maximum number of possible edges in the graph. Then $q()$
+## `add_edge_op()` and `delete_edge_op()`
+The `add_edge_op()` functions proposes adding an edge to the graph by sampling uniformly at random from all edges not currently in the graph. Let $N_v$ be the number of vertices (cities) in the graph and $N_e$ the current number of edges. Then the algorithm proceeds as follows
 
-We need N_v 
-
-1. $A_0 = N_v(N_v-1) - N_e$
+1. $A_0 = N_v(N_v-1) - 2N_e$
 2. $A = A_0$
-3. for i in (1:N_v):
-4. if (A <= N_v - length(\text{adj}[i]))
-5. perform linear search to find the first A - length(\text{adj}[i]) edge not in the list
-6. else A = A-length(\text{adj}[i])
+3. for $i \in (1,\dots,N_v)$:
+4. if $(A <= N_v - \text{length}(\text{adj}[i]))$
+    + Find the first $A - \text{length}(\text{adj}[i])$ edge not in the list
+    + add edge to the proposed adjacency list
+    + break
+6. else $A = A-\text{length}(\text{adj}[i])$
+   + $i = i + 1$
+   + continue
 
-Then the probability of selecting an edge is $2/(N_v(N_v-1) - 2N_e)$ by symmetry. $N_v(N_v-1)$ is the total possible size of the adjacency list and $N_e$ is the number of unique edges currently in the list. Then $N_v(N_v-1) - 2N_e$ is the remaining "slots" in the adjacency list. We draw uniformly at random from $A \in \{1,\dots,N_v(N_v-1) - 2N_e\}$ which represents an index of the edges not present in the graph. Now we interate along the adjacency list `adj` whose length is the number of vertices $N_v$. Starting from $i = 1$ if $A <= N_v -  length(\text{adj}[i])$ then we know that the edge to be added is in $\text{adj}[i]$ and we can search for the correct edge in $O(|V|)$. If $A > N_v - length(\text{adj}[i])$ then we recompute $A = A - N_v + length(\text{adj}[i])$ increment $i = i + 1$ and repeat. 
+Then the probability of selecting an edge to add is $2/(N_v(N_v-1) - 2N_e)$ by symmetry. $N_v(N_v-1)$ is the total possible size of the adjacency list and $N_e$ is the number of unique edges currently in the list. Then $N_v(N_v-1) - 2N_e$ is the remaining "slots" in the adjacency list. We draw uniformly at random from $A \in \{1,\dots,N_v(N_v-1) - 2N_e\}$ which represents an index of the edges not present in the graph. Now we interate along the adjacency list `adj` whose length is the number of vertices $N_v$. Starting from $i = 1$ if $A <= N_v -  length(\text{adj}[i])$ then we know that the edge to be added is in $\text{adj}[i]$ and we can search for the correct edge in $O(|V|)$. If $A > N_v - length(\text{adj}[i])$ then we recompute $A = A - N_v + length(\text{adj}[i])$ increment $i = i + 1$ and repeat. Then $q(G^*_{N_e+1}|G_{N_e})$ the probability of proposing adding that particular edge occurs with probability $2/(N_v(N_v-1) - 2N_e)$, since $A_0$ is chosen uniformly at random from $\{1,\dots,N_v(N_v-1) - 2N_e\}$ and each edge $e_{ij}$ is represented twice (once in \text{adj}[i]: \{\dots,j,\dots\}) and again in $\text{adj}[j]: \{\dots,i,\dots\}$.
 
-$q(G^*|G)$ the probability of proposing adding that particular edge occurs with probability $2/(N_v(N_v-1) - 2N_e)$, since $A_0$ is chosen uniformly at random from $\{1,\dots,N_v(N_v-1) - 2N_e\}$ and each edge $e_{ij}$ is represented twice (once in \text{adj}[i]: \{\dots,j,\dots\}) and again in $\text{adj}[j]: \{\dots,i,\dots\}$.
+The probability of $q(G_{N_e}|G^*_{N_e+1})$ of deleting the edge (given the graph where the proposed edge was added) occurs with probability $2/2(N_e+1) = 1/(N_e+1)$ 
 
-The probability of $q(G|G^*)$ of deleting the edge that was added occurs with probability $2/2(N_e+1) = 1/(N_e+1)$ 
-
-$$\frac{q(G|G^*)}{q(G^*|G)} = \frac{\frac{1}{N_e+1}}{\frac{2}{N_v(N_v-1) - 2N_e}} = \frac{N_v(N_v-1) - 2N_e}{2(N_e+1)} $$
+$$\frac{q(G_{N_e}|G^*_{N_e+1})}{q(G^*_{N_e+1}|G_{N_e})} = \frac{\frac{1}{N_e+1}}{\frac{2}{N_v(N_v-1) - 2N_e}} = \frac{N_v(N_v-1) - 2N_e}{2(N_e+1)} $$
 and the Hastings ratio for removing an edge is given by
 
 
-$$ \begin{aligned} \frac{q(G|G^* deleted)}{q(G^* deleted|G)} & = \frac{\frac{2}{N_v(N_v-1) - 2(N_e-1)}}{\frac{1}{N_e}} \\ &= \frac{2N_e}{N_v(N_v-1) - 2(N_e-1)} \end{aligned} $$
+$$ \begin{aligned} \frac{q(G_{N_e}|G^*_{N_e-1})}{q(G^*_{N_e-1}|G_{N_e})} & = \frac{\frac{2}{N_v(N_v-1) - 2(N_e-1)}}{\frac{1}{N_e}} \\ &= \frac{2N_e}{N_v(N_v-1) - 2(N_e-1)} \end{aligned} $$
 
 
-## flip_edge
+## `degree_preserving()`
 
-Flip edge randomly samples an edge by randomly sampling two vertices at random without replacement. If the edge is currently is the adjacency list then it is removed, if it is not in the adjaceny list then it is added. Since reversing a flip is equivalent to flipping that edge again, the Hastings ratio is 1.
+The degree preserving swap was implemented to allow changes to the graph structure while maintaining the degree of connectivity of each vertex. This is because with large migration rates, the degree of the cities strongly influences the likelihood. Let's assume that the migration rate $m = 1$, then in Figure \ref{fig:deg_pre}, city 5 and 2 have double the counts of cities 1, 3, 4, and 6. Let's also assume that the configuration on the right is the true graph. If the MCMC algorithm proposes the graph on the left first, to get to the graph on the right would require say, disconnecting $1-5$ as seen in the middle. With such a high migration rate, the cities $5$ and $2$ would never be swapped (it would require transitioning to a graph where city $5$ would have degree $2$ and city $1$ degree 0). The degree preserving swap handles directly swapping between the left and right graphs without passing through the middle.
 
-This proposal does not appear to mix well and this maybe due to the fact that when the graph is sparse then the probabilty of adding an edge is higher than deleting an edge and vice versa.
+This was implemented by selecting two edges (v11, v12) and (v21, v22) and attempting to form the edges (v11, v22) and (v12, v21). If both edges are not already in the graph then the swap is made. If either or both edges exists, then the proposed swap is rejected. Since the proposed swap is reversed by randomly selecting (v11, v22) and (v12, v21), the Hastings ratio is 1 and the acceptance ratio is the ratio of the likelihoods. 
 
+```{r, out.width = "75%", fig.cap = "\\label{fig:deg_pre}An example graph configuration that might necessitate a degree preserving swap. \\textbf{Left} and \\textbf{right}: two configurations of graphs whose vertices have the same degree, \textbf{middle}: a potential intermediary proposal. With one-step edge adding and deleting the likelihood of switching between these two graph is low if the migration rate is high enough. The degree preserving swap operator would attempt to switch between these two graphs in 1 step. Deleting the edge between city 5 and 1 (middle figure) would occur with low probability. With a migration rate of 1, this would lower city 5's count by approximately 1/3 from the true value and by half for city 1.", fig.align='center'} 
+library(DiagrammeR)
 
+graph <- DiagrammeR("
+   graph TB
+   subgraph  
+    id3(1)---id1(2)
+    id1(2)---id4(3)
+    id5(4)---id2(5)
+    id2(5)---id6(6)
+    style id1 fill:#fdb863
+    style id2 fill:#fdb863
+    end
+    
+    subgraph 
+    id15(1)---|X|id13(5)
+    id13(5)---id16(3)
+    id17(4)---id14(2)
+    id14(2)---id18(6)
+    end
+    style id13 fill:#fdb863
+    style id14 fill:#fdb863
+    
+    
+  
+    subgraph  
+    id9(1)---id7(5)
+    id7(5)---id10(3)
+    id11(4)---id8(2)
+    id8(2)---id12(6)
+    end
+    style id7 fill:#fdb863
+    style id8 fill:#fdb863
+")
 
-## Degree Preserving Swap
+knitr::include_graphics("C:/repos/disease_sim/degree_pre_diag.png")
+```
 
-The degree preserving swap was implemented to allow changes to the graph structure while maintaining the degree of connectivity of each vertex. This was implemented by selecting two edges (v11, v12) and (v21, v22) and attempting to form the edges (v11, v22) and (v12, v21). If both edges are not already in the graph then the swap is made. If either or both edges exists, then the proposed swap is rejected. Since the proposed swap is reversed by randomly selecting (v11, v22) and (v12, v21), the Hastings ratio is 1 and the acceptance ratio is the ratio of the likelihoods. 
+## `rewire()`
 
-## Rewire
-
-
-Rewire randomly selects an edge (v1, v2) and deletes it from the adjacency list. It then randomly samples a vertex v3 and forms the edge (v2, v3). Since the reverse move is selecting the edge (v2, v3) and then rewiring (v1, v2), the Hastings ratio is 1
+Rewire randomly selects an edge (v1, v2) and deletes it from the adjacency list. It then randomly samples a vertex v3 and forms the edge (v2, v3). Since the reverse move is selecting the edge (v2, v3) and then rewiring (v1, v2), the Hastings ratio is 1.
 
 
 
 # Results/Discussion
 
 ## Two-Component Model
-In this paper, I have implemented an MCMC algorithm that estimates the Two-Component Model from simulated data. The simulation parameters are taken from @held_two-component_2006 
 
 | parameters    | simulation values    |
 | :-------------: |:-------------:|
@@ -470,6 +500,12 @@ In this paper, I have implemented an MCMC algorithm that estimates the Two-Compo
 | $\boldsymbol{\lambda}$: epidemic parameters     | 0.7, 1.2, 0.7      |
 | $\boldsymbol{\gamma}$: endemic parameters | log(10), 0.5, 1.5     |
 |$\boldsymbol{\theta}$: changepoints | 39, 49 |
+\pagebreak
+
+
+
+In this paper, I have implemented an MCMC algorithm that estimates the Two-Component Model from simulated data. The simulation parameters are taken from @held_two-component_2006 
+
 
 ```{r data load}
 load("2c_results.RData")
@@ -478,8 +514,7 @@ load("2c_sim_data.RData")
 
 
 
-
-```{r, lambda_traces_plot, fig.cap = "\\label{fig:lam_trace}Trace plots for $\\boldsymbol{\\gamma}$ and $\\boldsymbol{\\theta}$. The trace plots seem relatively well mixed. The autocorrelation is likely a function of the correlation between the each set of $\\boldsymbol{\\gamma}$ and $\\boldsymbol{\\theta}$ respectively. Thinning could potentially reduce the autocorrelation between sample draws.", fig.asp = 0.6}
+```{r, lambda_traces_plot, fig.cap = "\\label{fig:lam_trace} Trace plots for $\\boldsymbol{\\gamma}$ and $\\boldsymbol{\\theta}$. The trace plots seem relatively well mixed. The autocorrelation is likely a function of the correlation between the each set of $\\boldsymbol{\\gamma}$ and $\\boldsymbol{\\theta}$ respectively. Thinning could potentially reduce the autocorrelation between sample draws.", fig.asp = 0.6}
 
 burnin = 10000
 
@@ -528,7 +563,9 @@ mtext(
 ```
 
 
-Figure \ref{fig:lam_trace} are trace plots, which are time series of the parameter draws. Typically a "good" trace plot shows no obvious autocorrelation (which can indicate a proposal step that is too small) or flat portions (proposal steps that are too large). Trace plots with these patterns indicate that the sampler has not converged to the posterior distribution of the parameter. "Tuning" or adjusting the proposal jump size can help fix these patterns, with the end goal of being able to efficiently explore the posterior distribution of the parameter [@gelman_bayesian_2013, pp. 296]. The trace plots for the $\gamma$ parameters seem to rather well mixed though there is a slight pattern to the $\gamma_0$ trace plot. 
+ 
+Figure \ref{fig:lam_trace} are trace plots, which are time series of the parameter draws. Typically a "good" trace plot shows no obvious autocorrelation (which can indicate a proposal step that is too small) or flat portions (proposal steps that are too large). Trace plots with these patterns indicate that the sampler has not converged to the posterior distribution of the parameter. "Tuning" or adjusting the proposal jump size can help fix these patterns, with the end goal of being able to efficiently explore the posterior distribution of the parameter [@gelman_bayesian_2013, pp. 296]. The trace plots for the $\gamma$ parameters seem to rather well mixed though there is a slight pattern to the $\gamma_0$ trace plot.
+
 
 ```{r, fig.cap = "\\label{fig:cor_gammas}Plots of $\\gamma_0$ vs $\\gamma_1$ and $\\gamma_0$ vs $\\gamma_2$. Each point represents the corresponding parameter value at the same sample draw, i.e., the values of each parameter when the sample was accepted. The strong correlation between the parameters can lead to poor mixing. Note the tails are due to the initial values of the MCMC chain.", fig.asp = 0.5}
 
@@ -560,12 +597,16 @@ mtext(
 
 ```
 
+
+
+
 This is likely due to the correlation (see Figure \ref{fig:cor_gammas}) between $\gamma_0$, $\gamma_1$ and $\gamma_2$ due to their nature of parameterizing a cyclical function. The same is true for the $\theta$ parameters; they are constrained such that $\theta_1 < \theta_2 < \theta_3$. The dependence can cause inefficient sampling by proposing moves that are outside these narrow regions/combinations of parameter values [@turner_method_2013]. This autocorrelation seen in the trace plots could possibly be reduced via thinning i.e. taking every $k$ samples instead of every sample. @gelman_bayesian_2013 mentions that they have found it useful to store no more than a total of $1000$ iterations. 
 
 
-The $\theta_3$ trace plot is of note because it is only valid for when $K = 3$; the $\theta_3$ does not exist otherwise.
+The $\theta_3$ trace plot is of note because it is only valid for when $K = 3$; the $\theta_3$ does not exist otherwise.\\
 
-```{r, fig.cap = "Trace plots for all $\\lambda$ values and filtered for K = 2. Overall the trace plots show that the samplers are mixing well with some minor autocorrelation that could potentially be resolved with thinning or more samples. The raw trace plots include the $\ambda$ values when there are 3 and 4 separate $\\lambda$'s and is the cause of the random jumps.", fig.asp=0.8}
+```{r,fig.cap = "Trace plots for all $\\lambda$ values. Overall the trace plots show that the samplers are mixing well with some minor autocorrelation that could potentially be resolved with thinning or more samples. The raw trace plots include the $\\lambda$ values when there are 3 and 4 separate $\\lambda$'s and is the cause of the random jumps.", fig.asp=0.8, out.height="41%", fig.align = 'center'}
+
 burnin = 400000
 par(mfrow = c(2, 2), las  = 0)
 par(
@@ -596,6 +637,14 @@ mtext(
   line = 2,
   outer = TRUE
 )
+
+```
+
+
+
+The $\boldsymbol{\lambda}$ trace plots have interesting patterning, specifically the $\lambda_2$ and $\lambda_3$ traces appear to fix tightly at $1.2$ and $0.7$ respectively while also jumping to $0.7$ and $1.2$ respectively. This is an artifact of the dimension change in the model. When $K = 2$, $\lambda_2$ is tightly fixed around $1.2$ and $\lambda_3$ at $0.7$ but when $K = 2$, $\lambda_3$ can take the role of fitting the outbreak while $\lambda_4$ models to the return $0.7$, the baseline.
+
+```{r, fig.asp = 0.8, fig.cap = "Trace plots filtered for K = 2 and K = 3 showing how the different number of changepoints affects the traces of the individual $\\lambda$ values.", fig.align = 'center' , out.height = "41%"}
 
 par(mfrow = c(2, 2), las  = 0)
 par(
@@ -637,11 +686,10 @@ mtext(
 )
 ```
 
-The $\boldsymbol{\lambda}$ trace plots have interesting patterning, specifically the $\lambda_2$ and $\lambda_3$ traces appear to fix tightly at $1.2$ and $0.7$ respectively while also jumping to $0.7$ and $1.2$ respectively. This is an artifact of the dimension change in the model. When $K = 2$, $\lambda_2$ is tightly fixed around $1.2$ and $\lambda_3$ at $0.7$ but when $K = 2$, $\lambda_3$ can take the role of fitting the outbreak while $\lambda_4$ models to the return $0.7$, the baseline.
+In assessing the inference on the data, I examine the density plots. Here we see that the density plots cover the true values. 
 
 
-
-```{r, fig.asp = 1, fig.cap = "\\label{fig:2c_dens} Density plots for the count data, $K$", include = FALSE }
+```{r, fig.asp = 1, fig.cap = "\\label{fig:2c_dens} Plots for the count data and density plots showing $K$"}
 par(mfrow = c(3, 3), las = 0)
 par(
   mar = c(2, 4, 1, 2),
@@ -685,7 +733,7 @@ mtext(text = "Iteration", side = 1, outer = TRUE)
 
 ### Prior Checks
 
-I also performed calibration checks
+I also performed prior checks where the likelihood ratio is set to 1 so that the posterior distributions should match the prior. 
 
 ```{r}
 load("prior_check.RData")
@@ -728,10 +776,15 @@ $$K \sim \text{Unif}(0,N)$$
 In Figure \ref{fig:pc_2c} we have plots of the samples of the $\lambda$ values (first 3) and the $\gamma$ values. Each is overlayed with the density of their respective priors in red. Overall there appears to be a good match between the sampled values and their prior distributions.
 
 In figure \ref{fig:pois_hist} we have a frequency histogram of the sampled values of $K$ (the number of change points) overlayed with a red circle. The red circle represents the appropriate density value from the prior distribution of $K$. Overall we see a good qualitative fit between the values sampled from the posterior and the prior distribution. The following table gives the sample frequency and the actual probability (from the prior distibution). If these probabilities did not match, then there is likely a bug in the code or some unknown prior assumption on the model. Note that the sample frequency was computed from a thinned sample of 10,000 hence why 11, 25, and 51 have sample probabilities of 0.0001, there was 1 occurence of each.
+
 ```{r, fig.cap="\\label{fig:pois_hist} Sample probabilities of $K$ overlayed with true probabilities. Overall this shows a good agreement between the sample probabilities and the true probabilties."}
 load("prior_check_pois.RData")
-hist(res_save$K[res_save$K < 12],breaks = seq(-1,12,1), freq = FALSE)
+hist(res_save$K[res_save$K < 12],breaks = seq(-1,12,1), freq = FALSE, xlab = "K", main = "Histogram of samples of K vs Pois(2) probabilites")
 points(seq(0,11,by = 1)-0.5, dpois(seq(0,11,by = 1),2), col = "red")
+legend(7,0.25,
+legend = c("Pois(2) probs"),
+col = c("red"),
+pch = c("o"))
 # df =data.frame(sample=as.numeric(table(res_save$K)/length(res_save$K)), actual = dpois(c(0:9,c(11,25,51)),2))
 # knitr::kable(df, format = "latex")
 ```
@@ -758,7 +811,13 @@ points(seq(0,11,by = 1)-0.5, dpois(seq(0,11,by = 1),2), col = "red")
 
 ## Graph Estimation on Fixed Two-Component Model
 
+Progress on the graph. The graph proposals are a challenge to the computational speed and mixing becomes a problem. For example the original base graph operator was `flip_edge()` which had much poorer mixing than the `add/del_edge_op()` combination. To test the correctness of the operators, we also set the likelihood to always equal to 1. With the correct derivation about the priors, any significant deviation of the posterior distributions from the prior distributions is likely to be due to implementation errors in the code.
+
 ## Graph Priors
+
+#show poor mixing of flip_edge op()
+
+# show add/del edge is likely correct
 
 # Conclusion
 

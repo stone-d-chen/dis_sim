@@ -597,8 +597,8 @@ repeated for
 corresponding credible intervals are collected. We can then compare to
 see if the 95\% credible intervals from the \(N\) parameter samples,
 covers the true sampled parameter 95\% of the time (Carpenter
-\protect\hyperlink{ref-carpenter_bayesian_2017}{2017},p.
-@cook\_validation\_2006).
+\protect\hyperlink{ref-carpenter_bayesian_2017}{2017}; Cook et al.
+\protect\hyperlink{ref-cook_validation_2006}{2006}).
 
 \hypertarget{posterior-predictive-checking}{%
 \subsubsection{Posterior Predictive
@@ -618,22 +618,25 @@ Kruschke \protect\hyperlink{ref-kruschke_doing_2014}{2014},pp. 130--131)
 
 Here I describe the Metropolis Hastings algorithms used to draw samples
 from the posterior distributions of the parameters of interest. The
-algorithms are implemented in base R with some elements of the
-likelihood computation implemented in Rcpp. The operators generate and
-evaluate proposals. Each operator is a R function that accepts a list of
-parameters that represent the current state of the Markov chain, then
-proposes an new state for a given parameter (or set of parameters). The
-function then calculates the log acceptance ratio and determines whether
-to accepts it's proposal or reject it. It then returns the proposed
-parameters or returns the original parameters (in the case of
-rejecting).
+algorithms are implemented in base R (R Core Team
+\protect\hyperlink{ref-r_core_team_r_2019}{2019}) with some elements of
+the likelihood computation implemented in Rcpp (Eddelbuettel and
+François \protect\hyperlink{ref-eddelbuettel_rcpp_2011}{2011}). The
+operators generate and evaluate proposals. Each operator is a R function
+that accepts a list of parameters that represent the current state of
+the Markov chain, then proposes an new state for a given parameter (or
+set of parameters). The function then calculates the log acceptance
+ratio and determines whether to accepts it's proposal or reject it. It
+then returns the proposed parameters or returns the original parameters
+(in the case of rejecting).
 
 \hypertarget{likelihood-computation}{%
 \subsection{Likelihood Computation}\label{likelihood-computation}}
 
-Each operator receives the log-likelihood of its proposal by pass the
-proposal to the \texttt{compute\_log\_like} function. The
-\texttt{compute\_log\_like} function returns the unnormalized
+Each operator receives the log-likelihood of its proposal by passing the
+proposal to either \texttt{compute\_log\_like()} function or the
+\texttt{compute\_log\_like\_rat()} function. The
+\texttt{compute\_log\_like()} function returns the unnormalized
 log-likelihood of the proposed parameters. This is computationally
 faster since computing the normalized likelihood of a Poisson
 distribution requires the evalution of \(Z_{t}!\) for each data point.
@@ -658,10 +661,10 @@ changes is in the interval between timepoints
 likelihoods of the proposed vs the current parameter set is important,
 the parts that remain identical have a likelihood of 1 (or
 log-likelihood of 0) and all that remains of the likelihood computation
-is:
+is
 
 Similar reductions in comptutation can be done following changes in the
-graph. If an edge \(e^*_{ik}\) is proposed then only \(Y_{i,t}\) and
+graph and. If an edge \(e^*_{ik}\) is proposed then only \(Y_{i,t}\) and
 \(Y_{k,t}\) and the corresponding \(Z\)'s are affected. As such only
 those two cities need to be updated.
 \[Y^*_{i,t}|G \sim ~ \text{Pois}\big(m\lambda_tZ_{k,t-1} +m\lambda_t\sum_{j=1}^{N_v}Z_{j,t-1}1[e_{ij}\in E(G)]+ \lambda_tZ_{i,t-1}\big) \]
@@ -671,11 +674,13 @@ those two cities need to be updated.
 Then the likelihood ratio can be computed as (dropping conditioning
 notation for clarity)
 
-\[ \frac{P(Z^*_{i,t})P(Z^*_{k,t})}{P(Z_{i,t})P(Z_k,t)}\frac{\prod_j P(Z_{j})}{\prod_{j}P( Z_{j})} \]
+\[ \frac{P(Z^*_{i,t})P(Z^*_{k,t})}{P(Z_{i,t})P(Z_k,t)}\frac{\prod_j P(Z_{j})}{\prod_{j}P( Z_{j})} = \frac{P(Z^*_{i,t})P(Z^*_{k,t})}{P(Z_{i,t})P(Z_k,t)} \]
+This is currently implemented for the \texttt{add\_edge\_op()} and
+\texttt{del\_edge\_op()} operators.
 
 \hypertarget{change_gamma-change_lambda}{%
-\subsection{change\_gamma,
-change\_lambda}\label{change_gamma-change_lambda}}
+\subsection{\texorpdfstring{\texttt{change\_gamma()},
+\texttt{change\_lambda()}}{change\_gamma(), change\_lambda()}}\label{change_gamma-change_lambda}}
 
 The gamma and lambda parameters are updated in blocks via a standard
 Metropolis-Hastings step (Gelman et al.
@@ -707,7 +712,7 @@ issue in the simulated cases, the initial values are positive and the
 jump (\(\sigma\)) size is small enough not to propose negative values.
 
 \hypertarget{change_theta}{%
-\subsection{change\_theta}\label{change_theta}}
+\subsection{\texorpdfstring{\texttt{change\_theta()}}{change\_theta()}}\label{change_theta}}
 
 This operator proposes a new location for one of the current change
 points \(\theta_1,\dots, \theta_K\). A change
@@ -734,9 +739,10 @@ from current \(\lambda_k\) values and the \(\theta_k^*\) values. The
 Hastings ratio is then 1 and the acceptance rate is the ratio of the
 likelihoods.
 
-\hypertarget{birthdeath_theta-reversible-jump-mcmc}{%
-\subsection{birth/death\_theta reversible jump
-mcmc}\label{birthdeath_theta-reversible-jump-mcmc}}
+\hypertarget{birthdeath_theta-and-reversible-jump-mcmc}{%
+\subsection{\texorpdfstring{\texttt{birth/death\_theta} and Reversible
+Jump
+MCMC}{birth/death\_theta and Reversible Jump MCMC}}\label{birthdeath_theta-and-reversible-jump-mcmc}}
 
 The \texttt{birth\_theta()} and \texttt{death\_theta()} operators allow
 for an increase and decrease in the number of changepoints. Then the
@@ -748,8 +754,8 @@ directly comparable (since they are not defined on the same probability
 space). To handle this we use a Reversible Jump MCMC (RJMCMC) as
 proposed in Green (\protect\hyperlink{ref-green_reversible_1995}{1995}).
 
-\hypertarget{birth}{%
-\subsubsection{Birth}\label{birth}}
+\hypertarget{birth_theta}{%
+\subsubsection{\texorpdfstring{\texttt{birth\_theta()}}{birth\_theta()}}\label{birth_theta}}
 
 For a birth step a new changepoint is chosen uniformly at random from
 all possible time steps \(\{1,\dots,N\}\) that aren't currently change
@@ -799,8 +805,8 @@ reverse move is deterministic so it's probability is also 1 (and omitted
 from the equation). Finally the Jacobian is given by
 \[ |J_{birth}| = \frac{(\lambda_1 + \lambda_2)^2}{\lambda_0}\] .
 
-\hypertarget{death}{%
-\subsubsection{Death}\label{death}}
+\hypertarget{death_theta}{%
+\subsubsection{\texorpdfstring{\texttt{death\_theta()}}{death\_theta()}}\label{death_theta}}
 
 For the death proposal we randomly select any of the current change
 points uniformly at random and remove it. Then the two \(\lambda\)
@@ -830,42 +836,61 @@ since the function is invertible.
 \hypertarget{graph-proposals}{%
 \section{Graph Proposals}\label{graph-proposals}}
 
-The proposed graph is stored as an adjacency list. To create make
-proposals in the graph space the follow operators are used.
+The data structure for the graph is an adjacency list and is implemented
+using a list of numeric vector in R. While not a true hashmap,
+numerically indexing the list allows for near \(O(1)\) look-ups (Horner
+\protect\hyperlink{ref-horner_hash_2015}{2015}). To make proposals in
+the graph space the following operators are used.
 
-\hypertarget{add-and-delete}{%
-\subsection{add and delete}\label{add-and-delete}}
+\hypertarget{add_edge_op-and-delete_edge_op}{%
+\subsection{\texorpdfstring{\texttt{add\_edge\_op()} and
+\texttt{delete\_edge\_op()}}{add\_edge\_op() and delete\_edge\_op()}}\label{add_edge_op-and-delete_edge_op}}
 
 The \texttt{add\_edge\_op()} functions proposes adding an edge to the
-graph by sampling uniformly at random from all edges in not currently in
-the graph. Let \(M = \binom{N_v}{2}\) be the maximum number of possible
-edges in the graph. Then \(q()\)
-
-We need N\_v
+graph by sampling uniformly at random from all edges not currently in
+the graph. Let \(N_v\) be the number of vertices (cities) in the graph
+and \(N_e\) the current number of edges. Then the algorithm proceeds as
+follows
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \tightlist
 \item
-  \(A_0 = N_v(N_v-1) - N_e\)
+  \(A_0 = N_v(N_v-1) - 2N_e\)
 \item
   \(A = A_0\)
 \item
-  for i in (1:N\_v):
+  for \(i \in (1,\dots,N_v)\):
 \item
-  if (A \textless{}= N\_v - length(\text{adj}{[}i{]}))
+  if \((A <= N_v - \text{length}(\text{adj}[i]))\)
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Find the first \(A - \text{length}(\text{adj}[i])\) edge not in the
+    list
+  \item
+    add edge to the proposed adjacency list
+  \item
+    break
+  \end{itemize}
 \item
-  perform linear search to find the first A - length(\text{adj}{[}i{]})
-  edge not in the list
-\item
-  else A = A-length(\text{adj}{[}i{]})
+  else \(A = A-\text{length}(\text{adj}[i])\)
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \(i = i + 1\)
+  \item
+    continue
+  \end{itemize}
 \end{enumerate}
 
-Then the probability of selecting an edge is \(2/(N_v(N_v-1) - 2N_e)\)
-by symmetry. \(N_v(N_v-1)\) is the total possible size of the adjacency
-list and \(N_e\) is the number of unique edges currently in the list.
-Then \(N_v(N_v-1) - 2N_e\) is the remaining ``slots'' in the adjacency
-list. We draw uniformly at random from
+Then the probability of selecting an edge to add is
+\(2/(N_v(N_v-1) - 2N_e)\) by symmetry. \(N_v(N_v-1)\) is the total
+possible size of the adjacency list and \(N_e\) is the number of unique
+edges currently in the list. Then \(N_v(N_v-1) - 2N_e\) is the remaining
+``slots'' in the adjacency list. We draw uniformly at random from
 \(A \in \{1,\dots,N_v(N_v-1) - 2N_e\}\) which represents an index of the
 edges not present in the graph. Now we interate along the adjacency list
 \texttt{adj} whose length is the number of vertices \(N_v\). Starting
@@ -873,40 +898,40 @@ from \(i = 1\) if \(A <= N_v - length(\text{adj}[i])\) then we know that
 the edge to be added is in \(\text{adj}[i]\) and we can search for the
 correct edge in \(O(|V|)\). If \(A > N_v - length(\text{adj}[i])\) then
 we recompute \(A = A - N_v + length(\text{adj}[i])\) increment
-\(i = i + 1\) and repeat.
-
-\(q(G^*|G)\) the probability of proposing adding that particular edge
-occurs with probability \(2/(N_v(N_v-1) - 2N_e)\), since \(A_0\) is
-chosen uniformly at random from \(\{1,\dots,N_v(N_v-1) - 2N_e\}\) and
-each edge \(e_{ij}\) is represented twice (once in \text{adj}{[}i{]}:
+\(i = i + 1\) and repeat. Then \(q(G^*_{N_e+1}|G_{N_e})\) the
+probability of proposing adding that particular edge occurs with
+probability \(2/(N_v(N_v-1) - 2N_e)\), since \(A_0\) is chosen uniformly
+at random from \(\{1,\dots,N_v(N_v-1) - 2N_e\}\) and each edge
+\(e_{ij}\) is represented twice (once in \text{adj}{[}i{]}:
 \{\dots,j,\dots\}) and again in \(\text{adj}[j]: \{\dots,i,\dots\}\).
 
-The probability of \(q(G|G^*)\) of deleting the edge that was added
-occurs with probability \(2/2(N_e+1) = 1/(N_e+1)\)
+The probability of \(q(G_{N_e}|G^*_{N_e+1})\) of deleting the edge
+(given the graph where the proposed edge was added) occurs with
+probability \(2/2(N_e+1) = 1/(N_e+1)\)
 
-\[\frac{q(G|G^*)}{q(G^*|G)} = \frac{\frac{1}{N_e+1}}{\frac{2}{N_v(N_v-1) - 2N_e}} = \frac{N_v(N_v-1) - 2N_e}{2(N_e+1)} \]
+\[\frac{q(G_{N_e}|G^*_{N_e+1})}{q(G^*_{N_e+1}|G_{N_e})} = \frac{\frac{1}{N_e+1}}{\frac{2}{N_v(N_v-1) - 2N_e}} = \frac{N_v(N_v-1) - 2N_e}{2(N_e+1)} \]
 and the Hastings ratio for removing an edge is given by
 
-\[ \begin{aligned} \frac{q(G|G^* deleted)}{q(G^* deleted|G)} & = \frac{\frac{2}{N_v(N_v-1) - 2(N_e-1)}}{\frac{1}{N_e}} \\ &= \frac{2N_e}{N_v(N_v-1) - 2(N_e-1)} \end{aligned} \]
+\[ \begin{aligned} \frac{q(G_{N_e}|G^*_{N_e-1})}{q(G^*_{N_e-1}|G_{N_e})} & = \frac{\frac{2}{N_v(N_v-1) - 2(N_e-1)}}{\frac{1}{N_e}} \\ &= \frac{2N_e}{N_v(N_v-1) - 2(N_e-1)} \end{aligned} \]
 
-\hypertarget{flip_edge}{%
-\subsection{flip\_edge}\label{flip_edge}}
-
-Flip edge randomly samples an edge by randomly sampling two vertices at
-random without replacement. If the edge is currently is the adjacency
-list then it is removed, if it is not in the adjaceny list then it is
-added. Since reversing a flip is equivalent to flipping that edge again,
-the Hastings ratio is 1.
-
-This proposal does not appear to mix well and this maybe due to the fact
-that when the graph is sparse then the probabilty of adding an edge is
-higher than deleting an edge and vice versa.
-
-\hypertarget{degree-preserving-swap}{%
-\subsection{Degree Preserving Swap}\label{degree-preserving-swap}}
+\hypertarget{degree_preserving}{%
+\subsection{\texorpdfstring{\texttt{degree\_preserving()}}{degree\_preserving()}}\label{degree_preserving}}
 
 The degree preserving swap was implemented to allow changes to the graph
 structure while maintaining the degree of connectivity of each vertex.
+This is because with large migration rates, the degree of the cities
+strongly influences the likelihood. Let's assume that the migration rate
+\(m = 1\), then in Figure \ref{fig:deg_pre}, city 5 and 2 have double
+the counts of cities 1, 3, 4, and 6. Let's also assume that the
+configuration on the right is the true graph. If the MCMC algorithm
+proposes the graph on the left first, to get to the graph on the right
+would require say, disconnecting \(1-5\) as seen in the middle. With
+such a high migration rate, the cities \(5\) and \(2\) would never be
+swapped (it would require transitioning to a graph where city \(5\)
+would have degree \(2\) and city \(1\) degree 0). The degree preserving
+swap handles directly swapping between the left and right graphs without
+passing through the middle.
+
 This was implemented by selecting two edges (v11, v12) and (v21, v22)
 and attempting to form the edges (v11, v22) and (v12, v21). If both
 edges are not already in the graph then the swap is made. If either or
@@ -915,24 +940,28 @@ proposed swap is reversed by randomly selecting (v11, v22) and (v12,
 v21), the Hastings ratio is 1 and the acceptance ratio is the ratio of
 the likelihoods.
 
+\begin{figure}
+
+{\centering \includegraphics[width=0.75\linewidth]{C:/repos/disease_sim/degree_pre_diag} 
+
+}
+
+\caption{\label{fig:deg_pre}An example graph configuration that might necessitate a degree preserving swap. \textbf{Left} and \textbf{right}: two configurations of graphs whose vertices have the same degree,     extbf{middle}: a potential intermediary proposal. With one-step edge adding and deleting the likelihood of switching between these two graph is low if the migration rate is high enough. The degree preserving swap operator would attempt to switch between these two graphs in 1 step. Deleting the edge between city 5 and 1 (middle figure) would occur with low probability. With a migration rate of 1, this would lower city 5's count by approximately 1/3 from the true value and by half for city 1.}\label{fig:unnamed-chunk-2}
+\end{figure}
+
 \hypertarget{rewire}{%
-\subsection{Rewire}\label{rewire}}
+\subsection{\texorpdfstring{\texttt{rewire()}}{rewire()}}\label{rewire}}
 
 Rewire randomly selects an edge (v1, v2) and deletes it from the
 adjacency list. It then randomly samples a vertex v3 and forms the edge
 (v2, v3). Since the reverse move is selecting the edge (v2, v3) and then
-rewiring (v1, v2), the Hastings ratio is 1
+rewiring (v1, v2), the Hastings ratio is 1.
 
 \hypertarget{resultsdiscussion}{%
 \section{Results/Discussion}\label{resultsdiscussion}}
 
 \hypertarget{two-component-model}{%
 \subsection{Two-Component Model}\label{two-component-model}}
-
-In this paper, I have implemented an MCMC algorithm that estimates the
-Two-Component Model from simulated data. The simulation parameters are
-taken from Held et al.
-(\protect\hyperlink{ref-held_two-component_2006}{2006})
 
 \begin{longtable}[]{@{}cc@{}}
 \toprule
@@ -948,10 +977,17 @@ K: number of changespoints & 2\tabularnewline
 \bottomrule
 \end{longtable}
 
+\pagebreak
+
+In this paper, I have implemented an MCMC algorithm that estimates the
+Two-Component Model from simulated data. The simulation parameters are
+taken from Held et al.
+(\protect\hyperlink{ref-held_two-component_2006}{2006})
+
 \begin{figure}
 \centering
 \includegraphics{thesis_draft_files/figure-latex/lambda_traces_plot-1.pdf}
-\caption{\label{fig:lam_trace}Trace plots for \(\boldsymbol{\gamma}\)
+\caption{\label{fig:lam_trace} Trace plots for \(\boldsymbol{\gamma}\)
 and \(\boldsymbol{\theta}\). The trace plots seem relatively well mixed.
 The autocorrelation is likely a function of the correlation between the
 each set of \(\boldsymbol{\gamma}\) and \(\boldsymbol{\theta}\)
@@ -974,7 +1010,7 @@ there is a slight pattern to the \(\gamma_0\) trace plot.
 
 \begin{figure}
 \centering
-\includegraphics{thesis_draft_files/figure-latex/unnamed-chunk-2-1.pdf}
+\includegraphics{thesis_draft_files/figure-latex/unnamed-chunk-3-1.pdf}
 \caption{\label{fig:cor_gammas}Plots of \(\gamma_0\) vs \(\gamma_1\) and
 \(\gamma_0\) vs \(\gamma_2\). Each point represents the corresponding
 parameter value at the same sample draw, i.e., the values of each
@@ -998,10 +1034,16 @@ have found it useful to store no more than a total of \(1000\)
 iterations.
 
 The \(\theta_3\) trace plot is of note because it is only valid for when
-\(K = 3\); the \(\theta_3\) does not exist otherwise.
+\(K = 3\); the \(\theta_3\) does not exist otherwise.\textbackslash{}
 
-\includegraphics{thesis_draft_files/figure-latex/unnamed-chunk-3-1.pdf}
-\includegraphics{thesis_draft_files/figure-latex/unnamed-chunk-3-2.pdf}
+\begin{figure}
+
+{\centering \includegraphics[height=0.41\textheight]{thesis_draft_files/figure-latex/unnamed-chunk-4-1} 
+
+}
+
+\caption{Trace plots for all $\lambda$ values. Overall the trace plots show that the samplers are mixing well with some minor autocorrelation that could potentially be resolved with thinning or more samples. The raw trace plots include the $\lambda$ values when there are 3 and 4 separate $\lambda$'s and is the cause of the random jumps.}\label{fig:unnamed-chunk-4}
+\end{figure}
 
 The \(\boldsymbol{\lambda}\) trace plots have interesting patterning,
 specifically the \(\lambda_2\) and \(\lambda_3\) traces appear to fix
@@ -1012,10 +1054,30 @@ around \(1.2\) and \(\lambda_3\) at \(0.7\) but when \(K = 2\),
 \(\lambda_3\) can take the role of fitting the outbreak while
 \(\lambda_4\) models to the return \(0.7\), the baseline.
 
+\begin{figure}
+
+{\centering \includegraphics[height=0.41\textheight]{thesis_draft_files/figure-latex/unnamed-chunk-5-1} 
+
+}
+
+\caption{Trace plots filtered for K = 2 and K = 3 showing how the different number of changepoints affects the traces of the individual $\lambda$ values.}\label{fig:unnamed-chunk-5}
+\end{figure}
+
+In assessing the inference on the data, I examine the density plots.
+Here we see that the density plots cover the true values.
+
+\begin{figure}
+\centering
+\includegraphics{thesis_draft_files/figure-latex/unnamed-chunk-6-1.pdf}
+\caption{\label{fig:2c_dens} Plots for the count data and density plots
+showing \(K\)}
+\end{figure}
+
 \hypertarget{prior-checks-1}{%
 \subsubsection{Prior Checks}\label{prior-checks-1}}
 
-I also performed calibration checks
+I also performed prior checks where the likelihood ratio is set to 1 so
+that the posterior distributions should match the prior.
 
 \includegraphics{thesis_draft_files/figure-latex/prior_checks_2c-1.pdf}
 The following data was collected by running 100,000 iterations (thinned
@@ -1045,7 +1107,14 @@ did not match, then there is likely a bug in the code or some unknown
 prior assumption on the model. Note that the sample frequency was
 computed from a thinned sample of 10,000 hence why 11, 25, and 51 have
 sample probabilities of 0.0001, there was 1 occurence of each.
-\includegraphics{thesis_draft_files/figure-latex/unnamed-chunk-6-1.pdf}
+
+\begin{figure}
+\centering
+\includegraphics{thesis_draft_files/figure-latex/unnamed-chunk-8-1.pdf}
+\caption{\label{fig:pois_hist} Sample probabilities of \(K\) overlayed
+with true probabilities. Overall this shows a good agreement between the
+sample probabilities and the true probabilties.}
+\end{figure}
 
 \begin{longtable}[]{@{}ccc@{}}
 \toprule
@@ -1072,8 +1141,23 @@ K & sample & actual\tabularnewline
 \subsection{Graph Estimation on Fixed Two-Component
 Model}\label{graph-estimation-on-fixed-two-component-model}}
 
+Progress on the graph. The graph proposals are a challenge to the
+computational speed and mixing becomes a problem. For example the
+original base graph operator was \texttt{flip\_edge()} which had much
+poorer mixing than the \texttt{add/del\_edge\_op()} combination. To test
+the correctness of the operators, we also set the likelihood to always
+equal to 1. With the correct derivation about the priors, any
+significant deviation of the posterior distributions from the prior
+distributions is likely to be due to implementation errors in the code.
+
 \hypertarget{graph-priors}{%
 \subsection{Graph Priors}\label{graph-priors}}
+
+\#show poor mixing of flip\_edge op()
+
+\hypertarget{show-adddel-edge-is-likely-correct}{%
+\section{show add/del edge is likely
+correct}\label{show-adddel-edge-is-likely-correct}}
 
 \hypertarget{conclusion}{%
 \section{Conclusion}\label{conclusion}}
@@ -1098,6 +1182,11 @@ Diggle, P., Knorr-Held, L., Rowlingson, B., Su, T., Hawtin, P., and
 Bryant, T. (2003), ``On-line Monitoring of Public Health Surveillance
 Data,'' pp. 233--266.
 \url{https://doi.org/10.1093/acprof:oso/9780195146493.003.0009}.
+
+\leavevmode\hypertarget{ref-eddelbuettel_rcpp_2011}{}%
+Eddelbuettel, D., and François, R. (2011), ``Rcpp: Seamless R and C++
+Integration,'' \emph{Journal of Statistical Software}, 40, 1--18.
+\url{https://doi.org/10.18637/jss.v040.i08}.
 
 \leavevmode\hypertarget{ref-noauthor_ehec_2011}{}%
 \emph{EHEC O104:H4 Outbreak Germany 2011} (2011), report, Robert
@@ -1130,6 +1219,10 @@ two-component model for counts of infectious diseases,''
 \emph{Biostatistics}, 7, 422--437.
 \url{https://doi.org/10.1093/biostatistics/kxj016}.
 
+\leavevmode\hypertarget{ref-horner_hash_2015}{}%
+Horner, J. (2015), ``Hash Table Performance in R: Part I,''
+\emph{R-bloggers}.
+
 \leavevmode\hypertarget{ref-keeling_modeling_2008}{}%
 Keeling, M. J., and Rohani, P. (2008), \emph{Modeling Infectious
 Diseases in Humans and Animals}, Princeton University Press.
@@ -1141,6 +1234,10 @@ R, JAGS, and Stan}, Academic Press.
 \leavevmode\hypertarget{ref-pawitan_all_2001}{}%
 Pawitan, Y. (2001), \emph{In All Likelihood: Statistical Modelling and
 Inference Using Likelihood}, OUP Oxford.
+
+\leavevmode\hypertarget{ref-r_core_team_r_2019}{}%
+R Core Team (2019), \emph{R: A Language and Environment for Statistical
+Computing}, Vienna, Austria: R Foundation for Statistical Computing.
 
 \leavevmode\hypertarget{ref-turner_method_2013}{}%
 Turner, B. M., Sederberg, P. B., Brown, S. D., and Steyvers, M. (2013),
