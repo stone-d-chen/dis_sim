@@ -226,10 +226,10 @@ compute_log_prior <- function(input){
   
   prior_star <- -log( choose( choose(length(adj), 2), edge_count)) 
   + dpois(edge_count, 10, log = TRUE)
-  # -log(choose(N, K)) +
-  #   sum(dgamma(lambda, 1, 1, log = TRUE)) +
-  #   sum(dnorm(gamma, 0, 3, log = TRUE)) +
-  #   dpois(K, 2, log = TRUE)
+   -log(choose(N, K)) +
+     sum(dgamma(lambda, 1, 1, log = TRUE)) +
+     sum(dnorm(gamma, 0, 3, log = TRUE)) +
+     dpois(K, 2, log = TRUE)
   
   
   return(prior_star)
@@ -371,10 +371,9 @@ compute_log_like <- function(input) {
 
 #-------for prior testing--------
 
- compute_log_like <- function(input){
-
-   0
- }
+ # compute_log_like_rat <- function(input, adj, v1,v2){
+ #   0
+ # }
 ```
 
 # base operators
@@ -392,7 +391,7 @@ change_migration <- function(input) {
   migration <- input$migration
   
   #propose new state from normal
-  migration_star <- migration + runif(1, -0.2, 0.2)
+  migration_star <- migration + runif(1, -0.01, 0.01)
   
   if (migration_star > 1 || migration_star < 0){
     return(input)
@@ -862,7 +861,7 @@ add_edge_op <- function(input){
   
   if (log(U) < alpha) {
     input_star$graph = 1
-    input_star$LL <- 0
+    input_star$LL <- LL + rat + prior_star - prior_old
     return(input_star)
     
   } else {
@@ -932,7 +931,7 @@ del_edge_op <- function(input){
   
   if (log(U) < alpha) {
     input_star$graph = 1
-    input_star$LL <- 0
+    input_star$LL <- LL + rat + prior_star - prior_old
     return(input_star)
     
   } else {
@@ -1189,7 +1188,7 @@ flip_edge <- function(input, mig = FALSE) {
 update_param_mig <- function(input) {
   
   U = runif(1)
-  if (U < 0) {
+  if (U < 1) {
     output <- flip_edge(input)
   } else {
     output <- change_migration(input)
@@ -1212,9 +1211,17 @@ update_del_add <- function(input) {
   
 }
 
-update_add <- function(input){
+update_del_add_mig <- function(input) {
   
-  output <- add_edge_op(input)
+  U <- runif(1)
+  if (U < 98/200) {
+    output <- add_edge_op(input)
+  } else if (U < 196/200) {
+    output <- del_edge_op(input)
+  } else {
+    output <- change_migration(input)
+  }
+  return(output)
   
 }
 
@@ -1304,15 +1311,16 @@ ops = c(death_theta,
         rewire,
         degree_preserving,
         change_migration,
-        compute_log_like)
+        compute_log_like,
+        compute_log_prior)
 lapply(ops, undebug)
-#debug(change_migration)
+undebug(change_migration)
 # debug(compute_log_like)
 
 undebug(add_edge_op)
 undebug(del_edge_op)
 
-nSim <- 100000
+nSim <- 1000000
 #pre-allocate
 res <- list(
   K = numeric(nSim),
@@ -1349,6 +1357,24 @@ output <-
     migration = 0.15
   )
 
+output_LL <- compute_log_like(output)
+
+output <-
+  list(
+    K = 2,
+    theta = c(39, 49),
+    lambda = lambda,
+    LL = output_LL,
+    gamma = gamma,
+    INDEP = INDEP,
+    adj = init_list,
+    graph = 1,
+    edge_count = 0,
+    counts = counts,
+    migration = 0.15
+  )
+
+
 
 
 set.seed(1)
@@ -1377,7 +1403,7 @@ system.time(for (i in 1:nSim) {
   res$migration[i] <- output$migration
   
   
-  if (i %% 10000 == 1) {
+  if (i %% 50000 == 1) {
     plot(graph.adjlist(output$adj, mode = "all"))
 
     print(output$LL)
@@ -1400,15 +1426,18 @@ plot(g_city)
 # Diagonostics
 ```{r}
 
-# 
-burnin = 1000
 
+burnin = 50000
+downsample = seq(1, nSim-burnin, length=10000)
+edge_hist = list()
+edge_hist$count <- res$count[-(1:burnin)]
 
+#save(edge_hist, file = "prior_graph.RData")
 
 par(mfrow = c(1,2))
 plot(graph.adjlist(output$adj, mode = "all"))
 mean(res$accept[-(1:burnin)] == 1)
-hist(res$count, breaks = 100)
+hist(res$count[-(1:burnin)][downsample], breaks = 100)
 plot(res$count, type = "l")
 plot(res$accept, type = "l")
 hist(res$accept[-(1:burnin)], freq = FALSE)
