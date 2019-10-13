@@ -784,7 +784,8 @@ points(seq(0,11,by = 1)-0.5, dpois(seq(0,11,by = 1),2), col = "red")
 legend(7,0.25,
 legend = c("Pois(2) probs"),
 col = c("red"),
-pch = c("o"))
+pch = c("o"),
+bty = "n")
 # df =data.frame(sample=as.numeric(table(res_save$K)/length(res_save$K)), actual = dpois(c(0:9,c(11,25,51)),2))
 # knitr::kable(df, format = "latex")
 ```
@@ -815,14 +816,28 @@ Progress on the graph. The graph proposals are a challenge to the computational 
 
 ## Graph Priors
 
-#show poor mixing of flip_edge op()
+### Posterior distribution of number of edges matches prior distribution
 
-# show add/del edge is likely correct
+Here we set the prior ratio and the likelihood ratio to always equal to 1. This places a uniform prior distribution on $p$ and a uniform prior on $G|p$. Then the probability of each graph is equally likely and the posterior distribution of the number of edges should be $\text{Binom}(105, 0.5)$. Figure \ref{fig:binom_hist} shows a thinned posterior sample of the number of edges overlayed with the appropriate $\text{Binom}(105, 0.5)$ in red.
 
+```{r, fig.cap="\\label{fig:binom_hist} Posterior probabilities of the number of edge counts, overlayed with true probabilities. Overall this shows a good agreement between the posterior probabilities and the true probabilties."}
+load("prior_graph.RData")
+hist(edge_hist$count,breaks = seq(25,75,1), freq = FALSE, xlab = "# of edges", main = "Samples from # edge count vs Pois(105, 0.5) probs")
+points(seq(37,70,by = 1)-0.5, dbinom(seq(37,70,by = 1),105,0.5), col = "red")
+legend(25,0.08,
+legend = c("Binom(105, 0.5)\nprob."),
+col = c("red"),
+pch = c("o"),
+bty = "n")
+```
+
+\pagebreak
 # Conclusion
 
+Conclusion here
 
 
 
+\pagebreak
 # Citations
 
