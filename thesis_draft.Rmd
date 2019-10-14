@@ -518,7 +518,7 @@ load("2c_sim_data.RData")
 
 burnin = 10000
 
-downsample = seq(1, length(res$K), length = 1000)
+downsample = seq(1, length(res$K), length = 10000)
 
 par(
   mar = c(1, 4, 2, 2),
@@ -829,6 +829,22 @@ legend = c("Binom(105, 0.5)\nprob."),
 col = c("red"),
 pch = c("o"),
 bty = "n")
+```
+
+
+
+```{r, fig.cap="\\label{fig:binom_hist} "}
+load("edge_mig.RData")
+
+hist(edge_mig$count, breaks = seq(4,34,1), freq = FALSE, main = "", xlab = "")
+title(main = "Histogram of # of edges", xlab = "# of edges")
+plot(edge_mig$mig[downsample], edge_mig$count[downsample])
+
+```
+```{r}
+library(HDInterval)
+print("80 perc HPDI")
+knitr::kable(hdi(edge_mig, 0.8))
 ```
 
 \pagebreak
