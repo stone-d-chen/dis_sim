@@ -100,44 +100,39 @@
 \maketitle
 
 \newcommand{\dw}[1]{{\color{red}{#1}}}
-\newcommand{\del}[1]{{\color{blue}{}}}
-
 
 \hypertarget{intro}{%
 \section{Intro}\label{intro}}
 
 In this thesis we perform inference on an extension of a model presented
-by Held et al. (\protect\hyperlink{ref-held_two-component_2006}{2006}) 
-for \del{modeling parameters of} infectious disease \dw{surveillance data}\del{counts in a Bayesian
-framework}. Their method models \del{surveillance data of} infectious disease
-\del{counts} \dw{incidence (i.e., new cases) --- actually check this, is it incidence or prevalance (the total number currently infected) being used, prevalance make more sense for an autoregressive model but not sure } as a branching Poisson process with a cyclical endemic parameter.
-The cyclical endemic parameter models ``seasonality'' \del{of disease counts}
-(e.g.~seasonal flu patterns) \del{and}\dw{while} the Poisson branching process \dw{allows for} 
-\del{occasional} ``outbreaks'' (e.g.~swine flu, H1N1). Their method models a
-single time series of count data from a specific location or region. We
-\del{attempt to} extend the\del{ir} model to multiple time series of count data that
+by Held et al. (\protect\hyperlink{ref-held_two-component_2006}{2006})
+for infectious disease surveillance data. Their method models infectious
+disease incidence (i.e., new cases) as a branching Poisson process with
+a cyclical endemic parameter. The cyclical endemic parameter models
+``seasonality'' (e.g.~seasonal flu patterns) while the Poisson branching
+process allows for ``outbreaks'' (e.g.~swine flu, H1N1). Their method
+models a single time series of count data from a specific location or
+region. We extend the model to multiple time series of count data that
 are spatially related.
 
-\del{Specifically} The dataset of interest contains data from 412
-administrative districts in Germany. Each district has surveillance data
-which contains the weekly case counts of severe gastroenteritis or
-stomach flu. The data spans May 2 and July 26 2011 when a strain of
-\emph{Escherichia coli} (\emph{E. coli}) caused an outbreak of severe
-illness in Germany. Over 3,950 people were affected compared with the
-typically seen \textasciitilde{}200 cases a year typically seen. Many
-developed severe complications and over 50 people died (\emph{EHEC O104}
-\protect\hyperlink{ref-noauthor_ehec_2011}{2011} , pp.~2-3, 11). \dw{fix the citation here --- see suggested citation in the pdf}
+The dataset of interest contains data from 412 administrative districts
+in Germany. Each district has surveillance data which contains the
+weekly case counts of severe gastroenteritis or stomach flu. The data
+spans May 2 and July 26 2011 when a strain of \emph{Escherichia coli}
+(\emph{E. coli}) caused an outbreak of severe illness in Germany. Over
+3,950 people were affected compared with the typically seen
+\textasciitilde{}200 cases a year typically seen. Many developed severe
+complications and over 50 people died tk fix citation (\emph{EHEC O104}
+\protect\hyperlink{ref-noauthor_ehec_2011}{2011} , pp.~2-3, 11).
 
-We \del{attempt to} extend the\del{ir} model to incorporate a graph \del{. The graph}\dw{that}
-represents a transmission network between the different spatial regions
-(e.g., the administration district) and allow dependencies between count
-data in those regions. The end goal will be to be able to estimate
-covariates that affect the probability of transmission between regions
-(e.g., the shipping network that transmitted the \emph{E. coli}
-contaminated food).
+We to extend the model to incorporate a graph that epresents a
+transmission network between the different spatial regions (e.g., the
+administration district) and allow dependencies between count data in
+those regions. The end goal will be to be able to estimate covariates
+that affect the probability of transmission between regions (e.g., the
+shipping network that transmitted the \emph{E. coli} contaminated food).
 
-
-\dw{def needs expanding} Statistical methods to model infectious disease data typically use
+Statistical methods to model infectious disease data typically use
 mechanistic models that is models that use expert knowledge of the
 underyling process (Pawitan
 \protect\hyperlink{ref-pawitan_all_2001}{2001}, ch.~1). One such model
@@ -170,53 +165,50 @@ Model}\label{intro-to-two-component-model}}
 
 Held et al. (\protect\hyperlink{ref-held_two-component_2006}{2006})
 presents a stochastic model for the statistical analysis of infectious
-disease counts that serves as the basis of the the extended graph model.
+disease counts that serves as the basis of the theextended graph model.
 
 The two components of the model are a simple Poisson branching process
 with autoregressive parameter \(\lambda\) and a seasonal component fit
 with a Fourier series. These components are described as the
 ``epidemic'' and ``endemic'' components respectively. Additionally, the
-two-component model allows for \del{the} \(\lambda\) to change over time
-\del{allowing for the disease to change}\dw{representing changing} infectivity\del{ over time}.
+two-component model allows for \(\lambda\) to change over time
+representing changing infectivity.
 
 A branching process is a model that is used to model the evolution
 (Grimmett and Stirzaker
 \protect\hyperlink{ref-grimmett_probability_2004}{2004} , pp.~171-175,
-243-255) of population over time\del{ over time}. Suppose there's currently
-one parent alive \dw{make conncetion between alive/parent/child language here and analogous epidemiological language}. Then in a branching process, this individual would
-give birth to a random number of offspring and then immediately die.
-Then at the next step, each of those offspring become parents who
-individually give birth to a random number of offspring. If the random
-number of offspring comes from a Poisson distribution, then the process
-is known as a Poisson branching process. It's in this sense that
-\(\lambda\) is an autoregressive parameter since it describes the
-relationship between the individuals in the previous time step to the
-current one. In thise cas we assume that the \(\lambda\) value is
-constant across individuals and over time (e.g.~\(\lambda\) is some
-biological reproduction rate). In the case of the Two-Component model,
-is fixed for individuals at a given time, but is allowed to vary over
-time. This allows the model to capture the dynamics of disease
-outbreaks.
+243-255) of population over time. Suppose there's currently one parent
+alive (cf., one person infectious). Then in a branching process, this
+individual would give birth to a random number of offspring (cf., newly
+infected) and then immediately die. Then at the next step, each of those
+offspring become parents who individually give birth to a random number
+of offspring. If the random number of offspring comes from a Poisson
+distribution, then the process is known as a Poisson branching process.
+its in this sense that \(\lambda\) is an autoregressive parameter since
+it describes the relationship between the individuals in the previous
+time step to the current one. In thise case we assume that the
+\(\lambda\) value is constant across individuals and over time
+(e.g.~\(\lambda\) is some biological reproduction rate). In the case of
+the Two-Component model, is fixed for individuals at a given time, but
+is allowed to vary over time. This allows the model to capture the
+dynamics of disease outbreaks.
 
 \hypertarget{two-component-model-notation}{%
 \subsection{Two-Component Model
 Notation}\label{two-component-model-notation}}
 
-Let \(Z = (Z_0, Z_1, ..., Z_n)\) be the \del{infectious disease counts}\dw{incidence} at
-each time step \(t\) \dw{and let} each \del{\(Z_t\) is determined as} \(Z_t = Y_t + X_t,\ t \in \{1,\dots, N\}\) \del{W} where \(Y_t\) is the epidemic component and \(X_t\) is the endemic
-component. The model is then specified through
-\(Z_t | Z_{t-1}\).
-
-
+Let \(Z = (Z_0, Z_1, ..., Z_n)\) be the incidence at each time step
+\(t\) and let each \(Z_t= Y_t + X_t, t\in \{1,\dots, n\}\). The model is
+then specified through \(Z_t | Z_{t-1}\).
 
 \hypertarget{epidemic-component}{%
 \subsection{Epidemic Component}\label{epidemic-component}}
 
-The epidemic component is given by:
+The epidemic component is given by
 
-\[Y_t|Z_{t-1} \sim\text{Pois}(\lambda_tZ_{t-1})\]
+\[Y_t|Z_{t-1} \sim\text{Pois}(\lambda_tZ_{t-1}),\]
 
-\dw{use punctuation as normal in displayed equations, so above equation should have a comma after it and the following "where" does not have a capital --- this applies throughout} Where \(\lambda_t\) is the time varing infectivity parameter and
+where \(\lambda_t\) is the time varing infectivity parameter and
 \(Z_{t-1}\) is the the infected count in the previous time step.
 
 We can think of \(\lambda_t\) as the infectivity of the disease at time
@@ -226,18 +218,18 @@ generates new infected i.i.d \(\text{Pois}(\lambda_t)\), then \(Z_t\) is
 the sum of those random variables which itself is Poisson;
 \(\sum_1^{Z_{n-1}}\text{Pois}(\lambda_t) =\text{Pois}(\lambda_tZ_{n-1})\).
 
-In this model,\del{ the} \(\lambda_t\) is allowed to vary over time. \dw{We restrict $\lambda$ to be piecewise constant with $K$ changepoints at locations }\del{The
-parameter \(\lambda = (\lambda_1,\cdots,\lambda_n)\) is a piecewise
-constant function with unknown number of changepoints \(K\) and unknown
-location of changepoints} \(\theta_1 < \cdots < \theta_K\) with
-\(\theta \in \{1,...,n-1\}\). If \(K = 0\) there is no changepoint and
+In this model, the \(\lambda_t\) is allowed to vary over time. We
+restrict \(\lambda\) to be piecewise constant with \(K\) change points
+at locations \(\theta_1 < \cdots < \theta_K\) with
+\(\theta \in \{1,...,n-1\}\). If \(K = 0\) there is no change point and
 the \(\lambda\) parameter is constant throughout.
 
 \hypertarget{tk-add-references-below}{%
-\subsection{TK add references below \dw{what is this heading?}}\label{tk-add-references-below}}
+\subsection{TK add references below}\label{tk-add-references-below}}
 
-\dw{If we consider only the process $Z_t = Y_t$}\del{For a Poisson process}, when \(\lambda > 1\) an outbreak occurs (Held et
-al. \protect\hyperlink{ref-held_two-component_2006}{2006}). When
+If we only consider the process \(Z_t = Y_t\), when \(\lambda > 1\) an
+outbreak occurs (Held et al.
+\protect\hyperlink{ref-held_two-component_2006}{2006}). When
 \(\lambda < 1\) then the process ``goes extinct'' or reaches and remains
 at 0 with probability 1 (Grimmett and Stirzaker
 \protect\hyperlink{ref-grimmett_probability_2004}{2004} , pp.~245). Once
@@ -249,7 +241,7 @@ between. When \(\lambda_t < 1\) the outbreak ends.
 Allowing \(\lambda_t\) to vary captures many scenarios, for example a
 particulary infectious strain of the flu could cause \(\lambda_t\) to
 increase above 1 and cause an outbreak. Later, better or new vaccines
-and quar\dw{a}ntine procedures can cause the overall infectivity to decrease
+and quarantine procedures can cause the overall infectivity to decrease
 below 1.
 
 \hypertarget{endemic-component}{%
@@ -261,7 +253,7 @@ prevents the branching process from going extinct. The endemic count is
 modeled as
 
 \[X_t \sim \text{Pois}(\nu_t)\]
-\[\log{\nu_t} = \gamma_0 + \sum_{l = 1}^L (\gamma_{2l-1}\sin(\rho l t)+\gamma_{2l}cos(\rho l t))\]
+\[\log{\nu_t} = \gamma_0 + \sum_{l = 1}^L (\gamma_{2l-1}\sin(\rho l t)+\gamma_{2l}cos(\rho l t)).\]
 
 That is, \(\log{\nu_t}\) is fit with a Fourier series which can
 approximate any function arbitrarily closely. Following, Held et al.
@@ -272,8 +264,9 @@ enough to model cylical patterns seen in disease counts.
 
 The parameter can then be fit with a linear regression
 \(\log{\nu_t} = s_t\gamma^T\)
+
 where
-\(s_t = \langle 1, sin(\rho l t), \gamma_{2l}cos(\rho l t) \rangle\)
+\(s_t = \langle 1, sin(\rho l t), \gamma_{2l}cos(\rho l t) \rangle\).
 
 \begin{figure}
 \centering
@@ -284,66 +277,66 @@ where
 \hypertarget{likelihood}{%
 \subsection{Likelihood}\label{likelihood}}
 
-T\del{hen t}he probability of the full time series \(Z\) given the initial
-starting count \(Z_0\) can be factored as a product of the probabilities
-of each \(Z_t\) given the previous count \(Z_{t-1}\)\dw{,}
+The probability of the full time series \(Z\) given the initial starting
+count \(Z_0\) can be factored as a product of the probabilities of each
+\(Z_t\) given the previous count \(Z_{t-1}\),
 
-\[P(Z|Z_0,\theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2 ) = \prod_{t=1}^b P(Z_t|Z_t{-1}, \theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2)\]
-Where \(Z_t\) is distributed as sum of the Poisson endemic and epidemic
-components
-\[Z_t|Z_{t-1}, \theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2 \sim\text{Pois}(\nu_t + \lambda_tZ_{t-1})\]
-where the endemic component \(\nu_t\) is described as
-\[\log{\nu_t} = \gamma_0 +  \gamma_{1}\sin(\rho l t)+\gamma_{2}\cos(\rho l t)\]
+\[P(Z|Z_0,\theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2 ) = \prod_{t=1}^b P(Z_t|Z_t{-1}, \theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2),\]
+where \(Z_t\) is distributed as sum of the Poisson endemic and epidemic
+components,
+\[Z_t|Z_{t-1}, \theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2 \sim\text{Pois}(\nu_t + \lambda_tZ_{t-1}),\]
+where the endemic component \(\nu_t\) is described as,
+\[\log{\nu_t} = \gamma_0 +  \gamma_{1}\sin(\rho l t)+\gamma_{2}\cos(\rho l t),\]
 and \(\lambda_t\) piecewise function is described by
-\[ \lambda_t =  \begin{cases} \lambda^{(1)} & t < \theta_0 \\
+\[ \lambda_t =  \begin{cases} \lambda^{(1)}, & t < \theta_0 \\
 \lambda^{(k)}, & \theta_{k} \leq t < \theta_{(k-1)} \\
-\lambda^{(K+1)}, & t \geq \theta_K \end{cases}\]
-\dw{fix punctuation}
+\lambda^{(K+1)}, & t \geq \theta_K \end{cases}.\]
 
 \hypertarget{multiple-locations-connected-by-a-graph}{%
 \section{Multiple locations connected by a
 graph}\label{multiple-locations-connected-by-a-graph}}
 
 We would like to extend our data from a univariate time series of counts
-\(Z_t\) to a multiple time series of counts \(Z_{i,t}\) where \(i\) \del{now}
+\(Z_t\) to a multiple time series of counts \(Z_{i,t}\) where \(i\) now
 indexes separate time series. In this case we will say the \(i\) indexes
-individual ``cities'' \del{where}\dw{so} \(Z_i\) represents the infectious disease
+individual ``cities'' so \(Z_i\) represents the infectious disease
 counts in city \(i\). Now, a city \(i\)'s epidemic disease count at time
-\(t\) is modelled as a function of both it\del{'}s counts \(Z_{i,t-1}\) and
-possibly other cities\dw{'} counts as well.
+\(t\) is modelled as a function of both its counts \(Z_{i,t-1}\) and
+possibly other cites' counts as well.
 
-This dependenc\dw{e} between cities is represented \del{with}\dw{by} a \del{fixed} graph \(G\)
-where \(N_v\), the number of vertices in graph is \del{fixed and }equal to the
-number of cities and \dw{and the (undirected) edge $\{i,j\}$ connects vertices $i$ and $j$ when transmission of the disease in city $i$ influences that in city $j$ and vice versa --- (or write something to that effect... and maybe move it to end of this paragraph)}.\del{ \(N_e\) is the number of edges in the graph,
-representing dependencies between cities' disease counts.} We call
-\(V = \{1,\dots,N_v \}\) the vertex set of the graph where \(N_v\) is
-the number of cities/individual time series of disease counts, and
-\(E(G)\) is a set of unordered pairs of vertices \(\{i,j\}\) where
-\(i,j \in V\) and \(i \neq j\) that describes the edges present in graph
-\(G\). We represent the edge \(\{i,j\}\) as \(e_{ij}\) and the indicator
-\(1[e_{ij}=1]\) if \(\{i,j\} \in E(G)\) and 0 otherwise.
+This dependence between cities is represented by a fixed graph \(G\)
+where \(N_v\), the number of vertices in graph is fixed and equal to the
+number of cities. An (undirected) edge \(\{i,j\}\) connects vertices
+\(i\) and \(j\) if the counts in city \(i\) influences the counts in
+city \(j\) and vice versa. We call \(V = \{1,\dots,N_v \}\) the vertex
+set of the graph where \(N_v\) is the number of cities/individual time
+series of disease counts, and \(E(G)\) is a set of unordered pairs of
+vertices \(\{i,j\}\) where \(i,j \in V\) and \(i \neq j\) that describes
+the edges present in graph \(G\). We represent the edge \(\{i,j\}\) as
+\(e_{ij}\) and the indicator \(1[e_{ij}=1]\) if \(\{i,j\} \in E(G)\) and
+0 otherwise.
 
 \begin{figure}
-\includegraphics[trim={1 2cm 0 2cm},clip]{thesis_draft_files/figure-latex/unnamed-chunk-1-1} \caption{\label{fig:graph example} A graph configuration. The vertices $i \in \{1,\dots, 10\}$ represent cities each with their own disease counts          $Z_{i,t}$. The edges between the graph represent whether the counts between the cities can affect each other. In this example city 1's disease counts at time $t$ are influenced by both it's own counts and cities 2, 4, 5 and 6's (i.e. every city connected to it) disease counts. City 10's disease counts are only it's own and city 9's.}\label{fig:unnamed-chunk-1}
+\includegraphics[trim={1 2cm 0 2cm},clip]{thesis_draft_files/figure-latex/unnamed-chunk-1-1} \caption{\label{fig:graph example} A graph configuration. The vertices $i \in \{1,\dots, 10\}$ represent cities each with their own disease counts $Z_{i,t}$. The edges between the graph represent whether the counts between the cities can affect each other. In this example city 1's disease counts at time $t$ are influenced by both its own counts and cities 2, 4, 5 and 6's (i.e., every city connected to it) disease counts. City 10's disease counts are only its own and city 9's.}\label{fig:unnamed-chunk-1}
 \end{figure}
 
 We then model the disease count of city \(i\) at time \(t\) as a
-function of \(Z_{i,t-1}\) (as before, it's \dw{its} own counts at time \(t-1\))
-as well all the counts of the cities \(j\) it is connected to,
+function of \(Z_{i,t-1}\) (as before, its own counts at time \(t-1\)) as
+well all the counts of the cities \(j\) it is connected to,
 \(Z_{j,t-1}\). Then the counts at city \(i\) at time \(t\) are modeled
 as \(Z_t|Z_{t-1}, G = X_{i, t} + Y_{i,t}|G\) where
 \[X_{i,t}: \text{infected count in city } i \text{ at time step } t \text{, due to endemic factors}   \]
 \[Y_{i,t}|G : \text{infected count in city } i \text{ at time step } t \text{, due to epidemic factors}\]
-\[Z_{i,t}|G = X_{i,t} + Y_{i,t}|G: \text{infected count in city } i \text{ at time step } t \]
+\[Z_{i,t}|G = X_{i,t} + Y_{i,t}|G: \text{infected count in city } i \text{ at time step } t\]
 As before we have the epidemic component as
 \(X_{i,t} \sim\text{Pois}(\nu_t)\). For the epidemic component we now
-include the additional counts from connected cities as \dw{don't need * in below}
+include the additional counts from connected cities as
 
-\[Y_{i,t}|G \sim ~ \text{Pois}\big(\lambda_t *\sum_{j\neq i}^{N_v}Z_{j,t-1}*1[e_{ij}=1]+ \lambda_tZ_{i,t-1}\big)|G \]
-Where \(\lambda_t*\sum_{j\neq i}^{N_v}Z_{j,t}*1[e_{ij}=1]\) are the
-counts from cities connected to city \(i\).
+\[Y_{i,t}|G \sim ~ \text{Pois}\big(\lambda_t\sum_{j\neq i}^{N_v}Z_{j,t-1}1[e_{ij}=1]+ \lambda_tZ_{i,t-1}\big)|G, \]
+where \(\lambda_t\sum_{j\neq i}^{N_v}Z_{j,t}1[e_{ij}=1]\) are the counts
+from cities connected to city \(i\).
 
-That is\dw{,} the epidemic component for city \(i\) is the sum of all counts
+That is, the epidemic component for city \(i\) is the sum of all counts
 in every city \(j\) connected to \(i\) in addition to the counts in city
 \(i\).
 
@@ -354,9 +347,10 @@ One issue with this model is that connecting two isolated cities
 essentially doubles the infectivity parameter, since we include the
 counts from both cities. In this formulation a connection between two
 cities is equivalent to treating them a single city. To make the model
-more realistic, a migration parameter \(m \in (0,1)\) is introduced \dw{so that}
-\del{The migration parameter enters into the likelihood as}
-\[Y_{i,t}|G \sim ~ \text{Pois}\big(m*\lambda_t*\sum_{j\neq i}^{N_v}Z_{j,t-1}*1[e_{ij}=1]+ \lambda_tZ_{i,t-1}\big)|G \]
+more realistic, a migration parameter \(m \in (0,1)\) is introduced so
+
+\[Y_{i,t}|G \sim ~ \text{Pois}\big(m\lambda_t\sum_{j\neq i}^{N_v}Z_{j,t-1}1[e_{ij}=1]+ \lambda_tZ_{i,t-1}\big)|G.\]
+
 The migration parameter \(m\) is then the fraction of infected in city
 \(j\) that can cause infections in city \(i\), where \(m = 1\) is
 equivalent to the previous model and all infected in city \(j\) are
@@ -364,21 +358,72 @@ counted and \(m = 0\) is no infected are counted and is equivalent to
 the cities \(i,j\) not being connected in graph \(G\) (i.e,
 \(e_{ij} \notin G\))
 
-\hypertarget{future-extensions}{%
-\subsubsection{Future Extensions}\label{future-extensions}}
+\hypertarget{bayesian-inference}{%
+\section{Bayesian Inference}\label{bayesian-inference}}
 
-\dw{move this to a discussion at the end, just a distraction here}
-While this thesis only covers a fixed migration rate, the end goal would
-be to model the migration rate as a function of city specific
-attributes, e.g.~size of the cities, distance between the cities, if the
-cities are near large highways or have ports for shipping. Then \(m\)
-can be modelled as a logistic function of these city parameters
-\(m \sim logit(\beta_0 + \beta_1*X_1 + \beta_2*X_2 + \dots)\). This
-would allow estimation of which city specific attributes cause the
-highest migration.
+In Bayesian analysis, we aim to estimate the posterior distribution of
+the parameters which we can calculate via Bayes' theorem:
+\[ P(\theta|D) = \frac{P(D|\theta)P(\theta)}{P(D)}.\] \(P(\theta|D)\) is
+the posterior distribution of the parameters, \(\theta\), given the data
+\(D\). \(P(D|\theta)\) is the likelihood of the data \(D\) given the
+parameter value \(\theta\). \(P(\theta)\) is the prior distribution of
+\(\theta\) and represents the belief that the parameters will take
+certain values. If we have little prior information about a parameter,
+we try to choose an uninformative prior to reflect that ignorance
+\(P(D)\) is the probability of the data marginalized over the parameter
+space. One issue is the computation of \(P(\text{D})\) which is given by
+\(\int P(\text{D}|\theta)P(\theta)\) over the entire parameter space.
+With many parameters this integral it typically analytically
+intractable. To handle this Markov chain Monte-Carlo methods are used
+which we discuss in section (\#methods).
 
-\hypertarget{graph-likelihood}{%
-\subsection{Graph Likelihood \dw{it is really a graph prior and the prior you discuss below is a prior on $p$, should move down or call this Graph model}}\label{graph-likelihood}}
+We now specify the priors of the Two-Component and graph portions of the
+model.
+
+\hypertarget{priors-for-lambda-gamma-k-and-vectheta}{%
+\subsection{\texorpdfstring{Priors for \(\lambda\), \(\gamma\), \(K\)
+and
+\(\vec{\theta}\)}{Priors for \textbackslash{}lambda, \textbackslash{}gamma, K and \textbackslash{}vec\{\textbackslash{}theta\}}}\label{priors-for-lambda-gamma-k-and-vectheta}}
+
+The prior distribution for the \(\gamma\) parameters is Normal with
+variance \(\sigma^2 = 3^2\) to describe an uninformative prior:
+
+\[\gamma_i \sim N(0, 3I_3), i \in \{0,1,2\}.\]
+
+Since the \(\lambda\) values parameterize a Poisson distribution we set
+the prior to be Gamma(1, 1), its conjugate distribution. If Gamma is
+interpreted as the sum of exponentials, then the shape = 1, rate = 1
+parameterization represents seeing a single occurence in 1 unit of time
+and also represents an uninformative prior.
+
+\[ \lambda^{(k)} \sim Gamma(1, 1),\ k \in \{1, \dots, K + 1\}.\]
+
+The number of change points \(K\) takes values in \(\{1,\dots,N\}\)
+where \(N\) is the total number of time points of counts collected. In
+the Held et al. (\protect\hyperlink{ref-held_two-component_2006}{2006})
+paper the number of change points is uniformly distributed
+\(P(K = k) = 1/N\) representing uncertainty in the number of change
+points. This is changed to \[K \sim \text{Pois}(2)\] representing that
+idea that the disease count data is already of interest due to a
+potential change in the infectivity of the disease.
+\(K \sim\text{Pois}(2)\) places the highest mass on \(K = 2\) change
+points which can capture a spike in disease counts (as seen in the
+simulated data) before returning to a baseline endemic rate. It also
+places mass on \(K = 1\) (e.g.~capturing a long term decrease in
+infectivity due to intervention) and \(K = 3\) change points. It also
+acts as a regularizer to help reduce overfitting the count time series
+where each time point is given a unique \(\lambda_t\) value.
+
+The probability of a specific location for a change point given the
+number of change points is uniformly distributed among all the possible
+change points, \[P(\theta|K=k) = \binom{N}{k}^{-1}.\] Then the
+unnormallized posterior is then the product of the likelihood and the
+priors,
+\[ P(\theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2|Z)  \propto \]
+\[\prod_{t=1}^N P(Z_t|Z_{t-1},\theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2)*P(\theta|K)*P(K)*P(\prod_{k=1}^{K+1}\lambda^{(k)} )*P(\prod_{i=0}^2 \gamma_i)  .\]
+
+\hypertarget{graph-prior}{%
+\subsection{Graph Prior}\label{graph-prior}}
 
 We model the graph \(G\) modeled as an Erdos-Renyi random graph. An
 Erdos-Renyi random graph has a fixed vertex set
@@ -391,74 +436,6 @@ Then an edge \(e_{ij}\) is in the edge set \(E(G)\) with probability
 \\ & = p^{N_e}(1-p)^{\binom{N_v}{2}-N_e} \end{aligned}\] where \(N_e\)
 is the number of edges.
 
-\hypertarget{bayesian-inference}{%
-\section{Bayesian Inference}\label{bayesian-inference}}
-
-In Bayesian analysis, we aim to estimate the \dw{posterior} distribution of the
-parameters \del{on interest given the data}\dw{which we can calculate} via Bayes' theorem:
-\[ P(\theta|D) = \frac{P(D|\theta)P(\theta)}{P(D)}. \] \(P(\theta|D)\) is
-the posterior distribution of the parameters, \(\theta\)\dw{,} given the data
-\(D\). \(P(D|\theta)\) is the likelihood of the data \(D\) given the
-parameter value \(\theta\). \(P(\theta)\) is the prior distribution of
-\(\theta\) and represents the belief that the parameters will take
-certain values. \dw{If we have little prior information about a parameter, we try to choose an uninformative prior to reflect that ignorance}\del{The prior distribution can be specified to by
-``uninformative'' in the sense that the contribution to the posterior
-likelihood is much smaller than the likelihood}. \(P(D)\) is the
-probability of the data marginalized over the parameter space. One issue
-is the computation of \(P(\text{data})\) which is given by
-\(\int P(\text{data}|\text{parameters})P(\text{parameters})\) \dw{why use words here rather than $D, \theta$ etc?} over the
-entire parameter space. With many parameters this integral it typically
-analytically intractable. To handle this Markov chain Monte-Carlo
-methods are used \dw{which we discuss in Section ...}. 
-
-\dw{maybe at this state the basci form of the posterior here --- i.e. replace generic $\theta$ and $D$ used above with the papameters and data for this model as well as factorising it then get on to specifying priors in section below} We now specify the priors of the Two-Component and
-graph portions of the model.
-
-\hypertarget{two-component-priors }{%
-\subsection{Two-Component Priors \dw{Priors for $\lambda, \gamma,...$ etc}}\label{two-component-priors}}
-
-
-
-The prior values for the \(\gamma\) parameters are Multivariate-Normal
-distributed with variance \(3I_3\) to describe the uncertainty. \dw{do you mean you are modeling the $\gamma_i$ and independent each with a standard normal prior?}
-
-\[\gamma_i \sim N(0, 3I_3), i \in \{0,1,2\}\]
-
-Since the \(\lambda\) values parameterize a Poisson distribution we set
-the prior to be Gamma(1, 1), it's \dw{its not it's --- check this throughout!} conjugate distribution. If Gamma is
-interpreted as the sum of exponentials, then the shape = 1, rate = 1
-parameterization represents seeing a single occurrence in 1 unit of time
-and represents a vague prior.
-
-\[ \lambda^{(k)} \sim Gamma(1, 1),\ k \in \{1, \dots, K + 1\} \]
-
-\dw{I thought we were just sticking with a fixed number of change points?} The number of change-points \(K\) takes values in \(\{1,\dots,N\}\) where
-\(N\) is the total number of time points of counts collected. \dw{edits got to about here...} In the
-Held et al. (\protect\hyperlink{ref-held_two-component_2006}{2006})
-paper the number of changepoint \dw{spelling: two words or hyphenated} is uniformly distributed
-\(P(K = k) = 1/N\) representing uncertainty in the number of
-changepoints. This is changed to \[K \sim \text{Pois}(2)\] representing
-that idea that the disease count data is already of interest due to a
-potential change in the infectivity of the disease.
-\(K \sim\text{Pois}(2)\) places the highest mass on \(K = 2\)
-changepoints which can capture a spike in disease counts (as seen in the
-simulated data) before returning to a baseline endemic rate. It also
-places mass on \(K = 1\) (e.g.~capturing a long term decrease in
-infectivity due to intervention) and \(K = 3\) changepoints. It also
-acts as a regularizer to help reduce overfitting the count time series
-where each time point is given a unique \(\lambda_t\) value.
-
-The probability of a specfic location for a change point given the
-number of changepoints is uniformly distributed among all the possible
-changepoints \[P(\theta|K=k) = \binom{N}{k}^{-1}\] Then the
-unnormallized posterior is then the product of the likelihood and the
-priors 
-\[ P(\theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2|Z)  \propto \]
-\[\prod_{t=1}^N P(Z_t|Z_{t-1},\theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2)*P(\theta|K)*P(K)*P(\prod_{k=1}^{K+1}\lambda^{(k)} )*P(\prod_{i=0}^2 \gamma_i)  \]
-
-\hypertarget{graph-prior}{%
-\subsection{Graph Prior}\label{graph-prior}}
-
 We then place a prior on \(p\) as \(p \sim Unif(0,1)\) representing lack
 of knowledge of the sparseness of the graph. Now computing the marginal
 probability of a graph we find
@@ -470,7 +447,7 @@ That is the probability of graph is proportional to the number of edges
 edges in the graph is uniform with \(P(N_e) = 1/\binom{N_v}{2}\).
 However a graph with 2 edges compared with a graph with 1 edge is
 
-\[\begin{aligned}\frac{ P(G_{N_e = 2})}{P(G_{N_e = 1})}  &=  \frac{1/(\binom{N_v}{2}+1)\binom{N_v}{2}}{1/(\binom{N_v}{2}+1)\binom{N_v}{1}} \\& = \frac{\binom{N_v}{1}}{\binom{N_v}{2}}  \\& = \frac{N_v-1}{2} \end{aligned}\]
+\[\begin{aligned}\frac{ P(G_{N_e = 2})}{P(G_{N_e = 1})}  &=  \frac{1/(\binom{N_v}{2}+1)\binom{N_v}{2}}{1/(\binom{N_v}{2}+1)\binom{N_v}{1}} \\& = \frac{\binom{N_v}{1}}{\binom{N_v}{2}}  \\& = \frac{N_v-1}{2},\end{aligned}\]
 
 more likely. Then graphs with \(N_e = \binom{N_v}{2}/2\) are more likely
 compared to all graphs with \(|N_e| \in (0, N_v)\) and empty and
@@ -487,9 +464,9 @@ To summarize posterior is proportional to the product of the likelihood,
 graph and non-graph priors
 
 \[ P(\vec{\theta}, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2, G,p|Z)  \propto \]
-\[\begin{aligned}\prod_{i=1}^{N_v}\prod_{t=1}^N P(Z_{i,t}|Z_{t-1},\theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2,G,p)*\\P(\theta|K)P(K)P(\prod_{k=1}^{K+1}\lambda^{(k)} )P(\prod_{i=0}^2 \gamma_i)P(G|p)P(p) \end{aligned} \]
+\[\begin{aligned}\prod_{i=1}^{N_v}\prod_{t=1}^N P(Z_{i,t}|Z_{t-1},\theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2,G,p)*\\P(\theta|K)P(K)P(\prod_{k=1}^{K+1}\lambda^{(k)} )P(\prod_{i=0}^2 \gamma_i)P(G|p)P(p), \end{aligned} \]
 
-Where \(\vec{\theta}\) is a \(K\) dimensional vector of locations of
+where \(\vec{\theta}\) is a \(K\) dimensional vector of locations of
 change points (and takes values in \(\{1,\dots,N\}\) where \(n\) is end
 of the time series), \(\lambda^{(1)}, \dots, \lambda^{(K+1)}\)
 parameterize the epidemic component at the corresponding change points,
@@ -503,11 +480,11 @@ the graph.
 \subsection{Metropolis-Hastings
 Algorithm}\label{metropolis-hastings-algorithm}}
 
-To \dw{approximate the posterior, we draw samples from it using}\del{compute samples from the posterior distribution, } the
+To approximate the posterior, we draw samples from it using the
 Metropolis-Hastings algorithm (and its variant, the
-Metropolis-Hastings-Green algorithm)\del{ is used}. The algorithm begins with
-an Markov chain with some arbitrary transition probabilities \(q\),
-whose state space is the parameter space of the model, \(\theta\). After
+Metropolis-Hastings-Green algorithm). The algorithm begins with an
+Markov chain with some arbitrary transition probabilities \(q\), whose
+state space is the parameter space of the model, \(\theta\). After
 initializing the Markov chain in some initial state \(\theta_0\), the
 algorithm modifies the transition probabilities in such a way that the
 new transition probabilities has a stationary distribution that is the
@@ -618,8 +595,8 @@ poor models can be investigated (Gelman et al.
 \protect\hyperlink{ref-gelman_bayesian_2013}{2013},pp. 141--159;
 Kruschke \protect\hyperlink{ref-kruschke_doing_2014}{2014},pp. 130--131)
 
-\hypertarget{methods-implementation}{%
-\section{Methods/ Implementation}\label{methods-implementation}}
+\hypertarget{methods}{%
+\section{Methods/ Implementation}\label{methods}}
 
 Here I describe the Metropolis Hastings algorithms used to draw samples
 from the posterior distributions of the parameters of interest. The
@@ -631,7 +608,7 @@ operators generate and evaluate proposals. Each operator is a R function
 that accepts a list of parameters that represent the current state of
 the Markov chain, then proposes an new state for a given parameter (or
 set of parameters). The function then calculates the log acceptance
-ratio and determines whether to accepts it's proposal or reject it. It
+ratio and determines whether to accepts its proposal or reject it. It
 then returns the proposed parameters or returns the original parameters
 (in the case of rejecting).
 
@@ -653,13 +630,13 @@ This differs from Held et al.
 (\protect\hyperlink{ref-held_two-component_2006}{2006}) and Green
 (\protect\hyperlink{ref-green_reversible_1995}{1995}) who perform
 separate likelihood computations for each three operators: birth (adding
-a changepoint), death (removing a changepoint) and changing a
+a change point), death (removing a change point) and changing a
 \(\lambda\) value. Each of these operators changes only a portion of the
 total likelihood computation and as such, it is computationally more
 efficient to only compute the ratio of the changes. For example, let
-\(\boldsymbol{\theta^*}\) be the proposed changepoint vector where
-\(K^* = K + 1\) (i.e.~a new changepoint is added). Let \(m\) be the
-index of the proposed changepoint and the rest of the changepoints
+\(\boldsymbol{\theta^*}\) be the proposed change point vector where
+\(K^* = K + 1\) (i.e.~a new change point is added). Let \(m\) be the
+index of the proposed change point and the rest of the change points
 remain the same. Then the only part of the likelihood computation that
 changes is in the interval between timepoints
 \([\theta_{m-1}, \theta_{m+1})\) and since its the ratio between the
@@ -750,10 +727,10 @@ Jump
 MCMC}{birth/death\_theta and Reversible Jump MCMC}}\label{birthdeath_theta-and-reversible-jump-mcmc}}
 
 The \texttt{birth\_theta()} and \texttt{death\_theta()} operators allow
-for an increase and decrease in the number of changepoints. Then the
+for an increase and decrease in the number of change points. Then the
 parameter space can jump between a collection of possible models
 \(\{M_K, K \in \{0,1,\cdots,n-1\}\}\) where \(K\) indexes the number of
-changepoints. However models from different \(M_K\)'s have different
+change points. However models from different \(M_K\)'s have different
 dimensions of \(\boldsymbol{\theta_k}\) and the likelihoods are not
 directly comparable (since they are not defined on the same probability
 space). To handle this we use a Reversible Jump MCMC (RJMCMC) as
@@ -762,7 +739,7 @@ proposed in Green (\protect\hyperlink{ref-green_reversible_1995}{1995}).
 \hypertarget{birth_theta}{%
 \subsubsection{\texorpdfstring{\texttt{birth\_theta()}}{birth\_theta()}}\label{birth_theta}}
 
-For a birth step a new changepoint is chosen uniformly at random from
+For a birth step a new change point is chosen uniformly at random from
 all possible time steps \(\{1,\dots,N\}\) that aren't currently change
 points \(\{\theta_1,\dots,\theta_K\}\) and then added to the current set
 of change points
@@ -782,7 +759,7 @@ of change points
 \item
   In order to determine the acceptance probability for the proposal, the
   corresponding death move must also be determined. In death move a
-  current changepoint is selected uniformly at random and then removed.
+  current change point is selected uniformly at random and then removed.
   Then the \(\lambda\) values are changed deterministically (as
   described later).
 \end{enumerate}
@@ -800,14 +777,14 @@ birth and death step respectively and are selected such that
 term is transition probability from a parameter state with \(K\)
 \(\theta\)'s to \(K+1\). The probability of being in the proposed state
 \(\theta^*\) and proposing jumping back to the current state \(\theta\)
-is the probability of selecting the newly added changepoint
+is the probability of selecting the newly added change point
 \(\theta_{k^*}\) and deleting it. This occurs with probability \(1/K+1\)
-since the changepoints are selected uniformly at random and there are
-\(K+1\) changepoints in the proposed state. Similarly the probability of
-the current proposal state is \(1/N-K\) since there are \(N-K\) possible
-timesteps to add. Since \(u \sim U(0,1)\) then \(P(u) = 1\) and the
-reverse move is deterministic so it's probability is also 1 (and omitted
-from the equation). Finally the Jacobian is given by
+since the change points are selected uniformly at random and there are
+\(K+1\) change points in the proposed state. Similarly the probability
+of the current proposal state is \(1/N-K\) since there are \(N-K\)
+possible timesteps to add. Since \(u \sim U(0,1)\) then \(P(u) = 1\) and
+the reverse move is deterministic so its probability is also 1 (and
+omitted from the equation). Finally the Jacobian is given by
 \[ |J_{birth}| = \frac{(\lambda_1 + \lambda_2)^2}{\lambda_0}\] .
 
 \hypertarget{death_theta}{%
@@ -947,7 +924,7 @@ the likelihoods.
 
 \begin{figure}
 
-{\centering \includegraphics[width=0.75\linewidth]{degree_pre_diag} 
+{\centering \includegraphics[width=0.75\linewidth]{C:/repos/disease_sim/degree_pre_diag} 
 
 }
 
@@ -968,6 +945,83 @@ rewiring (v1, v2), the Hastings ratio is 1.
 \hypertarget{two-component-model}{%
 \subsection{Two-Component Model}\label{two-component-model}}
 
+\hypertarget{prior-checks-1}{%
+\subsubsection{Prior Checks}\label{prior-checks-1}}
+
+I performed prior checks where the likelihood ratio is set to 1 so that
+the posterior distributions should match their prior distributions.
+
+\begin{figure}
+\centering
+\includegraphics{thesis_draft_files/figure-latex/prior_checks_2c-1.pdf}
+\caption{\label{fig:pc2c} Prior Checks for \(\gamma\), \(\lambda\) and
+\(K\). Only 3 \(\lambda\) values are displayed. The KDE smoothed
+distribution of values are plotted against the true density values of
+the priors (that is \(P(\lambda) \sim ext{Gamma}(1,1)\) and
+\(P(\gamma) \sim \text{Norm}(0,3)\). The differences appear to be
+artifacts of the smoothing procedure.}
+\end{figure}
+
+The following data was collected by running 100,000 iterations (thinned
+to 10,000 samples) of proposing to update either the \(\lambda\) vector,
+\(\gamma\) vector, adding a change point (\(K \rightarrow K + 1\)) or
+removing a change point (\(K \rightarrow K - 1\)). The likelihood ratio
+was set to 1 so the only factor in accepting or rejecting a state was
+the priors. As such we would expect to see the posterior distributions
+of each parameter to be their respective prior distributions. The priors
+are \[\vec\lambda \sim \text{Gamma}(1,1)\]
+\[\vec\gamma \sim \text{Norm}(0,3)\] \[K \sim \text{Unif}(0,N)\]
+
+In Figure \ref{fig:pc2c} we have plots of the samples of the \(\lambda\)
+values (first 3) and the \(\gamma\) values. Each is overlayed with the
+density of their respective priors in red. Overall there appears to be a
+good match between the sampled values and their prior distributions.
+
+In figure \ref{fig:pois_hist} we have a frequency histogram of the
+sampled values of \(K\) (the number of change points) overlayed with a
+red circle. The red circle represents the appropriate density value from
+the prior distribution of \(K\). Overall we see a good qualitative fit
+between the values sampled from the posterior and the prior
+distribution. The following table gives the sample frequency and the
+actual probability (from the prior distibution). If these probabilities
+did not match, then there is likely a bug in the code or some unknown
+prior assumption on the model. Note that the sample frequency was
+computed from a thinned sample of 10,000 hence why 11, 25, and 51 have
+sample probabilities of 0.0001, there was 1 occurence of each.
+
+\begin{figure}
+\centering
+\includegraphics{thesis_draft_files/figure-latex/unnamed-chunk-3-1.pdf}
+\caption{\label{fig:pois_hist} Sample probabilities of \(K\) overlayed
+with true probabilities. Overall this shows a good agreement between the
+sample probabilities and the true probabilties.}
+\end{figure}
+
+\begin{longtable}[]{@{}ccc@{}}
+\toprule
+K & sample & actual\tabularnewline
+\midrule
+\endhead
+0 & 0.136 & 0.135\tabularnewline
+1 & 0.270 & 0.270\tabularnewline
+2 & 0.2681 & 0.271\tabularnewline
+3 & 0.185 & 0.180\tabularnewline
+4 & 0.0899 & 0.902\tabularnewline
+5 & 0.0365 & 0.361\tabularnewline
+6 & 0.0113 & 0.012\tabularnewline
+7 & 0.0029 & 0.0034\tabularnewline
+8 & 0.0007 & 0.0008\tabularnewline
+9 & 0.0001 & 0.00019\tabularnewline
+11 & 0.0001 & 6.94e-6\tabularnewline
+25 & 0.0001 & 2.97e-19\tabularnewline
+51 & 0.0001 & 1.96e-52\tabularnewline
+\bottomrule
+\end{longtable}
+
+\hypertarget{inference-on-simulated-data}{%
+\subsubsection{Inference on Simulated
+Data}\label{inference-on-simulated-data}}
+
 \begin{longtable}[]{@{}cc@{}}
 \toprule
 parameters & simulation values\tabularnewline
@@ -978,15 +1032,11 @@ K: number of changespoints & 2\tabularnewline
 0.7\tabularnewline
 \(\boldsymbol{\gamma}\): endemic parameters & log(10), 0.5,
 1.5\tabularnewline
-\(\boldsymbol{\theta}\): changepoints & 39, 49\tabularnewline
+\(\boldsymbol{\theta}\): change points & 39, 49\tabularnewline
 \bottomrule
 \end{longtable}
 
-\pagebreak
-
-In this paper, I have implemented an MCMC algorithm that estimates the
-Two-Component Model from simulated data. The simulation parameters are
-taken from Held et al.
+The simulation parameters are taken from Held et al.
 (\protect\hyperlink{ref-held_two-component_2006}{2006})
 
 \begin{figure}
@@ -1015,7 +1065,7 @@ there is a slight pattern to the \(\gamma_0\) trace plot.
 
 \begin{figure}
 \centering
-\includegraphics{thesis_draft_files/figure-latex/unnamed-chunk-3-1.pdf}
+\includegraphics{thesis_draft_files/figure-latex/unnamed-chunk-4-1.pdf}
 \caption{\label{fig:cor_gammas}Plots of \(\gamma_0\) vs \(\gamma_1\) and
 \(\gamma_0\) vs \(\gamma_2\). Each point represents the corresponding
 parameter value at the same sample draw, i.e., the values of each
@@ -1043,104 +1093,40 @@ The \(\theta_3\) trace plot is of note because it is only valid for when
 
 \begin{figure}
 
-{\centering \includegraphics[height=0.41\textheight]{thesis_draft_files/figure-latex/unnamed-chunk-4-1} 
-
-}
-
-\caption{Trace plots for all $\lambda$ values. Overall the trace plots show that the samplers are mixing well with some minor autocorrelation that could potentially be resolved with thinning or more samples. The raw trace plots include the $\lambda$ values when there are 3 and 4 separate $\lambda$'s and is the cause of the random jumps.}\label{fig:unnamed-chunk-4}
-\end{figure}
-
-The \(\boldsymbol{\lambda}\) trace plots have interesting patterning,
-specifically the \(\lambda_2\) and \(\lambda_3\) traces appear to fix
-tightly at \(1.2\) and \(0.7\) respectively while also jumping to
-\(0.7\) and \(1.2\) respectively. This is an artifact of the dimension
-change in the model. When \(K = 2\), \(\lambda_2\) is tightly fixed
-around \(1.2\) and \(\lambda_3\) at \(0.7\) but when \(K = 2\),
-\(\lambda_3\) can take the role of fitting the outbreak while
-\(\lambda_4\) models to the return \(0.7\), the baseline.
-
-\begin{figure}
-
 {\centering \includegraphics[height=0.41\textheight]{thesis_draft_files/figure-latex/unnamed-chunk-5-1} 
 
 }
 
-\caption{Trace plots filtered for K = 2 and K = 3 showing how the different number of changepoints affects the traces of the individual $\lambda$ values.}\label{fig:unnamed-chunk-5}
+\caption{Trace plots for all $\lambda$ values. Overall the trace plots show that the samplers are mixing well with some minor autocorrelation that could potentially be resolved with thinning or more samples. The raw trace plots include the $\lambda$ values when there are 3 and 4 separate $\lambda$'s and is the cause of the random jumps.}\label{fig:unnamed-chunk-5}
 \end{figure}
 
-In assessing the inference on the data, I examine the density plots.
-Here we see that the density plots cover the true values.
+The \(\boldsymbol{\lambda}\) trace plots show that the \(\lambda_2\) and
+\(\lambda_3\) traces appear to jump tightly around \(1.2\) and \(0.7\)
+respectively while also jumping to \(0.7\) and \(1.2\) respectively.
+This is an artifact of the dimension change in the model. When
+\(K = 2\), \(\lambda_2\) is tightly fixed around \(1.2\) and
+\(\lambda_3\) at \(0.7\) but when \(K = 2\), \(\lambda_3\) can take the
+role of fitting the outbreak while \(\lambda_4\) models to the return
+\(0.7\), the baseline.
 
 \begin{figure}
-\centering
-\includegraphics{thesis_draft_files/figure-latex/unnamed-chunk-6-1.pdf}
-\caption{\label{fig:2c_dens} Plots for the count data and density plots
-showing \(K\)}
+
+{\centering \includegraphics[height=0.41\textheight]{thesis_draft_files/figure-latex/unnamed-chunk-6-1} 
+
+}
+
+\caption{Trace plots filtered for K = 2 and K = 3 showing how the different number of change points affects the traces of the individual $\lambda$ values.}\label{fig:unnamed-chunk-6}
 \end{figure}
-
-\hypertarget{prior-checks-1}{%
-\subsubsection{Prior Checks}\label{prior-checks-1}}
-
-I also performed prior checks where the likelihood ratio is set to 1 so
-that the posterior distributions should match the prior.
-
-\includegraphics{thesis_draft_files/figure-latex/prior_checks_2c-1.pdf}
-The following data was collected by running 100,000 iterations (thinned
-to 10,000 samples) of proposing to update either the \(\lambda\) vector,
-\(\gamma\) vector, adding a change point (\(K \rightarrow K + 1\)) or
-removing a change point (\(K \rightarrow K - 1\)). The likelihood ratio
-for set to 1 so the only factor in accepting or rejecting a state was
-the priors. As such we would expect to see the parameter values
-posterior distribution to be their prior distributions. The priors are
-\[\vec\lambda \sim \text{Gamma}(1,1)\]
-\[\vec\gamma \sim \text{Norm}(0,3)\] \[K \sim \text{Unif}(0,N)\]
-
-In Figure \ref{fig:pc_2c} we have plots of the samples of the
-\(\lambda\) values (first 3) and the \(\gamma\) values. Each is
-overlayed with the density of their respective priors in red. Overall
-there appears to be a good match between the sampled values and their
-prior distributions.
-
-In figure \ref{fig:pois_hist} we have a frequency histogram of the
-sampled values of \(K\) (the number of change points) overlayed with a
-red circle. The red circle represents the appropriate density value from
-the prior distribution of \(K\). Overall we see a good qualitative fit
-between the values sampled from the posterior and the prior
-distribution. The following table gives the sample frequency and the
-actual probability (from the prior distibution). If these probabilities
-did not match, then there is likely a bug in the code or some unknown
-prior assumption on the model. Note that the sample frequency was
-computed from a thinned sample of 10,000 hence why 11, 25, and 51 have
-sample probabilities of 0.0001, there was 1 occurence of each.
 
 \begin{figure}
-\centering
-\includegraphics{thesis_draft_files/figure-latex/unnamed-chunk-8-1.pdf}
-\caption{\label{fig:pois_hist} Sample probabilities of \(K\) overlayed
-with true probabilities. Overall this shows a good agreement between the
-sample probabilities and the true probabilties.}
+\includegraphics[width=0.47\linewidth]{thesis_draft_files/figure-latex/unnamed-chunk-7-1} \includegraphics[width=0.47\linewidth]{thesis_draft_files/figure-latex/unnamed-chunk-7-2} \caption{\label{fig:2c_dens}\textbf{Left:} Density plots of the posterior samples of $\lambda$ parameters. The shaded blue represents the region corresponding to the 90\% highest probability density interval (HPDI). \textbf{Right:} Density plots of the posterior samples of $\gamma$ parameters.}\label{fig:unnamed-chunk-7}
 \end{figure}
 
-\begin{longtable}[]{@{}ccc@{}}
-\toprule
-K & sample & actual\tabularnewline
-\midrule
-\endhead
-0 & 0.136 & 0.135\tabularnewline
-1 & 0.270 & 0.270\tabularnewline
-2 & 0.2681 & 0.271\tabularnewline
-3 & 0.185 & 0.180\tabularnewline
-4 & 0.0899 & 0.902\tabularnewline
-5 & 0.0365 & 0.361\tabularnewline
-6 & 0.0113 & 0.012\tabularnewline
-7 & 0.0029 & 0.0034\tabularnewline
-8 & 0.0007 & 0.0008\tabularnewline
-9 & 0.0001 & 0.00019\tabularnewline
-11 & 0.0001 & 6.94e-6\tabularnewline
-25 & 0.0001 & 2.97e-19\tabularnewline
-51 & 0.0001 & 1.96e-52\tabularnewline
-\bottomrule
-\end{longtable}
+Figure \ref{fig:2c_dens}) shows the kernal density plots of the
+\(\lambda\) and \(\gamma\) samples along with the area corresponding to
+the 90\% highest probability density intervals (HPDIs). The 90\% HPDI is
+the smallest interval that contains 90\% of the density. All HPDIs cover
+their true values suggesting overall good inference.
 
 \hypertarget{graph-estimation-on-fixed-two-component-model}{%
 \subsection{Graph Estimation on Fixed Two-Component
@@ -1155,9 +1141,6 @@ equal to 1. With the correct derivation about the priors, any
 significant deviation of the posterior distributions from the prior
 distributions is likely to be due to implementation errors in the code.
 
-\hypertarget{graph-priors}{%
-\subsection{Graph Priors}\label{graph-priors}}
-
 \hypertarget{posterior-distribution-of-number-of-edges-matches-prior-distribution}{%
 \subsubsection{Posterior distribution of number of edges matches prior
 distribution}\label{posterior-distribution-of-number-of-edges-matches-prior-distribution}}
@@ -1168,47 +1151,86 @@ on \(G|p\). Then the probability of each graph is equally likely and the
 posterior distribution of the number of edges should be
 \(\text{Binom}(105, 0.5)\). Figure \ref{fig:binom_hist} shows a thinned
 posterior sample of the number of edges overlayed with the appropriate
-\(\text{Binom}(105, 0.5)\) in red.
+\(\text{Binom}(105, 0.5)\) probabilites in red.
 
 \begin{figure}
 \centering
-\includegraphics{thesis_draft_files/figure-latex/unnamed-chunk-9-1.pdf}
+\includegraphics{thesis_draft_files/figure-latex/unnamed-chunk-8-1.pdf}
 \caption{\label{fig:binom_hist} Posterior probabilities of the number of
 edge counts, overlayed with true probabilities. Overall this shows a
 good agreement between the posterior probabilities and the true
 probabilties.}
 \end{figure}
 
+\hypertarget{inference-on-number-of-edgesp-and-migration-rate}{%
+\subsubsection{\texorpdfstring{Inference on number of edges/\(p\) and
+migration
+rate}{Inference on number of edges/p and migration rate}}\label{inference-on-number-of-edgesp-and-migration-rate}}
+
+\begin{longtable}[]{@{}cc@{}}
+\toprule
+parameters & simulation values\tabularnewline
+\midrule
+\endhead
+K: number of changespoints & 2\tabularnewline
+\(\boldsymbol{\lambda}\): epidemic parameters & 0.7, 1.2,
+0.7\tabularnewline
+\(\boldsymbol{\gamma}\): endemic parameters & log(10), 0.5,
+1.5\tabularnewline
+\(\boldsymbol{\theta}\): change points & 39, 49\tabularnewline
+\(p\): Erdos-Renyi parameter & 0.15\tabularnewline
+true number of edges & 12\tabularnewline
+\(N_v\): number of vertices & 15\tabularnewline
+\(m\): migration rate & 0.15\tabularnewline
+\bottomrule
+\end{longtable}
+
+Inference is carried out on the graph and the migration rate, while the
+other parameters are fixed to their true values. A single interation of
+the sampler proposes adding or removing an edge (with equal probability)
+25 times before proposing a migration rate change. This allows the
+sampler to better explore the highly correlated posterior distribution
+which can be seen in Figure \ref{fig:p_mig_pairs}.
+
+\begin{figure}
+\centering
+\includegraphics{thesis_draft_files/figure-latex/unnamed-chunk-9-1.pdf}
+\caption{\label{fig:hist_edges} Histogram of posterior samples of the
+number of edges in the graph}
+\end{figure}
+
+\hypertarget{trace-plots}{%
+\subsubsection{trace plots}\label{trace-plots}}
+
 \includegraphics{thesis_draft_files/figure-latex/unnamed-chunk-10-1.pdf}
-\includegraphics{thesis_draft_files/figure-latex/unnamed-chunk-10-2.pdf}
 
-\begin{verbatim}
-## [1] "80 perc HPDI"
-\end{verbatim}
+Figure \ref{fig:hist_edges} is a histogram of the posterior samples of
+the number of edges in the graph. The mean of the distribution is
+12.41644 and median is 12 and the mode is numeric. The mean and median
+are close to the true number of edges in the graph, \(12\).
 
-\begin{table}
+Figure \ref{fig:p_mig_pairs} also shows on the left, a hex plot of the
+joint posterior samples of \(p\) (which is computed by 15/105 where 105
+is the maximum number of edges in a graph with 15 vertices ) and
+migration rate. It shows a strong negative correlation, which is to
+expected. If the migration rate is smaller than the true value \(m\),
+say \(0.5m\) then the a city connected to \(d\) cities would need to
+connect to \(2d\) to have the ``correct'' counts. Similarly the
+migration rate is higher than the true migration, then the number of
+edges would need to be lower than the true number of edges. tk need to
+explain this
 
-\centering
-\begin{tabular}{l|r}
-\hline
-  & x\\
-\hline
-lower & 7\\
-\hline
-upper & 15\\
-\hline
-\end{tabular}
-\centering
-\begin{tabular}{l|r}
-\hline
-  & x\\
-\hline
-lower & 0.0969636\\
-\hline
-upper & 0.2044621\\
-\hline
-\end{tabular}
-\end{table}
+Figure \ref{fig:p_mig_pairs} also shows the kernal density estimates of
+\(p\) and migration rate. Both of the 90\% HPDIs cover their true
+values.
+
+\begin{figure}
+\includegraphics[width=0.5\linewidth]{thesis_draft_files/figure-latex/unnamed-chunk-11-1} \includegraphics[width=0.5\linewidth]{thesis_draft_files/figure-latex/unnamed-chunk-11-2} \caption{\label{fig:p_mig_pairs} \textbf{Left:} Joint posterior hex plot between migration rate and $p$ the parameter for the Erdos-Renyi graph. The $p$ value is directly computed from the number of edges by dividing by the total possible edges which is 105. The plot shows a strong negative correlation between $p$ and the migration rate.  \textbf{Right:} Density plots with regions corresponding to the 90\% highest density probability intervals in blue. }\label{fig:unnamed-chunk-11}
+\end{figure}
+
+\hypertarget{traces-showing-the-parameter-space-moves}{%
+\section{Traces showing the parameter space
+moves}\label{traces-showing-the-parameter-space-moves}}
 
 \pagebreak
 
@@ -1216,6 +1238,42 @@ upper & 0.2044621\\
 \section{Conclusion}\label{conclusion}}
 
 Conclusion here
+
+\hypertarget{future-extensions}{%
+\subsubsection{Future Extensions}\label{future-extensions}}
+
+While this thesis only covers a fixed migration rate, the end goal would
+be to model the migration rate as a function of city specific
+attributes, e.g.~size of the cities, distance between the cities, if the
+cities are near large highways or have ports for shipping. Then \(m\)
+can be modelled as a logistic function of these city parameters
+\(m \sim logit(\beta_0 + \beta_1*X_1 + \beta_2*X_2 + \dots)\). This
+would allow estimation of which city specific attributes cause the
+highest migration. Furthermore this eliminates the need for a discrete
+graph estimation. Instead the graph will be a fully directed graph and
+can be directly estimated as a function of
+\(m \sim logit(\beta_0 + \beta_1*X_1 + \beta_2*X_2 + \dots)\). This and
+fixing the number of change points would allow the graph to be
+completely continuous. This could potentially allow for derivative based
+methods like Hamiltonian Monte Carlo which holds the promise of being
+efficient with no to minimal tuning.
+
+\pagebreak
+
+\hypertarget{extra-graphs}{%
+\subsection{extra graphs}\label{extra-graphs}}
+
+\begin{figure}
+\centering
+\includegraphics{thesis_draft_files/figure-latex/unnamed-chunk-13-1.pdf}
+\caption{\label{fig:pairs_lambda} density plots}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics{thesis_draft_files/figure-latex/unnamed-chunk-14-1.pdf}
+\caption{\label{fig:pairs_gamma} dens plots}
+\end{figure}
 
 \pagebreak
 
