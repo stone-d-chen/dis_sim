@@ -1232,6 +1232,8 @@ values.
 \section{Traces showing the parameter space
 moves}\label{traces-showing-the-parameter-space-moves}}
 
+\includegraphics{thesis_draft_files/figure-latex/unnamed-chunk-12-1.pdf}
+
 \pagebreak
 
 \hypertarget{conclusion}{%
@@ -1249,14 +1251,7 @@ cities are near large highways or have ports for shipping. Then \(m\)
 can be modelled as a logistic function of these city parameters
 \(m \sim logit(\beta_0 + \beta_1*X_1 + \beta_2*X_2 + \dots)\). This
 would allow estimation of which city specific attributes cause the
-highest migration. Furthermore this eliminates the need for a discrete
-graph estimation. Instead the graph will be a fully directed graph and
-can be directly estimated as a function of
-\(m \sim logit(\beta_0 + \beta_1*X_1 + \beta_2*X_2 + \dots)\). This and
-fixing the number of change points would allow the graph to be
-completely continuous. This could potentially allow for derivative based
-methods like Hamiltonian Monte Carlo which holds the promise of being
-efficient with no to minimal tuning.
+highest migration.
 
 \pagebreak
 

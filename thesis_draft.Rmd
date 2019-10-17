@@ -925,21 +925,19 @@ mcmc_areas_ridges(em, prob = 0.9)
 # Traces showing the parameter space moves
 
 ```{r}
+par(mfrow = c(3,3))
 
-# par(mfrow = c(3,3))
-# 
-# LaplacesDemon::joint.density.plot(edge_mig$count/105, edge_mig$mig, contour = FALSE, Trace = c(1,1000))
-# 
-# LaplacesDemon::joint.density.plot(edge_mig$count/105, edge_mig$mig, contour = FALSE, Trace = c(1000,2000))
-# 
-# LaplacesDemon::joint.density.plot(edge_mig$count/105, edge_mig$mig, contour = FALSE, Trace = c(3000,4000))
-# 
-# LaplacesDemon::joint.density.plot(edge_mig$count/105, edge_mig$mig, contour = FALSE, Trace = c(4000,5000))
-# 
-# LaplacesDemon::joint.density.plot(edge_mig$count/105, edge_mig$mig, contour = FALSE, Trace = c(5000,6000))
-# 
-# LaplacesDemon::joint.density.plot(edge_mig$count/105, edge_mig$mig, contour = FALSE, Trace = c(7000,8000))
+LaplacesDemon::joint.density.plot(edge_mig$count/105, edge_mig$mig, contour = FALSE, Trace = c(1,1000))
 
+LaplacesDemon::joint.density.plot(edge_mig$count/105, edge_mig$mig, contour = FALSE, Trace = c(1000,2000))
+
+LaplacesDemon::joint.density.plot(edge_mig$count/105, edge_mig$mig, contour = FALSE, Trace = c(3000,4000))
+
+LaplacesDemon::joint.density.plot(edge_mig$count/105, edge_mig$mig, contour = FALSE, Trace = c(4000,5000))
+
+LaplacesDemon::joint.density.plot(edge_mig$count/105, edge_mig$mig, contour = FALSE, Trace = c(5000,6000))
+
+LaplacesDemon::joint.density.plot(edge_mig$count/105, edge_mig$mig, contour = FALSE, Trace = c(7000,8000))
 ```
 
 
@@ -950,7 +948,7 @@ Conclusion here
 
 ### Future Extensions
 
-While this thesis only covers a fixed migration rate, the end goal would be to model the migration rate as a function of city specific attributes, e.g. size of the cities, distance between the cities, if the cities are near large highways or have ports for shipping. Then $m$ can be modelled as a logistic function of these city parameters $m \sim logit(\beta_0 + \beta_1*X_1 + \beta_2*X_2 + \dots)$. This would allow estimation of which city specific attributes cause the highest migration. Furthermore this eliminates the need for a discrete graph estimation. Instead the graph will be a fully directed graph and can be directly estimated as a function of $m \sim logit(\beta_0 + \beta_1*X_1 + \beta_2*X_2 + \dots)$. This and fixing the number of change points would allow the graph to be completely continuous. This could potentially allow for derivative based methods like Hamiltonian Monte Carlo which holds the promise of being efficient with no to minimal tuning. 
+While this thesis only covers a fixed migration rate, the end goal would be to model the migration rate as a function of city specific attributes, e.g. size of the cities, distance between the cities, if the cities are near large highways or have ports for shipping. Then $m$ can be modelled as a logistic function of these city parameters $m \sim logit(\beta_0 + \beta_1*X_1 + \beta_2*X_2 + \dots)$. This would allow estimation of which city specific attributes cause the highest migration.
 
 \pagebreak
 
