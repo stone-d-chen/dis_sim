@@ -62,23 +62,17 @@ mypois <- function(data, lambdas) {
 # graph gen 1
 ```{r graph simulation}
 #this code block simulates data used in the MCMC
-
-
-#-----------graph initialization
+#-----------graph initialization-------#
 
 # edgelist for handrawn graph
 el = matrix(c(1, 2, 1, 3, 1, 4, 1, 5, 1, 6, 2, 7, 2, 8, 7, 8, 6, 9, 9, 10),
             byrow = TRUE,
             ncol = 2)
 
-# g_city = graph_from_edgelist(el, directed = FALSE)
+g_city = graph_from_edgelist(el, directed = FALSE)
+############################################
 
-# ER random graph
-g_city = sample_gnp(15, 0.175)
-plot(g_city)
-
-adjlist = as_adj_list(g_city, mode = 'all')
-
+#helpers
 #unclass from igraph for later use
 unclass_adjlist <- function(adjlist) {
   adjlist <- unclass(adjlist)
@@ -88,42 +82,34 @@ unclass_adjlist <- function(adjlist) {
   return(adjlist)
 }
 
+# ER random graph generation
+g_city = sample_gnp(15, 0.125)
+plot(g_city)
+
+adjlist = as_adj_list(g_city, mode = 'all')
 adjlist <- unclass_adjlist(adjlist)
 
-
 #---simulate endemic component based on paper's values----#
-#-----------NOTE: need to divide the rate since each city gets a chance
-
-#initial paramaters
-N = 199 #total epochs/time steps
+N = 199     #total epochs/time steps
 init = 10   #Z_0 value is the initial number of people infected
 
-#------- setting endemic parameters
+#------- setting endemic parameters-----------------------#
 gamma  <- c(log(10), 0.5, 1.5)/2
 rho <- 2*pi/52 
-
-# generates values
 t = 1:N
 INDEP <- as.matrix(data.frame(x0 = 1, x1 = sin(rho*t), x2 = cos(rho*t*1.5)))
 nu_t <- as.matrix(INDEP) %*% gamma
-
 ende_lambda = rep(0, N)
 ende_lambda = exp(nu_t)
 
-#-----setting epidemic lambda values
-K <- 2 #changepoints
+#-----setting epidemic lambda values -----------
+K <- 2              #changepoints
 theta  <- c(39, 49) #location of changepoints
 migration <- 0.15
 
-#lambda values
-lambda <- c(0.5, 1.5, 0.5)/2
-#lambda vector 
-epi_lambda = rep(lambda, diff(c(0, theta, N)))
 
-
-
-#list of actual parameter values; useful for testing
-
+lambda <- c(0.5, 1.5, 0.5)/2   #lambda values
+epi_lambda = rep(lambda, diff(c(0, theta, N))) #lambda vector
 
 
 #-----------------counts matrix ------
@@ -152,6 +138,23 @@ for (i in 1:(N - 1)) {
     counts[j , i + 1] = ende_c[j, i] + epi_c[j, i] #append new counts
   }
 }
+
+#list of actual parameter values; useful for testing
+
+actual <- list(
+  K = K,
+  theta = theta,
+  lambda = lambda,
+  LL = -Inf,
+  gamma = gamma,
+  INDEP = INDEP,
+  graph = g_city,
+  adj = adjlist,
+  counts = counts,
+  migration = migration
+)
+```
+```{r simulation plots}
 
 #---plots----
 plot(colSums(counts), type = 'l')
@@ -191,20 +194,6 @@ plot(counts[10, 30:50], type = "l", col = "red")
 lines(counts[11, 30:50], type = "l", col = "forestgreen")
 plot(counts[12, 30:50], type = 'l', col = "blue")
 lines(counts[15, 30:50], type = 'l', col = "black")
-
-
-actual <- list(
-  K = K,
-  theta = theta,
-  lambda = lambda,
-  LL = -Inf,
-  gamma = gamma,
-  INDEP = INDEP,
-  graph = g_city,
-  adj = adjlist,
-  counts = counts,
-  migration = migration
-)
 ```
 
 # PRIOR
@@ -225,7 +214,6 @@ compute_log_prior <- function(input){
   edge_count = input$edge_count
   
   prior_star <- -log( choose( choose(length(adj), 2), edge_count)) 
-  + dpois(edge_count, 10, log = TRUE)
    -log(choose(N, K)) +
      sum(dgamma(lambda, 1, 1, log = TRUE)) +
      sum(dnorm(gamma, 0, 3, log = TRUE)) +
@@ -1210,6 +1198,12 @@ update_del_add <- function(input) {
   return(output)
   
 }
+update_add <- function(input) {
+  
+  output <- add_edge_op(input)
+  return(output)
+  
+}
 
 update_del_add_mig <- function(input) {
   
@@ -1278,11 +1272,25 @@ update_param3 <- function(input) {
 
 
 
-update_param_nr <- function(input){
-  for (i in 1:20) {
-    output <- flip_edge(input)
+update_param_nr <- function(input) {
+  
+  U <- runif(1)
+  if (U < 1/2) {
+    output <- add_edge_op(input)
+  } else {
+    output <- del_edge_op(input)
+  }
+
+  for (i in 1:25) {
+    U <- runif(1)
+    if (U < 1/2) {
+      output <- add_edge_op(output)
+    } else {
+      output <- del_edge_op(output)
+    }
   }
   output <- change_migration(output)
+  return(output)
   
 }
 
@@ -1320,7 +1328,18 @@ undebug(change_migration)
 undebug(add_edge_op)
 undebug(del_edge_op)
 
-nSim <- 1000000
+
+
+```
+
+```{r}
+
+
+
+thin <- 10
+nSim <- 100
+total <- thin*nSim
+
 #pre-allocate
 res <- list(
   K = numeric(nSim),
@@ -1332,8 +1351,6 @@ res <- list(
   edge_count = numeric(nSim),
   migration = numeric(nSim)
 )
-
-
 
 
 
@@ -1354,7 +1371,7 @@ output <-
     graph = 1,
     edge_count = 0,
     counts = counts,
-    migration = 0.15
+    migration = 0.20
   )
 
 output_LL <- compute_log_like(output)
@@ -1371,21 +1388,21 @@ output <-
     graph = 1,
     edge_count = 0,
     counts = counts,
-    migration = 0.15
+    migration = 0.20
   )
 
 
-
-
-set.seed(1)
-
-system.time(for (i in 1:nSim) {
-  if (i < 5) {
+system.time (
+for (i in 1:nSim) {
+  if (i < 2) {
     output <-  update_add(output)
-  } else  {
-    output <-  update_del_add(output)
-  } 
+  }
   
+  for(j in 1:thin) {
+    output <-  update_param_nr(output)
+  }
+  
+  #data store
   k <- output$K
   res$K[i] <- k
   
@@ -1403,48 +1420,165 @@ system.time(for (i in 1:nSim) {
   res$migration[i] <- output$migration
   
   
-  if (i %% 50000 == 1) {
-    plot(graph.adjlist(output$adj, mode = "all"))
-
-    print(output$LL)
-    print(output$migration)
-    # debug(add_edge_op)
-    # debug(del_edge_op)
-  }
-  
- 
-  
-  
+  # if (i %% 100 == 1) {
+  #   plot(graph.adjlist(output$adj, mode = "all"))
+  # 
+  #   print(output$LL)
+  #   print(output$migration)
+  #   # debug(add_edge_op)
+  #   # debug(del_edge_op)
+  # }
   
   
 })
 
-plot(g_city)
 ```
+
+```{r}
+
+
+init_list <- vector(mode = "list", 15)
+edge_c_list = list()
+edge_c_list$count = 0
+
+output <-
+  list(
+    K = 2,
+    theta = c(39, 49),
+    lambda = lambda,
+    LL = -Inf,
+    gamma = gamma,
+    INDEP = INDEP,
+    adj = init_list,
+    graph = 1,
+    edge_count = 0,
+    counts = counts,
+    migration = 0.20
+  )
+
+output_LL <- compute_log_like(output)
+
+output <-
+  list(
+    K = 2,
+    theta = c(39, 49),
+    lambda = lambda,
+    LL = output_LL,
+    gamma = gamma,
+    INDEP = INDEP,
+    adj = init_list,
+    graph = 1,
+    edge_count = 0,
+    counts = counts,
+    migration = 0.20
+  )
+
+```
+
+
+
+```{r}
+library(doParallel)
+cl <- makeCluster(7)
+registerDoParallel(cl)
+
+
+
+
+
+
+ptime <- system.time(foreach(i=c(output, output, output, output, output, output, output)) %dopar% {
+  
+  
+
+thin <- 10
+nSim <- 10
+total <- thin*nSim
+
+#pre-allocate
+res <- list(
+  K = numeric(nSim),
+  theta = matrix(0, nSim, N),
+  lambda = matrix(0, nSim, N + 1),
+  gamma = matrix(0, nSim, 3),
+  adj = vector(mode = "list", N),
+  accept = numeric(nSim),
+  edge_count = numeric(nSim),
+  migration = numeric(nSim)
+)
+
+
+for (i in 1:nSim) {
+  if (i < 2) {
+    output <-  update_add(output)
+  }
+  
+  for(j in 1:thin) {
+    output <-  update_param_nr(output)
+  }
+  
+  #data store
+  k <- output$K
+  res$K[i] <- k
+  
+  # if (length(output$theta) == 0) {
+  #   res$theta[i,] <-  0
+  # } else {
+  #   res$theta[i,] <-   c(output$theta, rep(output$theta[k], N - k))
+  # }
+  # 
+  # res$lambda[i,] <-
+  #   c(output$lambda, rep(output$lambda[k + 1], N - k))
+  # res$gamma[i,] <- output$gamma
+  # res$accept[i] <- output$graph
+  res$count[i] <- output$edge_count
+  res$migration[i] <- output$migration
+  
+  
+  # if (i %% 100 == 1) {
+  #   plot(graph.adjlist(output$adj, mode = "all"))
+  # 
+  #   print(output$LL)
+  #   print(output$migration)
+  #   # debug(add_edge_op)
+  #   # debug(del_edge_op)
+  # }
+  
+  
+}
+return(res)
+}
+)
+
+stopCluster(cl)
+```
+
 
 
 # Diagonostics
 ```{r}
 
 
-burnin = 50000
-downsample = seq(1, nSim-burnin, length=10000)
-edge_hist = list()
-edge_hist$count <- res$count[-(1:burnin)]
+burnin = 50
+downsample = seq(1, nSim-burnin, length=1000)
+edge_mig = list()
+edge_mig$count <- res$count[-(1:burnin)]
+edge_mig$mig <- res$migration[-(1:burnin)]
 
-#save(edge_hist, file = "prior_graph.RData")
+
+#save(edge_mig, file = "edge_mig.RData")
 
 par(mfrow = c(1,2))
 plot(graph.adjlist(output$adj, mode = "all"))
 mean(res$accept[-(1:burnin)] == 1)
-hist(res$count[-(1:burnin)][downsample], breaks = 100)
+hist(res$count[-(1:burnin)][downsample], breaks = 50, freq = FALSE)
 plot(res$count, type = "l")
 plot(res$accept, type = "l")
-hist(res$accept[-(1:burnin)], freq = FALSE)
+hist(res$accept, freq = FALSE)
 hist(res$count[-(1:burnin)]/105)
 
-hist(res$migration)
-plot(res$migration, type = "l")
+hist(res$migration[-(1:burnin)][downsample], breaks = 100)
+plot(res$migration[-(1:burnin)][downsample], type = "l")
 plot(res$migration[1:length(res$count)], res$count)
 
 ```
@@ -1607,5 +1741,3 @@ for (i in 1:24) {
 
 
 ```
-
-
