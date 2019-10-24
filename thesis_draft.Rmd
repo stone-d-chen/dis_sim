@@ -73,7 +73,7 @@ $$Y_t|Z_{t-1} \sim\text{Pois}(\lambda_tZ_{t-1}),$$
 
 where $\lambda_t$ is the time varing infectivity parameter and $Z_{t-1}$ is the the infected count in the previous time step.
 
-We can think of $\lambda_t$ as the infectivity of the disease at time $t$ with an infected person causing new infections as $\text{Pois}(\lambda_t)$. Since each infected at time $Z_{t-1}$ generates new infected i.i.d $\text{Pois}(\lambda_t)$, then $Z_t$ is the sum of those random variables which itself is Poisson;  $\sum_1^{Z_{n-1}}\text{Pois}(\lambda_t) =\text{Pois}(\lambda_tZ_{n-1})$.
+We can think of $\lambda_t$ as the infectivity of the disease at time $t$ with an infected person causing new infections as $\text{Pois}(\lambda_t)$. Since each infected at time $Z_{t-1}$ generates new infected i.i.d $\text{Pois}(\lambda_t)$, then $Z_t$ is the sum of those random variables $\sum_1^{Z_{n-1}}\text{Pois}(\lambda_t) =\text{Pois}(\lambda_tZ_{n-1})$.
 
 In this model, the $\lambda_t$ is allowed to vary over time.  We restrict $\lambda$ to be piecewise constant with $K$ change points at locations $\theta_1 < \cdots < \theta_K$ with $\theta \in \{1,...,n-1\}$. If $K = 0$ there is no change point and the $\lambda$ parameter is constant throughout.
 
@@ -95,9 +95,9 @@ $$\log{\nu_t} = \gamma_0 + \sum_{l = 1}^L (\gamma_{2l-1}\sin(\rho l t)+\gamma_{2
 
 That is, $\log{\nu_t}$ is fit with a Fourier series which can approximate any function arbitrarily closely. Following, @held_two-component_2006 the series is computed with $L = 1$ since it was determined higher order frequencies were insignificant. That is the truncated series is still flexible enough to model cylical patterns seen in disease counts.
 
-The parameter can then be fit with a linear regression $\log{\nu_t} = s_t\gamma^T$
+<!-- The parameter can then be fit with a linear regression $\log{\nu_t} = s_t\gamma^T$ -->
 
-where $s_t = \langle 1, sin(\rho l t), \gamma_{2l}cos(\rho l t) \rangle$.
+<!-- where $s_t = \langle 1, sin(\rho l t), \gamma_{2l}cos(\rho l t) \rangle$. -->
 
 
 ```{r simulation figure, echo = FALSE, fig.cap = "\\label{fig:figs}plotting example"}
@@ -190,9 +190,9 @@ $$ \lambda_t =  \begin{cases} \lambda^{(1)}, & t < \theta_0 \\
 
 # Multiple locations connected by a graph
 
-We would like to extend our data from a univariate time series of counts $Z_t$ to a multiple time series of counts $Z_{i,t}$ where $i$ now indexes separate time series. In this case we will say the $i$ indexes individual "cities" so $Z_i$ represents the infectious disease counts in city $i$. Now, a city $i$'s epidemic disease count at time $t$ is modelled as a function of both its counts $Z_{i,t-1}$ and possibly other cites' counts as well.
+We would like to extend our data from a univariate time series of incidences $Z_t$ to a multiple time series of incidences $Z_{i,t}$ where $i$ now indexes separate time series. In this case we will say the $i$ indexes individual "cities" so $Z_i$ represents the infectious disease incidences in city $i$. Now, a city $i$'s epidemic disease incidences at time $t$ is modelled as a function of both its infectious disease incidences $Z_{i,t-1}$ and possibly other cites' incidences as well.
 
-This dependence between cities is represented by a fixed graph $G$ where $N_v$, the number of vertices in graph is fixed and equal to the number of cities. An (undirected) edge $\{i,j\}$ connects vertices $i$ and $j$ if the counts in city $i$ influences the counts in city $j$ and vice versa.  We call $V = \{1,\dots,N_v \}$ the vertex set of the graph where $N_v$ is the number of cities/individual time series of disease counts, and $E(G)$ is a set of unordered pairs of vertices $\{i,j\}$ where $i,j \in V$ and $i \neq j$ that describes the edges present in graph $G$. We represent the edge $\{i,j\}$ as $e_{ij}$ and the indicator $1[e_{ij}=1]$ if $\{i,j\} \in E(G)$ and 0 otherwise. 
+This dependence between cities is represented by a fixed graph $G$ where $N_v$, the number of vertices in graph is fixed and equal to the number of cities. An (undirected) edge $\{i,j\}$ connects vertices $i$ and $j$ if the counts in city $i$ influences the counts in city $j$ and vice versa.  We call $V = \{1,\dots,N_v \}$ the vertex set of the graph where $N_v$ is the number of cities/individual time series of disease counts, and $E(G)$ is a set of unordered pairs of vertices $\{i,j\}$ where $i,j \in V$ and $i \neq j$ that describes the edges present in graph $G$. We represent the edge $\{i,j\}$ as $e_{ij}$ and the indicator $1[e_{ij}]=1$ if $\{i,j\} \in E(G)$ and 0 otherwise. 
 
 
 ```{r  echo = FALSE,message = 'hide', warning= FALSE, fig.cap = "\\label{fig:graph example} A graph configuration. The vertices $i \\in \\{1,\\dots, 10\\}$ represent cities each with their own disease counts $Z_{i,t}$. The edges between the graph represent whether the counts between the cities can affect each other. In this example city 1's disease counts at time $t$ are influenced by both its own counts and cities 2, 4, 5 and 6's (i.e., every city connected to it) disease counts. City 10's disease counts are only its own and city 9's.", fig.width=14, fig.height=8, out.extra='trim={1 2cm 0 2cm},clip'}
@@ -209,9 +209,9 @@ plot(g_city)
 
 
 We then model the disease count of city $i$ at time $t$ as a function of $Z_{i,t-1}$ (as before, its own counts at time $t-1$) as well all the counts of the cities $j$ it is connected to, $Z_{j,t-1}$. Then the counts at city $i$ at time $t$ are modeled as $Z_t|Z_{t-1}, G = X_{i, t} + Y_{i,t}|G$ where
-$$X_{i,t}: \text{infected count in city } i \text{ at time step } t \text{, due to endemic factors}   $$
-$$Y_{i,t}|G : \text{infected count in city } i \text{ at time step } t \text{, due to epidemic factors}$$
-$$Z_{i,t}|G = X_{i,t} + Y_{i,t}|G: \text{infected count in city } i \text{ at time step } t$$
+$$X_{i,t}: \text{infected count in city } i \text{ at time step } t \text{, due to endemic factors}, $$
+$$Y_{i,t}|G : \text{infected count in city } i \text{ at time step } t \text{, due to epidemic factors}, $$
+$$Z_{i,t}|G = X_{i,t} + Y_{i,t}|G: \text{infected count in city } i \text{ at time step } t.$$
 As before we have the epidemic component as $X_{i,t} \sim\text{Pois}(\nu_t)$. For the epidemic component we now include the additional counts from connected cities as
 
 $$Y_{i,t}|G \sim ~ \text{Pois}\big(\lambda_t\sum_{j\neq i}^{N_v}Z_{j,t-1}1[e_{ij}=1]+ \lambda_tZ_{i,t-1}\big)|G, $$
@@ -221,7 +221,7 @@ That is, the epidemic component for city $i$ is the sum of all counts in every c
 
 ## Migration
 
-One issue with this model is that connecting two isolated cities essentially doubles the infectivity parameter, since we include the counts from both cities. In this formulation a connection between two cities is equivalent to treating them a single city. To make the model more realistic, a migration parameter $m \in (0,1)$ is introduced so
+One issue with this model is that connecting two isolated cities essentially doubles the infectivity parameter, since we include the counts from both cities. In this formulation a connection between two cities is equivalent to treating them as a single city. To make the model more realistic, a migration parameter $m \in (0,1)$ is introduced so
 
 $$Y_{i,t}|G \sim ~ \text{Pois}\big(m\lambda_t\sum_{j\neq i}^{N_v}Z_{j,t-1}1[e_{ij}=1]+ \lambda_tZ_{i,t-1}\big)|G.$$
 
@@ -236,7 +236,7 @@ The migration parameter $m$ is then the fraction of infected in city $j$ that ca
 # Bayesian Inference
 In Bayesian analysis, we aim to estimate the posterior distribution of the parameters which we can calculate via Bayes' theorem:
 $$ P(\theta|D) = \frac{P(D|\theta)P(\theta)}{P(D)}.$$
-$P(\theta|D)$ is the posterior distribution of the parameters, $\theta$, given the data $D$. $P(D|\theta)$ is the likelihood of the data $D$ given the parameter value $\theta$. $P(\theta)$ is the prior distribution of $\theta$ and represents the belief that the parameters will take certain values. If we have little prior information about a parameter, we try to choose an uninformative prior to reflect that ignorance $P(D)$ is the probability of the data marginalized over the parameter space. One issue is the computation of $P(\text{D})$ which is given by $\int P(\text{D}|\theta)P(\theta)$ over the entire parameter space. With many parameters this integral it typically analytically intractable. To handle this Markov chain Monte-Carlo methods are used which we discuss in section (#methods).
+$P(\theta|D)$ is the posterior distribution of the parameters, $\theta$, given the data $D$. $P(D|\theta)$ is the probability of the data $D$ given the parameter value $\theta$. $P(\theta)$ is the prior distribution of $\theta$ and represents the belief that the parameters will take certain values before seeing the data. If we have little prior information about a parameter, we try to choose an uninformative prior to reflect that ignorance $P(D)$ is the probability of the data marginalized over the parameter space. One issue is the computation of $P(\text{D})$ which is given by $\int P(\text{D}|\theta)P(\theta)$ over the entire parameter space. With many parameters this integral it typically analytically intractable. To handle this Markov chain Monte-Carlo methods are used which we discuss in section (#methods).
 
 
 We now specify the priors of the Two-Component and graph portions of the model.
@@ -261,22 +261,17 @@ The probability of a specific location for a change point given the number of ch
 $$P(\theta|K=k) = \binom{N}{k}^{-1}.$$
 Then the unnormallized posterior is then the product of the likelihood and the priors,
 $$ P(\theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2|Z)  \propto $$
-$$\prod_{t=1}^N P(Z_t|Z_{t-1},\theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2)*P(\theta|K)*P(K)*P(\prod_{k=1}^{K+1}\lambda^{(k)} )*P(\prod_{i=0}^2 \gamma_i)  .$$
+$$\prod_{t=1}^N P(Z_t|Z_{t-1},\theta, K, \lambda^{(1)}, \dots, \lambda^{(K+1)}, \gamma_0, \gamma_1, \gamma_2)P(\theta|K)P(K)P(\prod_{k=1}^{K+1}\lambda^{(k)} )P(\prod_{i=0}^2 \gamma_i)  .$$
 
 
 ## Graph Prior
 
-We model the graph $G$ modeled as an Erdos-Renyi random graph. An Erdos-Renyi random graph has a fixed vertex set $V(G) = \{1, \dots, N_v\}$ and is parameterized by $p \in (0,1)$. Then an edge $e_{ij}$ is in the edge set $E(G)$ with probability $p$ independent of every other edge. That is an ER graph $G \sim ER(p)$ and the likelihood of a graph $G$ given probability $p$ on an edge is $$\begin{aligned} G|p & = \prod_{i,j \in V(G),i \neq j} p^{1[e_{ij}=1]}(1-p)^{1-1[e_{ij}=1]} 
+We model the graph $G$ modeled as an Erdos-Renyi random graph. An Erdos-Renyi random graph has a fixed vertex set $V(G) = \{1, \dots, N_v\}$ and is parameterized by $p \in [0,1]$. Then an edge $e_{ij}$ is in the edge set $E(G)$ with probability $p$ independent of every other edge. That is an ER graph $G \sim ER(p)$ and the likelihood of a graph $G$ given probability $p$ on an edge is $$\begin{aligned} G|p & = \prod_{i,j \in V(G),i \neq j} p^{1[e_{ij}]}(1-p)^{1-1[e_{ij}]} 
 \\ & = p^{N_e}(1-p)^{\binom{N_v}{2}-N_e} \end{aligned}$$ where $N_e$ is the number of edges.
 
-We then place a prior on $p$ as $p \sim Unif(0,1)$ representing lack of knowledge of the sparseness of the graph. Now computing the marginal probability of a graph we find $$ \begin{aligned} P(G)  & = \int_0^1  P(G,p)dp   = \int_0^1 P(G|p)*P(p)dp \\ 
-&= \int_0^1 p^{N_e}(1-p)^{\binom{N_v}{2}-N_e}*1*dp = \frac{1}{(\binom{N_v}{2}+1)* \binom{\binom{N_v}{2}}{N_e} }  \end{aligned}$$
-
-That is the probability of graph is proportional to the number of edges $|N_e|$ in the graph. In essence the probability of the number of edges in the graph is uniform with $P(N_e) = 1/\binom{N_v}{2}$. However a graph with 2 edges compared with a graph with 1 edge is 
-
-$$\begin{aligned}\frac{ P(G_{N_e = 2})}{P(G_{N_e = 1})}  &=  \frac{1/(\binom{N_v}{2}+1)\binom{N_v}{2}}{1/(\binom{N_v}{2}+1)\binom{N_v}{1}} \\& = \frac{\binom{N_v}{1}}{\binom{N_v}{2}}  \\& = \frac{N_v-1}{2},\end{aligned}$$
-
-more likely. Then graphs with $N_e = \binom{N_v}{2}/2$ are more likely compared to all graphs with $|N_e| \in (0, N_v)$ and empty and complete graphs have the highest probability overall. We instead would like the probability of a graph to be uniform amongst all possible graphs. To do so we set a prior on the number of edges so that $P(G_{N_e}) = \binom{\binom{N_v}{2}}{N_e}$. It may be desirable to place a $Beta$ prior in $p$ with higher mass on lower probabilities. 
+We then place a prior on $p$ as $p \sim Unif(0,1)$ representing lack of knowledge of the sparseness of the graph. Now computing the marginal probability of a graph we find $$ \begin{aligned} P(G)  & = \int_0^1  P(G,p)dp   = \int_0^1 P(G|p)P(p)dp \\ 
+&= \int_0^1 p^{N_e}(1-p)^{\binom{N_v}{2}-N_e}*1*dp = \frac{1}{(\binom{N_v}{2}+1) \binom{\binom{N_v}{2}}{N_e} }  \end{aligned}$$ tk binom
+It may be desirable to place a $Beta$ prior in $p$ with higher mass on lower probabilities.  TK beta
 
 ##  Posterior
 To summarize posterior is proportional to the product of the likelihood, graph and non-graph priors
@@ -288,7 +283,7 @@ where $\vec{\theta}$ is a  $K$ dimensional vector of locations of change points 
 
 
 ## Metropolis-Hastings Algorithm
-To approximate the posterior, we draw samples from it using the Metropolis-Hastings algorithm (and its variant, the Metropolis-Hastings-Green algorithm). The algorithm begins with an Markov chain with some arbitrary transition probabilities $q$, whose state space is the parameter space of the model, $\theta$. After initializing the Markov chain in some initial state $\theta_0$, the algorithm modifies the transition probabilities in such a way that the new transition probabilities has a stationary distribution that is the target posterior. That is the Markov chain will eventually enter states in proportion to the posterior distribution.
+To approximate the posterior, we draw samples from it using the Metropolis-Hastings algorithm (and its variant, the Metropolis-Hastings-Green algorithm). The algorithm creates a Markov Chain whose states are the parameter space and whose stationary distribution is the posterior distribution. That is the Markov chain will eventually enter states in proportion to the posterior distribution.
 
 The algorithm is as follows:
 
@@ -303,9 +298,11 @@ The algorithm is as follows:
 
 6. Repeat steps 1-5 for a large number of iterations.
 
-The fraction $\frac{q(\theta^*|\theta)}{q(\theta|\theta^*)}$ is known as the Hastings ratio and is a function of the proposal distribution. It is typically chosen to be symmetric so that the ratio is always 1. Then the transition probability is ratio of the posterior distributions whose denominators, $P(D)$, cancels leaving $\frac{P(D|\theta^*)P(\theta^*)}{P(D|\theta)P(\theta)}$. The proposal ratio becomes important in asymmetric proposal distributions which occurs in some of the graph proposals below. For example if two parameter $\theta, \theta^*$ values are equally likely, $P(\theta^*|D) = P(\theta|D)$ then the Markov chain should enter those states with the same frequency. However if the proposal distribution proposes entering $\theta^*$ twice as frequently as $\theta^*$, then without the Hastings ratio there would be twice the frequency of $\theta^*$.
+The fraction $\frac{q(\theta^*|\theta)}{q(\theta|\theta^*)}$ is known as the Hastings ratio and is a function of the proposal distribution. It allows the base Metropolis algorithm (which requires symmetric proposals) to work for arbitrary $q$. Then the transition probability is ratio of the posterior distributions whose denominators, $P(D)$, cancels leaving $\frac{P(D|\theta^*)P(\theta^*)}{P(D|\theta)P(\theta)}$. The proposal ratio becomes important in asymmetric proposal distributions which occurs in some of the graph proposals below. For example if two parameter $\theta, \theta^*$ values are equally likely, $P(\theta^*|D) = P(\theta|D)$ then the Markov chain should enter those states with the same frequency. However if the proposal distribution proposes entering $\theta^*$ twice as frequently as $\theta^*$, then without the Hastings ratio there would be twice the frequency of $\theta^*$.
 
 A similar issue is also seen when jumping between parameter spaces. To handle this the Metropolis-Hastings-Green algorithm is introduced which adds an additional Jacobian term $|J|$ to handle the change in dimension. This is described further below.
+
+## Two-Component Model
 
 ## Model Checking
 
@@ -320,6 +317,13 @@ that is the samples returned by the MCMC should be drawn from the prior distribu
 
 Other prior analysis include prior sensitivity analysis where the effect of different priors on the posterior distribution are examined. This is less important when the datasets are large sense the likelihood portion generally dominates the posterior calculation.
 
+### Effective Sample Size
+
+The effective sample size is a downward adjustment of the number of samples drawn from the posterior distribution. Since the samples are not independent, their overall variance is lower than would be expected from truly independent samples. To adjust for this the following is used to estimate the effective sample size
+
+$$ \widehat{n_{eff}} = \frac{mn}{1+ 2\sum_{t=1}^T \widehat{\rho_t}},  $$
+where $\widehat{\rho_t}$ is an estimate of the autocorrelation as seen in @gelman_bayesian_2013, pp. 286. The effective sample size can be used to calculate estimates of the variance of the means of the posterior distributions.
+
 ### Well-Calibrated
 
 A goal of frequentist statistical inference is to obtain confidence intervals (CI), where a 95\% CI for a parameter would capture the true parameter in 95\% of replications. 
@@ -331,16 +335,18 @@ A credible interval plays a similar role in Bayesian inference. We would like a 
 If the model is a good fit for the data, then simulating data by sampling according the posterior distribution, should result in simulated data that looks similar to the true data. If this is not the case, the model potentially inadequate for capturing important features of the data. This can be done in a qualitative manner where obviously poor models can be investigated [@gelman_bayesian_2013, pp. 141-159; @kruschke_doing_2014, pp. 130-131]
 
 
+
+
 # Methods/ Implementation {#methods}
-Here I describe the Metropolis Hastings algorithms used to draw samples from the posterior distributions of the parameters of interest. The algorithms are implemented in base R [@r_core_team_r_2019] with some elements of the likelihood computation implemented in Rcpp [@eddelbuettel_rcpp_2011]. The operators generate and evaluate proposals. Each operator is a R function that accepts a list of parameters that represent the current state of the Markov chain, then proposes an new state for a given parameter (or set of parameters). The function then calculates the log acceptance ratio and determines whether to accepts its proposal or reject it. It then returns the proposed parameters or returns the original parameters (in the case of rejecting).
+Here I describe the Metropolis Hastings algorithms used to draw samples from the posterior distributions of the parameters of interest. The operators generate and evaluate proposals and are implemented as an R function. Each operator accepts a list of parameters that represents the current state of the Markov chain, then proposes an new state for a given parameter (or set of parameters). The function then calculates the log acceptance ratio and determines whether to accepts its proposal or reject it. It then returns the proposed parameters or returns the original parameters (in the case of rejecting). The algorithms are implemented in base R [@r_core_team_r:_2019] with some elements of the likelihood computation implemented in Rcpp [@eddelbuettel_rcpp:_2011].  Plots are generated in base R and the bayesplot [@gabry_bayesplot:_2019]. Parallel chains are implemented using doParallel  [@corporation_doparallel:_2019] and diagostics done with coda [@plummer_coda:_2006].
 
 ## Likelihood Computation
 
-Each operator receives the log-likelihood of its proposal by passing the proposal to either `compute_log_like()` function or the `compute_log_like_rat()` function. The `compute_log_like()` function returns the unnormalized log-likelihood of the proposed parameters. This is computationally faster since computing the normalized likelihood of a Poisson distribution requires the evalution of $Z_{t}!$ for each data point. The naive method of computing the entire log-likelihood was used as it was computationally fast enough on the simulated dataset (without the graph).
+Each operator receives the log-likelihood of its proposal by passing the proposal to either `compute_log_like()` function or the `compute_log_like_diff()` function. The `compute_log_like()` function returns the unnormalized log-likelihood of the proposed parameters. This is computationally faster since computing the normalized likelihood of a Poisson distribution requires the evalution of $Z_{t}!$ for each data point. The naive method of computing the entire log-likelihood was used as it was computationally fast enough on the simulated dataset (without the graph).
 
 This differs from @held_two-component_2006 and @green_reversible_1995 who perform separate likelihood computations for each three operators: birth (adding a change point), death (removing a change point) and changing a $\lambda$ value. Each of these operators changes only a portion of the total likelihood computation and as such, it is computationally more efficient to only compute the ratio of the changes. For example, let $\boldsymbol{\theta^*}$ be the proposed change point vector where $K^* = K + 1$ (i.e. a new change point is added). Let $m$ be the index of the proposed change point and the rest of the change points remain the same. Then the only part of the likelihood computation that changes is in the interval between timepoints $[\theta_{m-1}, \theta_{m+1})$ and since its the ratio between the likelihoods of the proposed vs the current parameter set is important, the parts that remain identical have a likelihood of 1 (or log-likelihood of 0) and all that remains of the likelihood computation is
 
-Similar reductions in comptutation can be done following changes in the graph and. If an edge $e^*_{ik}$ is proposed then only $Y_{i,t}$ and $Y_{k,t}$ and the corresponding $Z$'s are affected. As such only those two cities need to be updated. 
+Similar reductions in comptutation can be done following changes in the graph and is implemented in `compute_log_like_diff()`. If an edge $e^*_{ik}$ is proposed then only $Y_{i,t}$ and $Y_{k,t}$ and the corresponding $Z$'s are affected. As such only those two cities need to be updated. 
 $$Y^*_{i,t}|G \sim ~ \text{Pois}\big(m\lambda_tZ_{k,t-1} +m\lambda_t\sum_{j=1}^{N_v}Z_{j,t-1}1[e_{ij}\in E(G)]+ \lambda_tZ_{i,t-1}\big) $$
 $$Y^*_{k,t}|G \sim  \text{Pois}\big(m\lambda_tZ_{i,t-1} +m\lambda_t\sum_{j=1}^{N_v}Z_{j,t-1}1[e_{ij}\in E(G)]+ \lambda_tZ_{i,t-1}\big) $$
 $$\begin{aligned} Y_{j,t}|G &\sim \text{Pois}\big(m\lambda_t\sum_{l=1}^{N_v}Z_{j,t-1}1[e_{jl}\in E(G^*)]+ \lambda_tZ_{i,t-1}\big)\\ & \sim  \text{Pois}\big(m\lambda_t\sum_{l=1}^{N_v}Z_{j,t-1}1[e_{jl}\in E(G)]+ \lambda_tZ_{i,t-1}\big) \end{aligned}$$
@@ -357,7 +363,7 @@ The gamma and lambda parameters are updated in blocks via a standard Metropolis-
 
 Since the Normal distribution is symmetric, the Hastings ratio is 1 so the acceptance ratio is the ratio of the log-likelihoods between the current and proposed steps.
 
-One potential issue is that gamma and lambda are used to compute the parameter of a Poisson distribution, but the Normal distribution proposals could potentially propose invalid parameter values. To remedy this, the proposal operator checks to see whether the proposed parameter value is valid (in this case positive) and automatically rejects the proposed state (staying in the current state). This can lead to inefficient mixing as a step is "wasted". This inefficiency can be resolved by using a non-symmetric proposal distribution such as log-normal or a truncated normal and an adjustment of the Hastings ratio to compensate for the asymmetry. However this does not seem to be an issue in the simulated cases, the initial values are positive and the jump ($\sigma$) size is small enough not to propose negative values.
+One potential issue is that gamma and lambda are used to compute the parameter of a Poisson distribution, but the Normal distribution proposals could potentially propose invalid parameter values. To remedy this, the proposal operator checks to see whether the proposed parameter value is valid (in this case positive) and automatically rejects the proposed state (staying in the current state). This could be side-stepped by using a non-symmetric proposal distribution such as log-normal or a truncated normal and an adjustment of the Hastings ratio to compensate for the asymmetry. However this does not seem to be an issue in the simulated cases, the initial values are positive and the jump ($\sigma$) size is small enough not to propose negative values.
 
 ## `change_theta()`
 
@@ -414,28 +420,21 @@ And the Jacobian is $$|J_{death}| = 1/|J_{birth}| = \lambda_0/(\lambda_1 + \lamb
 The data structure for the graph is an adjacency list and is implemented using a list of numeric vector in R. While not a true hashmap, numerically indexing the list allows for near $O(1)$ look-ups [@horner_hash_2015]. To make proposals in the graph space the following operators are used. 
 
 ## `add_edge_op()` and `delete_edge_op()`
-The `add_edge_op()` functions proposes adding an edge to the graph by sampling uniformly at random from all edges not currently in the graph. Let $N_v$ be the number of vertices (cities) in the graph and $N_e$ the current number of edges. Then the algorithm proceeds as follows
+The `add_edge_op()` functions proposes adding an edge to the graph by sampling uniformly at random from all edges not currently in the graph. Let $N_v$ be the number of vertices (cities) in the graph and $N_e$ the current number of edges. Then the probability of selecting an edge to add is $2/(N_v(N_v-1) - 2N_e)$ by symmetry. This is determined as follows:
 
-1. $A_0 = N_v(N_v-1) - 2N_e$
-2. $A = A_0$
-3. for $i \in (1,\dots,N_v)$:
-4. if $(A <= N_v - \text{length}(\text{adj}[i]))$
-    + Find the first $A - \text{length}(\text{adj}[i])$ edge not in the list
-    + add edge to the proposed adjacency list
-    + break
-6. else $A = A-\text{length}(\text{adj}[i])$
-   + $i = i + 1$
-   + continue
+First, $N_v(N_v-1)$ is the total possible size of the adjacency list and $N_e$ is the number of unique edges currently in the list. Then $N_v(N_v-1) - 2N_e$ is the remaining "slots" in the adjacency list. We draw uniformly at random from $A \in \{1,\dots,N_v(N_v-1) - 2N_e\}$ which represents an index of the edges not present in the graph.
 
-Then the probability of selecting an edge to add is $2/(N_v(N_v-1) - 2N_e)$ by symmetry. $N_v(N_v-1)$ is the total possible size of the adjacency list and $N_e$ is the number of unique edges currently in the list. Then $N_v(N_v-1) - 2N_e$ is the remaining "slots" in the adjacency list. We draw uniformly at random from $A \in \{1,\dots,N_v(N_v-1) - 2N_e\}$ which represents an index of the edges not present in the graph. Now we interate along the adjacency list `adj` whose length is the number of vertices $N_v$. Starting from $i = 1$ if $A <= N_v -  length(\text{adj}[i])$ then we know that the edge to be added is in $\text{adj}[i]$ and we can search for the correct edge in $O(|V|)$. If $A > N_v - length(\text{adj}[i])$ then we recompute $A = A - N_v + length(\text{adj}[i])$ increment $i = i + 1$ and repeat. Then $q(G^*_{N_e+1}|G_{N_e})$ the probability of proposing adding that particular edge occurs with probability $2/(N_v(N_v-1) - 2N_e)$, since $A_0$ is chosen uniformly at random from $\{1,\dots,N_v(N_v-1) - 2N_e\}$ and each edge $e_{ij}$ is represented twice (once in \text{adj}[i]: \{\dots,j,\dots\}) and again in $\text{adj}[j]: \{\dots,i,\dots\}$.
+Now we interate along the adjacency list `adj` whose length is the number of vertices $N_v$. Starting from $i = 1$ if $A_i <= N_v -  \text{length}(\text{adj}[i])$ then we know that the edge to be added is in $\text{adj}[i]$ and we can search for the correct edge in $O(|V|)$. If $A_i > N_v - length(\text{adj}[i])$ then we recompute $A_{i+1} = A_i - N_v + length(\text{adj}[i])$ increment $i = i + 1$ and repeat.
 
-The probability of $q(G_{N_e}|G^*_{N_e+1})$ of deleting the edge (given the graph where the proposed edge was added) occurs with probability $2/2(N_e+1) = 1/(N_e+1)$ 
+Then $q(G^*_{N_e+1}|G_{N_e})$ the probability of proposing adding that particular edge occurs with probability $2/(N_v(N_v-1) - 2N_e)$, since $A_0$ is chosen uniformly at random from $\{1,\dots,N_v(N_v-1) - 2N_e\}$ and each edge $e_{ij}$ is represented twice (once in \text{adj}[i]: \{\dots,j,\dots\}) and again in $\text{adj}[j]: \{\dots,i,\dots\}$.
 
-$$\frac{q(G_{N_e}|G^*_{N_e+1})}{q(G^*_{N_e+1}|G_{N_e})} = \frac{\frac{1}{N_e+1}}{\frac{2}{N_v(N_v-1) - 2N_e}} = \frac{N_v(N_v-1) - 2N_e}{2(N_e+1)} $$
+The probability of $q(G_{N_e}|G^*_{N_e+1})$ of deleting the edge (given the graph where the proposed edge was added) occurs with probability $2/2(N_e+1) = 1/(N_e+1)$. Then the Hastings ratio for adding an edge is
+
+$$\frac{q(G_{N_e}|G^*_{N_e+1})}{q(G^*_{N_e+1}|G_{N_e})} = \frac{\frac{1}{N_e+1}}{\frac{2}{N_v(N_v-1) - 2N_e}} = \frac{N_v(N_v-1) - 2N_e}{2(N_e+1)},$$
 and the Hastings ratio for removing an edge is given by
 
 
-$$ \begin{aligned} \frac{q(G_{N_e}|G^*_{N_e-1})}{q(G^*_{N_e-1}|G_{N_e})} & = \frac{\frac{2}{N_v(N_v-1) - 2(N_e-1)}}{\frac{1}{N_e}} \\ &= \frac{2N_e}{N_v(N_v-1) - 2(N_e-1)} \end{aligned} $$
+$$ \begin{aligned} \frac{q(G_{N_e}|G^*_{N_e-1})}{q(G^*_{N_e-1}|G_{N_e})} & = \frac{\frac{2}{N_v(N_v-1) - 2(N_e-1)}}{\frac{1}{N_e}} \\ &= \frac{2N_e}{N_v(N_v-1) - 2(N_e-1)}. \end{aligned}$$
 
 
 ## `degree_preserving()`
@@ -444,7 +443,7 @@ The degree preserving swap was implemented to allow changes to the graph structu
 
 This was implemented by selecting two edges (v11, v12) and (v21, v22) and attempting to form the edges (v11, v22) and (v12, v21). If both edges are not already in the graph then the swap is made. If either or both edges exists, then the proposed swap is rejected. Since the proposed swap is reversed by randomly selecting (v11, v22) and (v12, v21), the Hastings ratio is 1 and the acceptance ratio is the ratio of the likelihoods. 
 
-```{r, out.width = "75%", fig.cap = "\\label{fig:deg_pre}An example graph configuration that might necessitate a degree preserving swap. \\textbf{Left} and \\textbf{right}: two configurations of graphs whose vertices have the same degree, \textbf{middle}: a potential intermediary proposal. With one-step edge adding and deleting the likelihood of switching between these two graph is low if the migration rate is high enough. The degree preserving swap operator would attempt to switch between these two graphs in 1 step. Deleting the edge between city 5 and 1 (middle figure) would occur with low probability. With a migration rate of 1, this would lower city 5's count by approximately 1/3 from the true value and by half for city 1.", fig.align='center'} 
+```{r, out.width = "75%", fig.cap = "\\label{fig:deg_pre}An example graph configuration that might necessitate a degree preserving swap. \\textbf{Left} and \\textbf{right}: two configurations of graphs whose vertices have the same degree, \\textbf{middle}: a potential intermediary proposal. With one-step edge adding and deleting the likelihood of switching between these two graph is low if the migration rate is high enough.", fig.align='center'} 
 library(DiagrammeR)
 
 graph <- DiagrammeR("
@@ -492,14 +491,13 @@ Rewire randomly selects an edge (v1, v2) and deletes it from the adjacency list.
 
 
 
-## Two-Component Model
 
 ### Prior Checks
 
 I performed prior checks where the likelihood ratio is set to 1 so that the posterior distributions should match their prior distributions. 
 
 
-```{r, prior_checks_2c, fig.cap = "\\label{fig:pc2c} Prior Checks for $\\gamma$, $\\lambda$ and $K$. Only 3 $\\lambda$ values are displayed. The KDE smoothed distribution of values are plotted against the true density values of the priors (that is $P(\\lambda) \\sim \text{Gamma}(1,1)$ and $P(\\gamma) \\sim \\text{Norm}(0,3)$. The differences appear to be artifacts of the smoothing procedure."}
+```{r, prior_checks_2c, fig.cap = "\\label{fig:pc2c} Prior Checks for $\\gamma$ and $\\lambda$. Only 3 $\\lambda$ values are displayed. The KDE smoothed distribution of values are plotted against the true density values of the priors (that is $P(\\lambda) \\sim \text{Gamma}(1,1)$ and $P(\\gamma) \\sim \\text{Norm}(0,3)$. The differences appear to be artifacts of the smoothing procedure."}
 load("prior_check.RData")
 
 burnin=0
@@ -524,9 +522,6 @@ lines(seq(-10, 10, length = 1000), dnorm(seq(-10, 10, length = 1000), 0, 3), col
 plot(density(res_save$gamma[-(1:burnin), 3], bw=0.2), main = "", xlab = "")
 lines(seq(-10, 10, length = 1000), dnorm(seq(-10, 10, length = 1000), 0, 3), col = "red")
 title(expression(paste(lambda, " and ", gamma, " Prior Checks")), outer = TRUE)
-
-
-
 ```
 
 The following data was collected by running 100,000 iterations (thinned to 10,000 samples) of proposing to update either the $\lambda$ vector, $\gamma$ vector, adding a change point  ($K \rightarrow K + 1$) or removing a change point ($K \rightarrow K - 1$). The likelihood ratio was set to 1 so the only factor in accepting or rejecting a state was the priors. As such we would expect to see the posterior distributions of each parameter to be their respective prior distributions. The priors are
@@ -537,6 +532,7 @@ $$K \sim \text{Unif}(0,N)$$
 In Figure \ref{fig:pc2c} we have plots of the samples of the $\lambda$ values (first 3) and the $\gamma$ values. Each is overlayed with the density of their respective priors in red. Overall there appears to be a good match between the sampled values and their prior distributions.
 
 In figure \ref{fig:pois_hist} we have a frequency histogram of the sampled values of $K$ (the number of change points) overlayed with a red circle. The red circle represents the appropriate density value from the prior distribution of $K$. Overall we see a good qualitative fit between the values sampled from the posterior and the prior distribution. The following table gives the sample frequency and the actual probability (from the prior distibution). If these probabilities did not match, then there is likely a bug in the code or some unknown prior assumption on the model. Note that the sample frequency was computed from a thinned sample of 10,000 hence why 11, 25, and 51 have sample probabilities of 0.0001, there was 1 occurence of each.
+
 
 ```{r, fig.cap="\\label{fig:pois_hist} Sample probabilities of $K$ overlayed with true probabilities. Overall this shows a good agreement between the sample probabilities and the true probabilties."}
 load("prior_check_pois.RData")
@@ -553,23 +549,10 @@ bty = "n")
 
 
 
-| K  | sample  | actual|
-| :-----: |:-----:|:-----:|
-|0 | 0.136 | 0.135|
-|1|  0.270| 0.270|
-|2|  0.2681| 0.271|
-|3|  0.185| 0.180|
-|4|  0.0899| 0.902|
-|5|  0.0365| 0.361|
-|6|  0.0113 |0.012|
-|7  |0.0029| 0.0034|
-|8  |0.0007| 0.0008|
-|9| 0.0001| 0.00019|
-|11| 0.0001| 6.94e-6|
-|25| 0.0001| 2.97e-19|
-|51| 0.0001| 1.96e-52|
 
 ### Inference on Simulated Data
+
+The following simulation parameters are taken from @held_two-component_2006's simulations.
 
 | parameters    | simulation values    |
 | :-------------: |:-------------:|
@@ -580,14 +563,11 @@ bty = "n")
 
 
 
-The simulation parameters are taken from @held_two-component_2006 
-
 
 ```{r data}
 load("2c_results.RData")
 load("2c_sim_data.RData")
 ```
-
 
 
 ```{r, lambda_traces_plot, fig.cap = "\\label{fig:lam_trace} Trace plots for $\\boldsymbol{\\gamma}$ and $\\boldsymbol{\\theta}$. The trace plots seem relatively well mixed. The autocorrelation is likely a function of the correlation between the each set of $\\boldsymbol{\\gamma}$ and $\\boldsymbol{\\theta}$ respectively. Thinning could potentially reduce the autocorrelation between sample draws.", fig.asp = 0.6}
@@ -638,15 +618,10 @@ mtext(
 )
 ```
 
-
  
 Figure \ref{fig:lam_trace} are trace plots, which are time series of the parameter draws. Typically a "good" trace plot shows no obvious autocorrelation (which can indicate a proposal step that is too small) or flat portions (proposal steps that are too large). Trace plots with these patterns indicate that the sampler has not converged to the posterior distribution of the parameter. "Tuning" or adjusting the proposal jump size can help fix these patterns, with the end goal of being able to efficiently explore the posterior distribution of the parameter [@gelman_bayesian_2013, pp. 296]. The trace plots for the $\gamma$ parameters seem to rather well mixed though there is a slight pattern to the $\gamma_0$ trace plot.
 
-
 ```{r, fig.cap = "\\label{fig:cor_gammas}Plots of $\\gamma_0$ vs $\\gamma_1$ and $\\gamma_0$ vs $\\gamma_2$. Each point represents the corresponding parameter value at the same sample draw, i.e., the values of each parameter when the sample was accepted. The strong correlation between the parameters can lead to poor mixing. Note the tails are due to the initial values of the MCMC chain.", fig.asp = 0.5}
-
-
-
 
 par(
   mar = c(1, 4, 2, 2),
@@ -673,36 +648,34 @@ mtext(
 
 ```
 
-
-
-
 This is likely due to the correlation (see Figure \ref{fig:cor_gammas}) between $\gamma_0$, $\gamma_1$ and $\gamma_2$ due to their nature of parameterizing a cyclical function. The same is true for the $\theta$ parameters; they are constrained such that $\theta_1 < \theta_2 < \theta_3$. The dependence can cause inefficient sampling by proposing moves that are outside these narrow regions/combinations of parameter values [@turner_method_2013]. This autocorrelation seen in the trace plots could possibly be reduced via thinning i.e. taking every $k$ samples instead of every sample. @gelman_bayesian_2013 mentions that they have found it useful to store no more than a total of $1000$ iterations. 
-
 
 The $\theta_3$ trace plot is of note because it is only valid for when $K = 3$; the $\theta_3$ does not exist otherwise.\\
 
+
 ```{r,fig.cap = "Trace plots for all $\\lambda$ values. Overall the trace plots show that the samplers are mixing well with some minor autocorrelation that could potentially be resolved with thinning or more samples. The raw trace plots include the $\\lambda$ values when there are 3 and 4 separate $\\lambda$'s and is the cause of the random jumps.", fig.asp=0.8, out.height="41%", fig.align = 'center'}
 
-burnin = 400000
+burnin = 20000
+downsample = seq(1, length(res$K[-(1:burnin)]), length = 300000 )
 par(mfrow = c(2, 2), las  = 0)
 par(
   mar = c(1, 4, 1, 2),
   oma = c(3, 0, 2, 0),
   mgp = c(2, 0.65, 0)
 )
-plot(res$lambda[-(1:burnin), 1],
+plot(res$lambda[-(1:burnin), 1][downsample],
      type = "l",
      ylab = expression(lambda[1]),
      xlab = "")
-plot(res$lambda[-(1:burnin), 2],
+plot(res$lambda[-(1:burnin), 2][downsample],
      type = "l",
      ylab = expression(lambda[2]),
      xlab = "")
-plot(res$lambda[-(1:burnin), 3],
+plot(res$lambda[-(1:burnin), 3][downsample],
      type = "l",
      ylab = expression(lambda[3]),
      xlab = "")
-plot(res$lambda[-(1:burnin), 4],
+plot(res$lambda[-(1:burnin), 4][downsample],
      type = "l",
      ylab = expression(lambda[4]),
      xlab = "")
@@ -717,8 +690,9 @@ mtext(
 ```
 
 
-
 The $\boldsymbol{\lambda}$ trace plots show that the $\lambda_2$ and $\lambda_3$ traces appear to jump tightly around $1.2$ and $0.7$ respectively while also jumping to $0.7$ and $1.2$ respectively. This is an artifact of the dimension change in the model. When $K = 2$, $\lambda_2$ is tightly fixed around $1.2$ and $\lambda_3$ at $0.7$ but when $K = 2$, $\lambda_3$ can take the role of fitting the outbreak while $\lambda_4$ models to the return $0.7$, the baseline.
+
+
 
 ```{r, fig.asp = 0.8, fig.cap = "Trace plots filtered for K = 2 and K = 3 showing how the different number of change points affects the traces of the individual $\\lambda$ values.", fig.align = 'center' , out.height = "41%"}
 
@@ -728,31 +702,35 @@ par(
   oma = c(3, 0, 2, 0),
   mgp = c(2, 0.65, 0)
 )
+downsample = seq(1, length( res$lambda[(res$K == 2), 2][-(1:burnin)]))
+
+
 plot(
   res$lambda[(res$K == 2), 2][-(1:burnin)],
   type = "l",
   ylab = expression(lambda[2]),
   xlab = ""
 )
+
 mtext(text = "K = 2", side = 2, line = 4)
 par(mar = c(1, 6, 1, 1))
 plot(
-  res$lambda[(res$K == 2), 3][-(1:burnin)],
+  res$lambda[(res$K == 2), 3][-(1:burnin)][downsample],
   type = "l",
   ylab = expression(lambda[3]),
   xlab = ""
 )
 par(mar = c(1, 6, 1, 1))
-plot(res$lambda[(res$K == 3), 2],
-     type = "l",
-     ylab = expression(lambda[2]),
-     xlab = "", asp = 1)
-mtext(text = "K = 3", side = 2, line = 4)
-par(mar = c(1, 6, 1, 1))
 plot(res$lambda[(res$K == 3), 3],
      type = "l",
      ylab = expression(lambda[3]),
-     xlab = "", asp = 1)
+     xlab = "")
+mtext(text = "K = 3", side = 2, line = 4)
+par(mar = c(1, 6, 1, 1))
+plot(res$lambda[(res$K == 3), 4],
+     type = "l",
+     ylab = expression(lambda[4]),
+     xlab = "")
 title(expression(paste(lambda, " Trace Plots for K = 2 & K = 3")), outer = TRUE)
 mtext(
   text = "Iteration",
@@ -760,18 +738,20 @@ mtext(
   line = 2,
   outer = TRUE
 )
+
 ```
 
 
 
 
-```{r, fig.asp = 1, fig.cap = "\\label{fig:2c_dens}\\textbf{Left:} Density plots of the posterior samples of $\\lambda$ parameters. The shaded blue represents the region corresponding to the 90\\% highest probability density interval (HPDI). \\textbf{Right:} Density plots of the posterior samples of $\\gamma$ parameters." , fig.show='hold', out.width="47%"}
-# par(mfrow = c(3, 3), las = 0)
-# par(
-#   mar = c(2, 4, 1, 2),
-#   oma = c(3, 0, 2, 0),
-#   mgp = c(2, 0.65, 0)
-# )
+```{r, fig.asp = 1, fig.cap = "\\label{fig:2c_dens} Msd"}
+burnin = 50000
+par(mfrow = c(4, 2), las = 0)
+par(
+  mar = c(3, 4, 1, 2),
+  oma = c(3, 0, 2, 0),
+  mgp = c(2, 0.65, 0)
+)
 # plot(Z,
 #      type = "l",
 #      xlab = "time step",
@@ -803,44 +783,92 @@ mtext(
 # plot(density(res$theta[-(1:burnin), 3], bw = 1),
 #      xlab =  expression(theta[3]),
 #      main = "")
-# title(expression(paste("Actual Counts Density Plots")), outer = TRUE)
-# mtext(text = "Iteration", side = 1, outer = TRUE)
-
-res_bp = list()
-res_bp$c1 = cbind(res$K[apply(res$lambda[,1:4]<3, 1, all)], res$lambda[,1:4][apply(res$lambda[,1:4]<3, 1, all),], res$gamma[apply(res$lambda[,1:4]<3, 1, all),])[seq(1,length(res$K[apply(res$lambda[,1:4]<3, 1, all)]),length = 5000),]
-
-colnames(res_bp$c1) = c("K" ,paste0("lambda",1:4), paste0("gamma",0:2))
-
-library(bayesplot)
-#mcmc_areas(res_bp, pars = ("K"), probs = 0.9) + yaxis_ticks(FALSE)+yaxis_text(FALSE) + xaxis_title() + ggplot2::xlab("# of change points")
-
-mcmc_areas(res_bp$c1, pars = paste0("lambda",1:3), prob = 0.9, title ="title") + yaxis_ticks(FALSE)+yaxis_text(FALSE) + ggplot2::xlab(expression(paste(lambda, " Densities")))
-  
-mcmc_areas(res_bp$c1,  pars = paste0("gamma",0:2), prob = 0.9)+ yaxis_ticks(FALSE)+yaxis_text(FALSE) + ggplot2::xlab(expression(paste(gamma, " Densities")))
-
-#LaplacesDemon::p.interval(res_bp$c1, plot = TRUE)
 
 
 
 
+hist(
+  res$K,
+  main = "",
+  xlab = "K: number of change points",
+  freq = FALSE,
+  breaks = 50
+)
+hist(
+  res$lambda[-(1:burnin), 1],
+  main = "",
+  xlab = expression(lambda[1]),
+  freq = FALSE,
+  breaks = 50
+)
+hist(
+  res$lambda[-(1:burnin), 2],
+  main = "",
+  xlab = expression(lambda[2]),
+  freq = FALSE,
+  breaks = 50
+)
+hist(
+  res$lambda[-(1:burnin), 3],
+  main = "",
+  xlab = expression(lambda[3]),
+  freq = FALSE,
+  breaks = 50
+)
+hist(
+  res$lambda[-(1:burnin), 4],
+  main = "",
+  xlab = expression(lambda[4]),
+  freq = FALSE,
+  breaks = 50
+)
+hist(
+  res$theta[-(1:burnin), 1],
+  main = "",
+  xlab = expression(theta[1]),
+  freq = FALSE,
+  breaks = 50
+)
+hist(
+  res$theta[-(1:burnin), 2],
+  main = "",
+  xlab = expression(theta[2]),
+  freq = FALSE,
+  breaks = 50
+)
 
-
+title("Histograms of Posterior Samples", outer = TRUE)
+# 
+# HDInterval::hdi(res$theta[,1:3], credMass = 0.95)
+# HDInterval::hdi(res$theta[res$K == 3,1:3], credMass = 0.95)
+# HDInterval::hdi(res_bp, credMass = 0.95)
 ```
 
-Figure \ref{fig:2c_dens}) shows the kernal density plots of the $\lambda$ and $\gamma$ samples along with the area corresponding to the 90% highest probability density intervals (HPDIs). The 90% HPDI is the smallest interval that contains 90% of the density. All HPDIs cover their true values suggesting overall good inference.
+Figure \ref{fig:2c_dens} shows the histograms of the $\lambda$ and $\gamma$ samples
 
-
+| parameters    | lower    | upper | 
+| :-------------: |:-------------:|:---------:|
+| K   |2 | 2|
+| $\boldsymbol{\lambda_1}$ | 0.67  | 0.82|
+| $\boldsymbol{\lambda_2}$ | 1.09  | 1.29|
+| $\boldsymbol{\lambda_3}$ | 0.69  | 0.80|
+| $\boldsymbol{\gamma_0}$ | 1.95  | 2.50|
+| $\boldsymbol{\gamma_1}$ | 0.36 | 0.67|
+| $\boldsymbol{\gamma_2}$ | 1.28 | 1.68|
+| $\boldsymbol{\theta_1}$ | 39 | 49|
+| $\boldsymbol{\theta_2}$ | 39 | 49|
+\pagebreak
 
 ## Graph Estimation on Fixed Two-Component Model
 
-Progress on the graph. The graph proposals are a challenge to the computational speed and mixing becomes a problem. For example the original base graph operator was `flip_edge()` which had much poorer mixing than the `add/del_edge_op()` combination. To test the correctness of the operators, we also set the likelihood to always equal to 1. With the correct derivation about the priors, any significant deviation of the posterior distributions from the prior distributions is likely to be due to implementation errors in the code.
 
 ### Posterior distribution of number of edges matches prior distribution
 
-Here we set the prior ratio and the likelihood ratio to always equal to 1. This places a uniform prior distribution on $p$ and a uniform prior on $G|p$. Then the probability of each graph is equally likely and the posterior distribution of the number of edges should be $\text{Binom}(105, 0.5)$. Figure \ref{fig:binom_hist} shows a thinned posterior sample of the number of edges overlayed with the appropriate $\text{Binom}(105, 0.5)$ probabilites in red. 
+Here we set the prior ratio and the likelihood ratio to always equal to 1. In this case the posterior distribution should only be driven by the proposal mechanism/operator and correctness of the operator can be determined. The `add_edge_op()/del_edge_op()` operators, should propose each graph with equal probability. In this case the distribution of the number of edges should be $\text{Binom}(105, 0.5)$ since there are $\binom{N_v}{N_e}$ graphs with $N_e$ many edges. 
 
 ```{r, fig.cap="\\label{fig:binom_hist} Posterior probabilities of the number of edge counts, overlayed with true probabilities. Overall this shows a good agreement between the posterior probabilities and the true probabilties."}
 load("prior_graph.RData")
+
 hist(edge_hist$count,breaks = seq(25,75,1), freq = FALSE, xlab = "# of edges", main = "Samples from # edge count vs Pois(105, 0.5) probs")
 points(seq(37,70,by = 1)-0.5, dbinom(seq(37,70,by = 1),105,0.5), col = "red")
 legend(25,0.08,
@@ -858,110 +886,161 @@ Mode <- function(x) {
 
 ### Inference on number of edges/$p$ and migration rate
 
+Next I simulated a dataset on a graph. Inference is carried out on the graph and the migration rate, while the other parameters are fixed to their true values. A single interation of the sampler proposes adding or removing an edge (with equal probability) 25 times before proposing a migration rate change. This allows the sampler to better explore the highly correlated posterior distribution. For the following data 1,000,000 samples were drawn and thinned to every 200 samples (for a total for 5000 samples). This was run for 8 chains which were used for convergence diagnostics and then pooled together. \pagebreak
+
+
+
 | parameters    | simulation values    |
 | :-------------: |:-------------:|
 | K: number of changespoints      |2 | 
-| $\boldsymbol{\lambda}$: epidemic parameters     | 0.7, 1.2, 0.7      |
-| $\boldsymbol{\gamma}$: endemic parameters | log(10), 0.5, 1.5     |
+| $\boldsymbol{\lambda}$: epidemic parameters | 0.35, 0.6, 0.35 |
+| $\boldsymbol{\gamma}$: endemic parameters | log(10), 0.5, 1.5 |
 |$\boldsymbol{\theta}$: change points | 39, 49 |
 |$p$: Erdos-Renyi parameter| 0.15|
-|true number of edges|12|
+|true number of edges|16|
 |$N_v$: number of vertices|15|
 |$m$: migration rate|0.15|
 
-
-Inference is carried out on the graph and the migration rate, while the other parameters are fixed to their true values. A single interation of the sampler proposes adding or removing an edge (with equal probability) 25 times before proposing a migration rate change. This allows the sampler to better explore the highly correlated posterior distribution which can be seen in Figure \ref{fig:p_mig_pairs}.
-
-
+tk double check parameters
+ 
 
 
-```{r, fig.cap="\\label{fig:hist_edges} Histogram of posterior samples of the number of edges in the graph"}
-load("edge_mig.RData")
+
+
+```{r, fig.cap="\\label{fig:hist_edges} Histogram and trace of posterior samples of the number of edges in the graph", fig.asp = 1}
+load("chains.RData")
+
+all_counts <- c(ptime[[1]]$count, ptime[[2]]$count, ptime[[3]]$count, ptime[[4]]$count, ptime[[5]]$count, ptime[[6]]$count, ptime[[7]]$count, ptime[[8]]$count)
+
+all_migs <- c(ptime[[1]]$migration, ptime[[2]]$migration, ptime[[3]]$migration, ptime[[4]]$migration, ptime[[5]]$migration, ptime[[6]]$migration, ptime[[7]]$migration, ptime[[8]]$migration)
+
+par(mfrow=c(4,4))
+par(
+  mar = c(2, 2, 1, 2),
+  oma = c(3, 3, 2, 0),
+  mgp = c(2, 0.65, 0)
+)
+for(i in 1:8){
+hist(ptime[[i]]$count, breaks = seq(6.5,41.5,by=1), main = "", xlab = "", ylab = "", freq = FALSE)
+}
+
+for(i in 1:8){
+plot(ptime[[i]]$count,type = "l", main = "", xlab = "", ylab = "")
+title( outer = TRUE, main = "# of Edges Traces & Histograms per Chain")
+}
+
+
+```
+
+
+```{r, fig.cap="\\label{fig:migration} my cap", fig.asp = 1}
+
+load("chains.RData")
+par(mfrow=c(4,4))
+par(
+  mar = c(2, 2, 1, 2),
+  oma = c(3, 3, 2, 0),
+  mgp = c(2, 0.65, 0)
+)
+for(i in 1:8){
+  hist(ptime[[i]]$migration,breaks = 30, main = "", xlab = "", ylab = "", freq = FALSE)
+}
+for(i in 1:8){
+plot(ptime[[i]]$migration,type = "l", main = "", xlab = "", ylab = "")
+}
+title( outer = TRUE, main = "Migration Traces & Histograms per Chain")
+
+all_counts <- c(ptime[[1]]$count, ptime[[2]]$count, ptime[[3]]$count, ptime[[4]]$count, ptime[[5]]$count, ptime[[6]]$count, ptime[[7]]$count, ptime[[8]]$count)
+
+all_migs <- c(ptime[[1]]$migration, ptime[[2]]$migration, ptime[[3]]$migration, ptime[[4]]$migration, ptime[[5]]$migration, ptime[[6]]$migration, ptime[[7]]$migration, ptime[[8]]$migration)
+
+
+```
+
+
+The trace plots in Figure \ref{fig:hist_edges} and Figure \ref{fig:migration} shows that each chain appears relatively well-mixed. The chains were then pooled. The effective sample size for the pooled chains are `11759` and `6667` for the number of edges and the migration rate respectively. 
+
+```{r, fig.cap="\\label{fig:p_mig_pairs} Joint posterior hex plot between migration rate and $p$ the parameter for the Erdos-Renyi graph. The $p$ value is directly computed from the number of edges by dividing by the total possible edges which is 105. The plot shows a strong negative correlation between $p$ and the migration rate.", fig.asp = 0.9, out.width = '65%', fig.align='center'}
+load("chains.RData")
 library(bayesplot)
 
-hist(edge_mig$count, breaks = seq(4,34,1), freq = FALSE, main = "", xlab = "")
-title(main = "Histogram of # of edges", xlab = "# of edges")
+all_counts <- c(ptime[[1]]$count, ptime[[2]]$count, ptime[[3]]$count, ptime[[4]]$count, ptime[[5]]$count, ptime[[6]]$count, ptime[[7]]$count, ptime[[8]]$count)
 
-```
+all_migs <- c(ptime[[1]]$migration, ptime[[2]]$migration, ptime[[3]]$migration, ptime[[4]]$migration, ptime[[5]]$migration, ptime[[6]]$migration, ptime[[7]]$migration, ptime[[8]]$migration)
 
-### trace plots
-
-```{r}
-par(
-  mar = c(1, 4, 2, 2),
-  oma = c(3, 0, 2, 0),
-  mgp = c(3, 1, 0),
-  mfrow = c(1, 2),
-  las = 1
-)
-plot(edge_mig$count,
-     type = "l",
-     ylab = expression(gamma[0]),
-     xlab = "")
-plot(edge_mig$mig,
-     type = "l",
-     ylab = expression(gamma[0]),
-     xlab = "")
-```
-
-Figure \ref{fig:hist_edges} is a histogram of the posterior samples of the number of edges in the graph. The mean of the distribution is `r mean(edge_mig$count)` and median is `r median(edge_mig$count)` and the mode is `r mode(edge_mig$count)`. The mean and median are close to the true number of edges in the graph, $12$. 
-
-Figure \ref{fig:p_mig_pairs} also shows on the left, a hex plot of the joint posterior samples of $p$ (which is computed by 15/105 where 105 is the maximum number of edges in a graph with 15 vertices ) and migration rate. It shows a strong negative correlation, which is to expected. If the migration rate is smaller than the true value $m$, say $0.5m$ then the a city connected to $d$ cities would need to connect to $2d$ to have the "correct" counts. Similarly the migration rate is higher than the true migration, then the number of edges would need to be lower than the true number of edges. tk need to explain this
-
-Figure \ref{fig:p_mig_pairs} also shows the kernal density estimates of $p$  and migration rate. Both of the 90% HPDIs cover their true values.
-
-
-
-```{r, fig.cap="\\label{fig:p_mig_pairs} \\textbf{Left:} Joint posterior hex plot between migration rate and $p$ the parameter for the Erdos-Renyi graph. The $p$ value is directly computed from the number of edges by dividing by the total possible edges which is 105. The plot shows a strong negative correlation between $p$ and the migration rate.  \\textbf{Right:} Density plots with regions corresponding to the 90\\% highest density probability intervals in blue. ", out.width = "50%", fig.show = "hold", fig.asp = 1}
 em = list()
-em$c1 = cbind(edge_mig$count/105, edge_mig$mig)
+em$c1 = cbind(all_counts/105, all_migs)
 colnames(em$c1) = c("p", "migration")
 mcmc_hex(em)
-#plot(edge_mig$mig[downsample], edge_mig$count[downsample])
-
-mcmc_areas_ridges(em, prob = 0.9)
+# HDInterval::hdi(all_counts, credMass = 0.95)
+# HDInterval::hdi(all_migs, credMass = 0.95)
 ```
 
-# Traces showing the parameter space moves
 
-```{r}
-par(mfrow = c(3,3))
+```{r, fig.cap="\\label{fig:pooled} Histograms of pooled samples."}
 
-LaplacesDemon::joint.density.plot(edge_mig$count/105, edge_mig$mig, contour = FALSE, Trace = c(1,1000))
 
-LaplacesDemon::joint.density.plot(edge_mig$count/105, edge_mig$mig, contour = FALSE, Trace = c(1000,2000))
+par(mfrow=c(1,2))
+par(
+  mar = c(4, 4, 2, 1),
+  oma = c(3, 0, 2, 0),
+  mgp = c(3, 1, 0),
+  las = 1
+)
+hist(all_counts, freq = FALSE, xlab = "# of edges", main = "", breaks = seq(6.5, 37, 1))
+hist(all_migs, freq = FALSE, xlab = "migration rate", main = "", breaks = 30)
+title(main = "Histogram of Posterior Samples", outer = TRUE)
 
-LaplacesDemon::joint.density.plot(edge_mig$count/105, edge_mig$mig, contour = FALSE, Trace = c(3000,4000))
 
-LaplacesDemon::joint.density.plot(edge_mig$count/105, edge_mig$mig, contour = FALSE, Trace = c(4000,5000))
-
-LaplacesDemon::joint.density.plot(edge_mig$count/105, edge_mig$mig, contour = FALSE, Trace = c(5000,6000))
-
-LaplacesDemon::joint.density.plot(edge_mig$count/105, edge_mig$mig, contour = FALSE, Trace = c(7000,8000))
 ```
 
+
+
+
+
+Figure \ref{fig:pooled} shows histograms of the pooled posterior samples of the number of edges and the migration rate. The mean of the distribution of the number of edges is `r mean(all_counts)` edges and median is `r median(all_counts)` edges. The mean and median are close to the true number of edges in the graph, $16$. tk check this The mean migration rate is `r mean(all_migs)`.
+
+Figure \ref{fig:p_mig_pairs} shows a hex plot of the joint posterior samples of $p$ (which is computed by $\frac{\text{num. edges}}{105}$ where 105 is the maximum number of edges in a graph with 15 vertices) and migration rate. It shows a strong negative correlation, which is to expected. If the migration rate is smaller than the true value $m$, say $0.5m$ then the a city connected to $d$ cities would need to connect to $2d$ to have the "correct" counts. Similarly the migration rate is higher than the true migration, then the number of edges would need to be lower than the true number of edges. tk need to explain this
+
+
+
+
+The 95% HPDI for the number of edges and the migration rate are (9, 24) and (0.08, 0.24) respectively and cover the true values.
+
+| parameters | lower | upper | 
+| :--------: |:-----:|:-----:|
+| # of edges | 9 | 24 |
+| migration | 0.08 | 0.24 |
 
 \pagebreak
+
+
 # Conclusion
 
-Conclusion here
+In this thesis, I've re-implemented a Metropolis-Hastings version @held_two-component_2006's Two-Component model and tested the model on simulated data (as done in @held_two-component_2006). The MH version was able to recover the true parameters, with the 90% HPDI covering the true parameters. I then extended the model to allow for multiple time series and a graph informed dependency structure which was implemented as an adjacency list. To perform inference on the graph, several graph operators were implemented and tested. Special attention was payed to computational efficiency of the operators and the likelihood computation in order to allow the model to scale to larger, more realistic data sets like the Germany *E. coli* dataset which contains data from ~ 600 cities each with ~ 400 time points. 
 
-### Future Extensions
+## Data Analysis of Real Data
+While the Two-Component parameters were held fixed to make test the graph extension, this strategy could also work on a real data set. The multiple time series could be compressed down to a univariate time series by summing the data across each city at a particular time step. Then the Two-Component parameters could be estimated on this compressed time series. Then holding these parameters fixed, we could estimate the graph on the full, uncompressed data. This should give identifical estimates for the endemic $\gamma$ parameters, the change points $K$ and the location of the change points $\vec{\theta}$ since these are independent of the connections between cities. Then only the $\lambda$ epidemic parameters need to estimated simulataneously with the graph and migration rates. This would greatly simplify inference compared with estimating all the parameters at once.
 
-While this thesis only covers a fixed migration rate, the end goal would be to model the migration rate as a function of city specific attributes, e.g. size of the cities, distance between the cities, if the cities are near large highways or have ports for shipping. Then $m$ can be modelled as a logistic function of these city parameters $m \sim logit(\beta_0 + \beta_1*X_1 + \beta_2*X_2 + \dots)$. This would allow estimation of which city specific attributes cause the highest migration.
+## Theoretical Extension
+
+While this thesis only covers a constant migration rate, the end goal would be to model the city (vertex) specific and between city (edge) attributes that could affect the migration rate. For example the size of the cities (city specific) and the distance between cities (between city attribute) could be important predictors of migration rates. In the case of the 2011 outbreak of *E. coli* distance to the Autobahn and shipping routes might be important since the *E. coli* was carried on contaminated produce. Determining what factors are most important in determining migration rates could give clues to e.g., public health officials, what locations are susceptible to outbreaks and importantly, what are potential interventions to reduce outbreaks. 
+
+The migration rate $m$ could be modelled as a logistic function of these city parameters $m \sim logit(\beta_0 + \beta_1*X_1 + \beta_2*X_2 + \dots)$ where the $X_i$'s can be both city specific attributes or edge specific attributes. One simple example could be 
+
+$$m_{i,j} \sim \text{logit}\big(\text{pop. city }i*X_1 + \text{pop. city } j*X_2 + \frac{\text{pop. city }i*\text{pop. city }j}{d(\text{city }i, \text{city }j)}*X_3\big), $$
+where $d(i,j)$ is some distance metric (e.g. euclidean, public transportation distance). The populations of city $i$ and city $j$ are city specific and $\frac{\text{pop. city }i*\text{pop. city }j}{d(\text{city }i, \text{city }j)}$ is an edge specfic attribute. Then $m_{ij}$ would be the migration rate from city $i$ to city $j$ and $m_{j,i}$ the rate from city $j$ to city $i$.
+
+Furthermore this would allow the graph to be changed from an undirected, unweighted graph to a fully-connected directed graph with weighted edges, where the weight of $e_{i,j}$ is $m_{i,j}$. If the number of change points $K$ and the location of the change points $\vec{\theta}$ is held fixed (e.g., by being previously estimated), then all the parameters in the model are continuous and computational issues regarding the discrete nature of the undirected graph can be side-stepped. For example, having all the parameters be continuous could allow for gradient-based sampling methods such as Hamitonian Monte Carlo which holds the promise of efficient sampling with little to no tuning required.
 
 \pagebreak
 
-## extra graphs
+# Appendix
+
+## Code
 
 
-```{r, fig.asp = 1, fig.cap = "\\label{fig:pairs_lambda} density plots", fig.show='hold'}
-mcmc_pairs(res_bp, pars = c("K","lambda1","lambda2", "lambda3"), off_diag_fun = "hex")
-```
 
-```{r, fig.asp = 1, fig.cap = "\\label{fig:pairs_gamma} dens plots", fig.show='hold'}
-mcmc_pairs(res_bp, pars = c("gamma0","gamma1", "gamma2"), off_diag_fun = "hex")
-```
 
 
 \pagebreak
